@@ -1,0 +1,16 @@
+-- 元ファイル: /Users/myamaguchi/Programing/OSX_IDE_Skill_management/tests/sample_utf8.csv
+-- 推定エンコーディング: utf-8
+-- 改行: LF (UNIX/Mac)
+-- 生成: 2026-02-24T00:04:16
+-- 先頭4行プレビュー:
+-- [1] id,name,value
+-- [2] 1,foo,100
+-- [3] 2,bar,200
+-- [4] 1,foo,100
+--
+-- LOAD DATA INFILE '/Users/myamaguchi/Programing/OSX_IDE_Skill_management/tests/sample_utf8.csv' INTO TABLE your_table_name
+-- CHARACTER SET utf8mb4
+-- FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\'
+-- LINES TERMINATED BY '\n'
+-- IGNORE 1 LINES
+-- (col1, col2, ...);

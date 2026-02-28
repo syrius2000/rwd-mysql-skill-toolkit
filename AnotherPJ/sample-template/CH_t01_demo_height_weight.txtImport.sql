@@ -1,0 +1,19 @@
+-- 元ファイル: CH_t01_demo_height_weight.txt
+-- 推定エンコーディング: utf-8
+-- 生成日時: 2025-10-30T14:09:50
+--
+-- 先頭4行プレビュー:
+-- [1] "PATIENTNO","SEX","HEIGHTWEIGHTSTATUS","HEIGHTWEIGHT","HEIGHTWEIGHTDATE"
+-- [2] "020991167","0","01","156.7","2022/7/4 0:00:00"
+-- [3] "020991167","0","01","157.2","2018/8/20 11:39:00"
+-- [4] "020991167","0","01","157.2","2018/8/29 0:00:00"
+--
+-- 以下は雛形です。必要に応じてテーブル名 / 区切り文字 / カラム定義を編集してください。
+-- LOAD DATA INFILE の利用例:
+-- LOAD DATA INFILE 'ABSOLUTE_OR_RELATIVE_PATH' INTO TABLE your_table_name
+-- CHARACTER SET utf8mb4
+-- FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\'
+-- LINES TERMINATED BY '
+'
+-- IGNORE 1 LINES
+-- (col1, col2, col3, ...);

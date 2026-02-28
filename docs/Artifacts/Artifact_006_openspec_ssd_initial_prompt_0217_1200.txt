@@ -1,0 +1,7 @@
+OpenSpec で新規 change を spec-driven で進めたい。次のルールで進めてほしい。
+
+- 成果物に Cursor の Agent Skill を含める場合は、公式ドキュメント (https://cursor.com/ja/docs/context/skills) に準拠する。スクリプトは必ず scripts/ 配下に置き、SKILL.md からはスキルルート相対パス（例: scripts/step1.sh）で参照する。必要に応じて references/、assets/ を使う。
+- Skill の作成・修正では skill-creator（create-skill）のガイドに従う。description は第三者視点で WHAT/WHEN を明示、SKILL.md は要点に絞り、詳細は references/ 等に分離する。
+- Artifact は ./docs/Artifacts に保存し、ファイル名は連番（3桁ゼロパディング）と日時（MMDD_HHMM）を含める。
+
+change 名（kebab-case）: [ここに例: my-feature-skill]

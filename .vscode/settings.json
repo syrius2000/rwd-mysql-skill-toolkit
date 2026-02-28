@@ -1,0 +1,18 @@
+{
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  "editor.acceptSuggestionOnCommitCharacter": true,
+  "editor.tabCompletion": "on",
+  "vim.useCtrlKeys": true,
+  "vim.handleKeys": {
+    "<C-a>": true,
+    "<C-e>": true
+  },
+  "vim.insertModeKeyBindings": [
+    { "before": ["<C-a>"], "after": ["<Home>"] },
+    { "before": ["<C-e>"], "after": ["<End>"] }
+  ]
+}

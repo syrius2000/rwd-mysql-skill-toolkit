@@ -1,0 +1,44 @@
+# venv
+.venv/
+venv/
+env/
+
+# lock (uv)
+uv.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / local
+chrome_profile_notebooklm/
+*.local
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# large test data (GitHub 100MB limit)
+tests/csv_data/CH*.txt
+
+.gemini/
+gha-creds-*.json

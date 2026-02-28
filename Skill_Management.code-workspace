@@ -1,0 +1,37 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "sqltools.connections": [
+      {
+        "name": "QNAP MySQL 8.4",
+        "driver": "MySQL",
+        "server": "192.168.0.110",
+        "port": 3307,
+        "database": "",
+        "username": "root",
+        "password": "ROOT3543",
+        "connectionTimeout": 30000,
+        "acquireTimeout": 60000,
+        "connectionLimit": 10
+      },
+      {
+        "mysqlOptions": {
+          "authProtocol": "default",
+          "enableSsl": "Disabled"
+        },
+        "ssh": "Disabled",
+        "previewLimit": 50,
+        "server": "localhost",
+        "port": 3306,
+        "driver": "MySQL",
+        "name": "VACCINE",
+        "database": "VACCINE",
+        "username": "RWDadmin"
+      }
+    ]
+  }
+}
