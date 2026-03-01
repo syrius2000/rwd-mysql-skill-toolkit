@@ -7,16 +7,16 @@ author: AI Agent (LLM Model)
 
 ## 1. 目的
 
-1stdesign.md を土台に、既存 change `flat-file-to-mysql-ddl-creator` の proposal / design / specs / tasks を一貫して作り直す。
+1st_design.md を土台に、既存 change `flat-file-to-mysql-ddl-creator` の proposal / design / specs / tasks を一貫して作り直す。
 
 ---
 
-## 2. 反映する 1stdesign の要点（整理版）
+## 2. 反映する 1st_design の要点（整理版）
 
 - **参照コード**: AnotherPJ の `make_sample_sql_files.py`、`read_sample_bytes.py`、`detect_encoding.py`。サンプル SQL は `CH_t05_covid_vaccine.txtImport.sql` のような形式。`SQLDistinct.prompt.md` / `SQLInsert.prompt.md` を参照。
 - **成果物**: (1) CP932 CSV → MySQL 8.0 互換 DDL を自動生成する **Skill.md**、(2) その Skill を使って CSV を MySQL に投入する流れ、(3) **validation.md**（バリデーション手順・フローのドキュメント）。
 - **validation フロー**: レコード数カウント → 重複検出・レポート → 重複削除 → ユニーク CSV 作成 → MySQL 投入 → 投入後件数カウント → 件数比較 → 一致時は成功報告、不一致時はエラー報告。
-- **重複**: 1stdesign の「read_sample_bytes.py」3回は 1 つに整理。
+- **重複**: 1st_design の「read_sample_bytes.py」3回は 1 つに整理。
 
 ---
 
@@ -24,9 +24,9 @@ author: AI Agent (LLM Model)
 
 | # | 内容 | 理由 |
 |---|------|------|
-| 1 | **Artifact の順序を「参照→Skill→validation」に明示** | 1stdesign の「参考コード → Skill → validation.md」の依存関係を design/tasks に落とす。 |
+| 1 | **Artifact の順序を「参照→Skill→validation」に明示** | 1st_design の「参考コード → Skill → validation.md」の依存関係を design/tasks に落とす。 |
 | 2 | **spec を 1 つ追加: `validation-doc`** | 「validation.md が存在し、フロー（カウント→重複検出→削除→投入→件数比較→報告）が記述されている」を要件化。 |
-| 3 | **tasks に「参照コード分析」「Skill.md 作成」「validation.md 作成」を明示** | 現行 tasks は CLI/検証/DDL/投入に偏っている。1stdesign の「参考にする」「Skill を作る」「validation を書く」をタスクとして並べる。 |
+| 3 | **tasks に「参照コード分析」「Skill.md 作成」「validation.md 作成」を明示** | 現行 tasks は CLI/検証/DDL/投入に偏っている。1st_design の「参考にする」「Skill を作る」「validation を書く」をタスクとして並べる。 |
 | 4 | **LOAD DATA と INSERT の役割を design で分離** | DDL は LOAD DATA 対応、一方で「サンプル SQL（INSERT 形式）」も参照する。初期は INSERT/バッチで投入し、大容量は LOAD DATA オプションとする等、段階を design に書く。 |
 | 5 | **重複判定のデフォルト** | 指定がなければ「全カラム一致」、指定があれば「キーカラム」とし、spec と design の両方に同じ定義を書く。 |
 
@@ -69,7 +69,7 @@ author: AI Agent (LLM Model)
 
 | # | 疑問 | 選択肢の例 |
 |---|------|------------|
-| Q5 | 作り直しの**範囲**は？ | (A) proposal / design / tasks を 1stdesign ベースで更新（specs は後で検討） (B) 実装も含めてゼロから揃える |
+| Q5 | 作り直しの**範囲**は？ | (A) proposal / design / tasks を 1st_design ベースで更新（specs は後で検討） (B) 実装も含めてゼロから揃える |
 
 ---
 
@@ -78,7 +78,7 @@ author: AI Agent (LLM Model)
 ```
 openspec/changes/flat-file-to-mysql-ddl-creator/
 ├── proposal.md
-├── design.md      … 1stdesign ベース + 参照一覧（AnotherPJ .md / make_sample_sql_files.py / detect_encoding.py 新規）、validation フロー、validation.md は当 change 配下
+├── design.md      … 1st_design ベース + 参照一覧（AnotherPJ .md / make_sample_sql_files.py / detect_encoding.py 新規）、validation フロー、validation.md は当 change 配下
 ├── validation.md  … 当 change 配下に配置（フロー: カウント→重複検出→削除→投入→件数比較→報告）
 ├── specs/         … 既存内容は破棄済み。これから検討して追加する。
 └── tasks.md       … 参照分析 → detect_encoding.py 作成 → Skill（3分割案）→ validation.md → CLI/検証/DDL/投入/統合

@@ -13,7 +13,7 @@ author: AI Agent (Gemini 2.0 Pro)
 graph TD
     subgraph Repo [OSX_IDE_Skill_management]
         README[readme.md]
-        Design1[1stdesign.md]
+        Design1[1st_design.md]
 
         subgraph OpenSpec [openspec/changes/flat-file-to-mysql-ddl-creator]
             Prop[proposal.md]

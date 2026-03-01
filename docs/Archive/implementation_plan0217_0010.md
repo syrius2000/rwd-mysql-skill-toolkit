@@ -8,7 +8,7 @@ author: AI Agent (Gemini 2.0 Pro)
 
 ## 2. 調査対象
 - **OpenSpec 構成**: `openspec` ディレクトリ内の設定、スペック、および現在進行中の変更 (`flat-file-to-mysql-ddl-creator`) の状態。
-- **既存設計**: `1stdesign.md` および `readme.md` に記載された目標と決定事項。
+- **既存設計**: `1st_design.md` および `readme.md` に記載された目標と決定事項。
 - **参考コード (AnotherPJ)**: `AnotherPJ` ディレクトリ内の Python スクリプトおよび SQL テンプレートの構造とロジック。
 - **スキル定義**: 現在の各種スキルの構成状況。
 
@@ -20,7 +20,7 @@ author: AI Agent (Gemini 2.0 Pro)
 
 ### ステップ 2: 深掘り調査 (Deep Dive)
 - `AnotherPJ` 内の参考コード (`make_sample_sql_files.py` 等) を読み込み、再利用可能なパターンやロジックを特定します。
-- `1stdesign.md` で定義された「Goals」に対する「現状の不足分」を洗い出します。
+- `1st_design.md` で定義された「Goals」に対する「現状の不足分」を洗い出します。
 
 ### ステップ 3: 課題とリスクの特定 (Risk & Gap Analysis)
 - CP932 エンコーディング処理や大容量ファイル処理における具体的な技術的課題を検討します。

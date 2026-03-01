@@ -34,6 +34,7 @@ chrome_profile_notebooklm/
 # logs
 *.log
 *.html
+cocom2_var.html
 
 # Jupyter
 .ipynb_checkpoints/
