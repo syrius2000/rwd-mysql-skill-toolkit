@@ -6,6 +6,8 @@
   - MySQLデータバリデーションSkill
   - MySQLデータ件数比較Skill
 
+スキル正本は `.cursor/skills`。`.agent/skills`（Antigravity 用）との同期ルールは [docs/Artifacts/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Artifacts/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照。
+
 ## 参考にすべきコード
 
 - AnotherPJ/sample-template/CH_t05_covid_vaccine.txtImport.sql

@@ -33,6 +33,7 @@ chrome_profile_notebooklm/
 
 # logs
 *.log
+*.html
 
 # Jupyter
 .ipynb_checkpoints/
