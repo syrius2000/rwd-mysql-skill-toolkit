@@ -6,7 +6,7 @@
   - MySQLデータバリデーションSkill
   - MySQLデータ件数比較Skill
 
-スキル正本は `.cursor/skills`。`.agent/skills`（Antigravity 用）との同期ルールは [docs/Artifacts/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Artifacts/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照。
+スキル正本は `.cursor/skills`。`.agent/skills`（Antigravity 用）との同期ルールは [docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照。
 
 ## 参考にすべきコード
 
@@ -30,27 +30,9 @@
 /opsx:ff        design.md, proposal.md, task.mdを一括生成する
 /opsx:continue  design.md, proposal.md, task.mdを順序立てて作成する
 
-``` bash
-┌────────────────────┐
-│ Start a Change               │  /opsx:new
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐
-│ Create Artifacts             │  /opsx:ff or /opsx:continue
-│ (proposal, specs,            │
-│  design, tasks)              │
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐
-│ Implement Tasks              │  /opsx:apply
-│ (AI writes code)             │
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐
-│ Archive & Merge              │  /opsx:archive
-│ (Specs, Tasks)               │
-└────────────────────┘
+```mermaid
+flowchart TD
+    Start["Start a Change<br/>/opsx:new"] --> Create["Create Artifacts<br/>(proposal, specs, design, tasks)<br/>/opsx:ff or /opsx:continue"]
+    Create --> Implement["Implement Tasks<br/>(AI writes code)<br/>/opsx:apply"]
+    Implement --> Archive["Archive & Merge<br/>(Specs, Tasks)<br/>/opsx:archive"]
 ```
