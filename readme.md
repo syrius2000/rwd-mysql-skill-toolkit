@@ -5,6 +5,7 @@
   - MySQLデータ重複除去Skill
   - MySQLデータバリデーションSkill
   - MySQLデータ件数比較Skill
+- MySQL ER 図生成スキル（mysql-er-diagram: MCP MySQL で指定 DB のテーブル・カラムを取得し、PlantUML ER 図を出力）
 
 スキル正本は `.cursor/skills`。`.agent/skills`（Antigravity 用）との同期ルールは [docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照。
 
