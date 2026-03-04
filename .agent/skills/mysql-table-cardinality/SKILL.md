@@ -1,0 +1,79 @@
+---
+name: mysql-table-cardinality
+description: 指定 MySQL DB・テーブルからカラム一覧・総行数・カラムごとの濃度数（cardinality）を取得し、./skill-output/mysql_table_cardinality に CSV/JSON を出力する。MCP 利用可時は execute_sql、不可時は CLI。DB 名・テーブル名必須。全テーブルは -t '*'。濃度数・cardinality を確認したいとき、テーブル統計を取得したいときに使う。Cursor および Antigravity で利用可能。
+license: MIT
+metadata:
+  author: mysql-table-cardinality-skill
+  version: "1.0"
+---
+
+指定 DB・テーブルからカラム一覧、テーブル総行数、カラムごとの濃度数（COUNT(DISTINCT col)）を取得し、`./skill-output/mysql_table_cardinality` へ CSV と JSON を出力する。MCP (user-dbhub) が利用可能なら `execute_sql` を、利用できない場合は CLI を実行する。
+
+## 実行前提
+
+- 実行 cwd は **プロジェクトルート**。
+- 出力先は `./skill-output/mysql_table_cardinality`（`-o` 未指定時の既定）。
+- エージェントが本 Skill に従い、MCP または `scripts/get_cardinality_cli.py` を呼び出す。
+- **Cursor** では `.cursor/skills/mysql-table-cardinality/`、**Antigravity** では `.agent/skills/mysql-table-cardinality/` を参照。同一内容を両方に配置する（MUST）。
+
+## 動作の流れ
+
+1. 入力（DB 名・テーブル名）を受け取る
+2. **MCP 利用可**: `execute_sql` で SQL を実行（先頭で `USE db;` を実行して DB 指定）
+3. **MCP 利用不可**: `get_cardinality_cli.py` を実行（内部で `mysql` コマンド使用）
+4. カラム取得 → 総行数取得 → 各カラム濃度数取得 → CSV/JSON 出力
+
+## 出力の場所
+
+- `./skill-output/mysql_table_cardinality/<db>_<table>_columns_cardinality.csv` … カラム一覧＋濃度数
+- `./skill-output/mysql_table_cardinality/<db>_<table>_report.json` … database, table, total_rows, columns_count, timestamp
+
+## 覚えておくこと
+
+1. **`-t` は必須**。全テーブルは `-t '*'` で明示
+2. 全テーブル時は **事前に「全○テーブルを処理します。続行しますか？」とユーザーに確認**する
+3. **VIEW は対象外**（BASE TABLE のみ）
+4. 大テーブルでは **COUNT が重い**ため注意
+5. 認証は **.env（chmod 600）または ~/.my.cnf** を推奨。`.env` は `.gitignore` に含め、コミットしない
+
+## 入力
+
+- **database**（必須）: DB 名
+- **table**（必須）: テーブル名。全テーブルは `*`
+
+## 実行前の確認
+
+- `.env` または ~/.my.cnf に認証情報が設定されているか確認する
+- `mysql` コマンドが PATH にあることを確認する（CLI 利用時）
+- 全テーブル指定時はユーザーに確認を取る
+
+## 手順（MCP 優先）
+
+1. MCP user-dbhub の `execute_sql` が利用可能か確認する
+2. **MCP 利用可**:
+   - SQL の先頭で `USE db;` を実行して DB を指定
+   - カラム取得: `SELECT COLUMN_NAME, ORDINAL_POSITION, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='db' AND TABLE_NAME='table' ORDER BY ORDINAL_POSITION`
+   - 総行数: `SELECT COUNT(*) FROM \`db\`.\`table\``
+   - 各カラム濃度数: `SELECT COUNT(DISTINCT \`col\`) FROM \`db\`.\`table\``
+   - 識別子はバッククォートでエスケープ（` 内の ` は `` に二重化）
+   - 取得結果を CSV/JSON 形式で `./skill-output/mysql_table_cardinality/` に出力する
+3. **MCP 利用不可**: CLI を呼び出す
+   - Cursor: `python3 .cursor/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill-output/mysql_table_cardinality`
+   - Antigravity: `python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill-output/mysql_table_cardinality`
+   - 全テーブル: `-t '*'`
+
+## コマンド例
+
+単一テーブル:
+```
+python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d mydb -t mytable -o ./skill-output/mysql_table_cardinality
+```
+
+全テーブル（事前にユーザー確認）:
+```
+python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d mydb -t '*' -o ./skill-output/mysql_table_cardinality
+```
+
+## 参照
+
+- `scripts/get_cardinality_cli.py`
