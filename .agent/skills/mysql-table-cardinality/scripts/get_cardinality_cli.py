@@ -90,9 +90,7 @@ def _run_mysql(
     if user is not None:
         cmd[1:1] = ["-u", user]
     try:
-        proc = subprocess.run(
-            cmd, text=True, capture_output=True, check=False, env=env
-        )
+        proc = subprocess.run(cmd, text=True, capture_output=True, check=False, env=env)
     except FileNotFoundError:
         return [], "mysql コマンドが見つかりません（PATH を確認してください）"
     except Exception as e:
@@ -105,25 +103,41 @@ def _run_mysql(
     return rows, ""
 
 
-def _get_tables(database: str, host: str | None, port: int | None, user: str | None, password: str | None) -> list[str]:
-    db_esc = _escape_identifier(database)
-    q = f"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA={db_esc} AND TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME"
-    rows, err = _run_mysql(database, q, host=host, port=port, user=user, password=password)
+def _get_tables(
+    database: str,
+    host: str | None,
+    port: int | None,
+    user: str | None,
+    password: str | None,
+) -> list[str]:
+    # INFORMATION_SCHEMA ではリテラル（シングルクォート）を使用する必要がある
+    q = f"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{database}' AND TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME"
+    rows, err = _run_mysql(
+        database, q, host=host, port=port, user=user, password=password
+    )
     if err:
         return []
     return [r[0] for r in rows if r]
 
 
-def _get_columns(database: str, table: str, host: str | None, port: int | None, user: str | None, password: str | None) -> list[tuple[str, int, str]]:
-    db_esc = _escape_identifier(database)
-    tbl_esc = _escape_identifier(table)
+def _get_columns(
+    database: str,
+    table: str,
+    host: str | None,
+    port: int | None,
+    user: str | None,
+    password: str | None,
+) -> list[tuple[str, int, str]]:
+    # INFORMATION_SCHEMA ではリテラル（シングルクォート）を使用する必要がある
     q = (
         f"SELECT COLUMN_NAME, ORDINAL_POSITION, DATA_TYPE "
         f"FROM INFORMATION_SCHEMA.COLUMNS "
-        f"WHERE TABLE_SCHEMA={db_esc} AND TABLE_NAME={tbl_esc} "
+        f"WHERE TABLE_SCHEMA='{database}' AND TABLE_NAME='{table}' "
         f"ORDER BY ORDINAL_POSITION"
     )
-    rows, err = _run_mysql(database, q, host=host, port=port, user=user, password=password)
+    rows, err = _run_mysql(
+        database, q, host=host, port=port, user=user, password=password
+    )
     if err:
         return []
     result: list[tuple[str, int, str]] = []
@@ -136,11 +150,20 @@ def _get_columns(database: str, table: str, host: str | None, port: int | None, 
     return result
 
 
-def _get_count(database: str, table: str, host: str | None, port: int | None, user: str | None, password: str | None) -> int | None:
+def _get_count(
+    database: str,
+    table: str,
+    host: str | None,
+    port: int | None,
+    user: str | None,
+    password: str | None,
+) -> int | None:
     db_esc = _escape_identifier(database)
     tbl_esc = _escape_identifier(table)
     q = f"SELECT COUNT(*) FROM {db_esc}.{tbl_esc}"
-    rows, err = _run_mysql(database, q, host=host, port=port, user=user, password=password)
+    rows, err = _run_mysql(
+        database, q, host=host, port=port, user=user, password=password
+    )
     if err or not rows:
         return None
     try:
@@ -149,12 +172,22 @@ def _get_count(database: str, table: str, host: str | None, port: int | None, us
         return None
 
 
-def _get_cardinality(database: str, table: str, column: str, host: str | None, port: int | None, user: str | None, password: str | None) -> int | None:
+def _get_cardinality(
+    database: str,
+    table: str,
+    column: str,
+    host: str | None,
+    port: int | None,
+    user: str | None,
+    password: str | None,
+) -> int | None:
     db_esc = _escape_identifier(database)
     tbl_esc = _escape_identifier(table)
     col_esc = _escape_identifier(column)
     q = f"SELECT COUNT(DISTINCT {col_esc}) FROM {db_esc}.{tbl_esc}"
-    rows, err = _run_mysql(database, q, host=host, port=port, user=user, password=password)
+    rows, err = _run_mysql(
+        database, q, host=host, port=port, user=user, password=password
+    )
     if err or not rows:
         return None
     try:
@@ -184,18 +217,26 @@ def _process_table(
     for col_name, ord_pos, data_type in columns:
         card = _get_cardinality(database, table, col_name, host, port, user, password)
         cardinality = card if card is not None else -1
-        rows_data.append({
-            "column_name": col_name,
-            "ordinal_position": ord_pos,
-            "data_type": data_type,
-            "cardinality": cardinality,
-        })
+        rows_data.append(
+            {
+                "column_name": col_name,
+                "ordinal_position": ord_pos,
+                "data_type": data_type,
+                "cardinality": cardinality,
+            }
+        )
 
-    out_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        return False, f"出力ディレクトリの作成に失敗しました ({out_dir}): {e}"
     base = f"{database}_{table}"
     csv_path = out_dir / f"{base}_columns_cardinality.csv"
     with csv_path.open("w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["column_name", "ordinal_position", "data_type", "cardinality"])
+        w = csv.DictWriter(
+            f,
+            fieldnames=["column_name", "ordinal_position", "data_type", "cardinality"],
+        )
         w.writeheader()
         for r in rows_data:
             w.writerow(r)
@@ -208,23 +249,38 @@ def _process_table(
         "timestamp": datetime.now().isoformat(timespec="seconds"),
     }
     report_path = out_dir / f"{base}_report.json"
-    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    return True, f"{table}: total_rows={total}, columns={len(columns)} -> {csv_path.name}"
+    report_path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return (
+        True,
+        f"{table}: total_rows={total}, columns={len(columns)} -> {csv_path.name}",
+    )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="テーブル濃度数を取得し CSV/JSON を出力")
+    parser = argparse.ArgumentParser(
+        description="テーブル濃度数を取得し CSV/JSON を出力"
+    )
     parser.add_argument("-d", "--database", required=True, help="DB 名")
-    parser.add_argument("-t", "--table", required=True, help="テーブル名（全テーブルは *）")
+    parser.add_argument(
+        "-t", "--table", required=True, help="テーブル名（全テーブルは *）"
+    )
     parser.add_argument("--host", default=None, help="MySQL host")
     parser.add_argument("--port", type=int, default=None, help="MySQL port")
     parser.add_argument("-u", "--user", default=None, help="MySQL user")
-    parser.add_argument("-p", "--password", default="", help="MySQL password（非推奨、MYSQL_PASSWORD または .env を使用）")
     parser.add_argument(
-        "-o", "--out-dir",
+        "-p",
+        "--password",
+        default="",
+        help="MySQL password（非推奨、MYSQL_PASSWORD または .env を使用）",
+    )
+    parser.add_argument(
+        "-o",
+        "--out-dir",
         type=Path,
-        default=Path("./skill-output/mysql_table_cardinality"),
-        help="出力先（既定: ./skill-output/mysql_table_cardinality）",
+        default=Path("./skill_output/mysql_table_cardinality"),
+        help="出力先（既定: ./skill_output/mysql_table_cardinality）",
     )
     args = parser.parse_args()
     project_root = Path.cwd()

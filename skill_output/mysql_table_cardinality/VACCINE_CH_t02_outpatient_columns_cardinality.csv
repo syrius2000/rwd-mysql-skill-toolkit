@@ -1,0 +1,14 @@
+column_name,ordinal_position,data_type,cardinality
+APPOINTMENTNO,1,varchar,614688
+PATIENTNO,2,varchar,17615
+DEPARTMENTCODE,3,varchar,32
+DEPARTMENTNAME,4,varchar,32
+SEX,5,varchar,2
+PATIENTAGE,6,varchar,102
+VISITDATE,7,datetime,1367
+VISITTIME,8,varchar,644
+CONSULTSTARTTIME,9,varchar,945
+CONSULTENDTIME,10,varchar,952
+ADMISSIONDEPT,11,varchar,29
+ADMISSIONDEPTNAME,12,varchar,30
+ADMISSIONNO,13,varchar,25
