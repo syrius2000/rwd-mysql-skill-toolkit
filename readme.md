@@ -6,6 +6,7 @@
   - MySQLデータバリデーションSkill
   - MySQLデータ件数比較Skill
 - MySQL ER 図生成スキル（mysql-er-diagram: MCP MySQL で指定 DB のテーブル・カラムを取得し、PlantUML ER 図を出力）
+- MySQL テーブル濃度数スキル（mysql-table-cardinality: 指定 DB・テーブルのカラム一覧・総行数・濃度数を CSV/JSON 出力。MCP または CLI）
 
 スキル正本は `.cursor/skills`。`.agent/skills`（Antigravity 用）との同期ルールは [docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照。
 
