@@ -246,6 +246,7 @@ def _process_table(
         "table": table,
         "total_rows": total,
         "columns_count": len(columns),
+        "columns": rows_data,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
     }
     report_path = out_dir / f"{base}_report.json"
