@@ -1,18 +1,18 @@
 ---
 name: mysql-table-cardinality
-description: 指定 MySQL DB・テーブルからカラム一覧・総行数・カラムごとの濃度数（cardinality）を取得し、./skill-output/mysql_table_cardinality に CSV/JSON を出力する。MCP 利用可時は execute_sql、不可時は CLI。DB 名・テーブル名必須。全テーブルは -t '*'。濃度数・cardinality を確認したいとき、テーブル統計を取得したいときに使う。Cursor および Antigravity で利用可能。
+description: 指定 MySQL DB・テーブルからカラム一覧・総行数・カラムごとの濃度数（cardinality）を取得し、./skill_output/mysql_table_cardinality に CSV/JSON を出力する。MCP 利用可時は execute_sql、不可時は CLI。DB 名・テーブル名必須。全テーブルは -t '*'。濃度数・cardinality を確認したいとき、テーブル統計を取得したいときに使う。Cursor および Antigravity で利用可能。
 license: MIT
 metadata:
   author: mysql-table-cardinality-skill
   version: "1.0"
 ---
 
-指定 DB・テーブルからカラム一覧、テーブル総行数、カラムごとの濃度数（COUNT(DISTINCT col)）を取得し、`./skill-output/mysql_table_cardinality` へ CSV と JSON を出力する。MCP (user-dbhub) が利用可能なら `execute_sql` を、利用できない場合は CLI を実行する。
+指定 DB・テーブルからカラム一覧、テーブル総行数、カラムごとの濃度数（COUNT(DISTINCT col)）を取得し、`./skill_output/mysql_table_cardinality` へ CSV と JSON を出力する。MCP (user-dbhub) が利用可能なら `execute_sql` を、利用できない場合は CLI を実行する。
 
 ## 実行前提
 
 - 実行 cwd は **プロジェクトルート**。
-- 出力先は `./skill-output/mysql_table_cardinality`（`-o` 未指定時の既定）。
+- 出力先は `./skill_output/mysql_table_cardinality`（`-o` 未指定時の既定）。
 - エージェントが本 Skill に従い、MCP または `scripts/get_cardinality_cli.py` を呼び出す。
 - **Cursor** では `.cursor/skills/mysql-table-cardinality/`、**Antigravity** では `.agent/skills/mysql-table-cardinality/` を参照。同一内容を両方に配置する（MUST）。
 

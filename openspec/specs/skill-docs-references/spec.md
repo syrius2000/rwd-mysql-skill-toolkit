@@ -39,7 +39,7 @@ flat-file-mysql 系スキル（ddl-generation, load-validation, overview）の S
 - **THEN** エージェントは SKILL に記載された前提条件・注意・確認事項をユーザーに示すか、確認を求める
 
 ### Requirement: SKILL documents re-run and overwrite policy when problem at step 1
-flat-file-mysql 系スキルの SKILL.md には、Step 1 で不具合を見つけた場合の運用を記載する。内容: 原因を修正したうえで Step 1 から再実行し、Step 2・3 も再実行すること。再実行時は `./skill-output` 配下が上書きされるため、前の結果を残したい場合は事前にバックアップすること。
+flat-file-mysql 系スキルの SKILL.md には、Step 1 で不具合を見つけた場合の運用を記載する。内容: 原因を修正したうえで Step 1 から再実行し、Step 2・3 も再実行すること。再実行時は `./skill_output` 配下が上書きされるため、前の結果を残したい場合は事前にバックアップすること。
 
 #### Scenario: Re-run and overwrite policy is documented
 - **WHEN** 利用者が各スキルの SKILL.md を読む

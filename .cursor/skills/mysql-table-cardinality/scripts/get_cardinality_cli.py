@@ -17,6 +17,10 @@ def _escape_identifier(name: str) -> str:
     return "`" + name.replace("`", "``") + "`"
 
 
+def _escape_string_literal(text: str) -> str:
+    return text.replace("\\", "\\\\").replace("'", "''")
+
+
 def _load_dotenv(env_path: Path, project_root: Path) -> dict[str, str]:
     if not env_path.exists():
         return {}
@@ -77,18 +81,19 @@ def _run_mysql(
     user: str | None = None,
     password: str | None = None,
 ) -> tuple[list[list[str]], str]:
-    cmd = ["mysql", "-N", "-B", "-e", query, database]
+    cmd = ["mysql", "-N", "-B", "-e", query]
     env = os.environ.copy()
     if password:
         env["MYSQL_PWD"] = password
     else:
         env.pop("MYSQL_PWD", None)
     if host is not None:
-        cmd[1:1] = ["-h", host]
+        cmd.extend(["-h", host])
     if port is not None:
-        cmd[1:1] = ["-P", str(port)]
+        cmd.extend(["-P", str(port)])
     if user is not None:
-        cmd[1:1] = ["-u", user]
+        cmd.extend(["-u", user])
+    cmd.extend(["--", database])
     try:
         proc = subprocess.run(cmd, text=True, capture_output=True, check=False, env=env)
     except FileNotFoundError:
@@ -111,7 +116,8 @@ def _get_tables(
     password: str | None,
 ) -> list[str]:
     # INFORMATION_SCHEMA ではリテラル（シングルクォート）を使用する必要がある
-    q = f"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{database}' AND TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME"
+    db_lit = _escape_string_literal(database)
+    q = f"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{db_lit}' AND TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME"
     rows, err = _run_mysql(
         database, q, host=host, port=port, user=user, password=password
     )
@@ -129,10 +135,12 @@ def _get_columns(
     password: str | None,
 ) -> list[tuple[str, int, str]]:
     # INFORMATION_SCHEMA ではリテラル（シングルクォート）を使用する必要がある
+    db_lit = _escape_string_literal(database)
+    tbl_lit = _escape_string_literal(table)
     q = (
         f"SELECT COLUMN_NAME, ORDINAL_POSITION, DATA_TYPE "
         f"FROM INFORMATION_SCHEMA.COLUMNS "
-        f"WHERE TABLE_SCHEMA='{database}' AND TABLE_NAME='{table}' "
+        f"WHERE TABLE_SCHEMA='{db_lit}' AND TABLE_NAME='{tbl_lit}' "
         f"ORDER BY ORDINAL_POSITION"
     )
     rows, err = _run_mysql(
@@ -230,7 +238,10 @@ def _process_table(
         out_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:
         return False, f"出力ディレクトリの作成に失敗しました ({out_dir}): {e}"
-    base = f"{database}_{table}"
+        
+    safe_db = database.replace("/", "_").replace("\\", "_").replace("..", "_")
+    safe_table = table.replace("/", "_").replace("\\", "_").replace("..", "_")
+    base = f"{safe_db}_{safe_table}"
     csv_path = out_dir / f"{base}_columns_cardinality.csv"
     with csv_path.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(
@@ -299,16 +310,17 @@ def main() -> int:
         if not tables:
             print("Error: テーブル一覧の取得に失敗しました")
             return 1
-        ok_count = 0
+        successes = []
         for t in tables:
             ok, msg = _process_table(database, t, out_dir, host, port, user, password)
             if ok:
                 print(msg)
-                ok_count += 1
+                successes.append(True)
             else:
                 print(f"Error: {msg}")
-        print(f"Done: {ok_count}/{len(tables)} tables")
-        return 0 if ok_count == len(tables) else 1
+        success_count = len(successes)
+        print(f"Done: {success_count}/{len(tables)} tables")
+        return 0 if success_count == len(tables) else 1
 
     ok, msg = _process_table(database, table_arg, out_dir, host, port, user, password)
     if ok:

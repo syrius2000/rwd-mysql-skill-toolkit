@@ -182,8 +182,8 @@ def main() -> int:
         "-o",
         "--out-dir",
         type=Path,
-        default=Path("./skill-output/step1_sample_sql"),
-        help="出力先（既定: ./skill-output/step1_sample_sql）",
+        default=Path("./skill_output/step1_sample_sql"),
+        help="出力先（既定: ./skill_output/step1_sample_sql）",
     )
     args = parser.parse_args()
     reports = run_step1(list(args.csv_paths), args.out_dir.resolve())

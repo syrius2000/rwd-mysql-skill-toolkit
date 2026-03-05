@@ -8,7 +8,7 @@
 
 ### Requirement: 件数比較バリデーション
 
-システム SHALL、ステップ 3（step3_cli.py、Skill: flat-file-mysql-load-validation）で、step1 の unique を期待件数として DB 投入後の件数と比較する。レポートは `./skill-output/step3_report` に出力する（例: step3_report.json）。
+システム SHALL、ステップ 3（step3_cli.py、Skill: flat-file-mysql-load-validation）で、step1 の unique を期待件数として DB 投入後の件数と比較する。レポートは `./skill_output/step3_report` に出力する（例: step3_report.json）。
 
 #### Scenario: 整合が取れている場合
 
@@ -23,4 +23,4 @@
 #### Scenario: バリデーションレポートの出力
 
 - **WHEN** ステップ 3 のバリデーションを実行する
-- **THEN** 期待件数、投入後件数、成功/失敗を `./skill-output/step3_report` に出力する
+- **THEN** 期待件数、投入後件数、成功/失敗を `./skill_output/step3_report` に出力する

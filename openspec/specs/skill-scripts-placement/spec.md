@@ -24,9 +24,9 @@
 - **WHEN** 利用者がステップ 2 用プロンプトを参照する
 - **THEN** `prompts/step2-complete-sql.prompt.md` が当該スキル配下に存在し、`{{database_name}}` 等のプレースホルダを含む
 
-### Requirement: Execution from project root and output to skill-output subdirs
-スキルが参照するスクリプトの実行は、プロジェクトルートをカレントディレクトリとして行う。出力は `./skill-output` 配下をステップ単位で分ける: `step1_sample_sql/`（サンプル SQL・レポート）、`step2_complete_sql/`（完成版 SQL）、`step3_report/`（実行結果・件数比較）。step1 の `-o` の既定値は `./skill-output/step1_sample_sql` とする。SKILL.md にこの取り決めを明記する。
+### Requirement: Execution from project root and output to skill_output subdirs
+スキルが参照するスクリプトの実行は、プロジェクトルートをカレントディレクトリとして行う。出力は `./skill_output` 配下をステップ単位で分ける: `step1_sample_sql/`（サンプル SQL・レポート）、`step2_complete_sql/`（完成版 SQL）、`step3_report/`（実行結果・件数比較）。step1 の `-o` の既定値は `./skill_output/step1_sample_sql` とする。SKILL.md にこの取り決めを明記する。
 
 #### Scenario: SKILL documents cwd and output subdirs
 - **WHEN** エージェントまたは利用者が flat-file-mysql 系スキルの SKILL.md を読む
-- **THEN** 実行はプロジェクトルートで行い、出力は `./skill-output/step1_sample_sql` 等のサブディレクトリに書く旨が記載されている
+- **THEN** 実行はプロジェクトルートで行い、出力は `./skill_output/step1_sample_sql` 等のサブディレクトリに書く旨が記載されている

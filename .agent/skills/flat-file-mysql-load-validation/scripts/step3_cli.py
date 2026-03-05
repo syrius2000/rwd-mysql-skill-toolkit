@@ -102,8 +102,8 @@ def main() -> int:
     parser.add_argument(
         "--report-dir",
         type=Path,
-        default=Path("./skill-output/step3_report"),
-        help="レポート出力先（既定: ./skill-output/step3_report）",
+        default=Path("./skill_output/step3_report"),
+        help="レポート出力先（既定: ./skill_output/step3_report）",
     )
     args = parser.parse_args()
 

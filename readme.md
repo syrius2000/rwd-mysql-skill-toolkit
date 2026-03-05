@@ -1,40 +1,48 @@
-# スキルをIDE用に用意する
+# IDE用スキル管理リポジトリ
 
-- MySQLデータインポートSkill
-  - MySQLデータエンコーディング検証Skill
-  - MySQLデータ重複除去Skill
-  - MySQLデータバリデーションSkill
-  - MySQLデータ件数比較Skill
-- MySQL ER 図生成スキル（mysql-er-diagram: MCP MySQL で指定 DB のテーブル・カラムを取得し、PlantUML ER 図を出力）
-- MySQL テーブル濃度数スキル（mysql-table-cardinality: 指定 DB・テーブルのカラム一覧・総行数・濃度数を CSV/JSON 出力。MCP または CLI）
+このリポジトリは、各種IDE（Cursor, Antigravity）で使用するスキルを管理します。
 
-スキル正本は `.cursor/skills`。`.agent/skills`（Antigravity 用）との同期ルールは [docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照。
+## 管理スキル一覧
 
-## 参考にすべきコード
+### データ連携・操作スキル
 
-- AnotherPJ/sample-template/CH_t05_covid_vaccine.txtImport.sql
-- AnotherPJ/sample-template/SQLDistinct.prompt.md
-- AnotherPJ/sample-template/SQLInsert.prompt.md
+- **フラットファイルMySQL DDL生成 (`flat-file-mysql-ddl-generation`)**: フラットファイルからMySQLのDDLを生成します。
+- **フラットファイルMySQLロード検証 (`flat-file-mysql-load-validation`)**: MySQLへのデータロード結果を検証します。
+- **フラätファイルMySQL概要 (`flat-file-mysql-overview`)**: MySQLにロードされたフラットファイルの概要を把握します。
+- **MySQL ER図生成 (`mysql-er-diagram`)**: 指定されたデータベースのテーブル・カラム情報を基に、PlantUML形式のER図を生成します。
+- **MySQLテーブルカーディナリティ分析 (`mysql-table-cardinality`)**: 指定されたテーブルのカラム一覧、総行数、カーディナリティを分析し、CSV/JSON形式で出力します。
 
-## Openspec によるSDD開発手順について
+### OpenSpecによるSDD（Specification Driven Development）支援スキル
 
-### 最初の作業
+OpenSpecは、仕様書に基づいた開発を支援する一連のスキル群です。
 
-`openspec init` でターミナルからProjectフォルダに初期設定を行う。IDEを複数えらべる。
-
-## Project start workflow
-
-1. /opsx-new
-2. /opsx:ff（2.1）
-3. /opsx:continue（2.2）
-
-/opsx:new
-/opsx:ff        design.md, proposal.md, task.mdを一括生成する
-/opsx:continue  design.md, proposal.md, task.mdを順序立てて作成する
+- **`openspec-onboard`**: プロジェクトの初期設定を行います。
+- **`openspec-new-change`**: 新しい変更を開始します。
+- **`openspec-ff-change`**: 設計書、提案書、タスクリストを一括で生成します。
+- **`openspec-continue-change`**: 設計書、提案書、タスクリストを対話形式で順次作成します。
+- **`openspec-apply-change`**: 生成されたタスクに基づき、AIがコードを実装します。
+- **`openspec-verify-change`**: 実装された変更を検証します。
+- **`openspec-sync-specs`**: 仕様書を同期します。
+- **`openspec-explore`**: 仕様書を探索します。
+- **`openspec-archive-change`**: 完了した仕様書やタスクをアーカイブします。
+- **`openspec-bulk-archive-change`**: 複数の仕様書やタスクを一括でアーカイブします。
 
 ```mermaid
-flowchart TD
-    Start["Start a Change<br/>/opsx:new"] --> Create["Create Artifacts<br/>(proposal, specs, design, tasks)<br/>/opsx:ff or /opsx:continue"]
-    Create --> Implement["Implement Tasks<br/>(AI writes code)<br/>/opsx:apply"]
-    Implement --> Archive["Archive & Merge<br/>(Specs, Tasks)<br/>/opsx:archive"]
+graph TD
+    A[Start: 新規変更タスク開始<br/>/opsx-new-change] --> B{成果物生成方法を選択};
+    B --> C[一括生成<br/>/opsx-ff-change];
+    B --> D[対話形式で順次生成<br/>/opsx-continue-change];
+    C --> E[成果物<br/>(proposal, specs, design, tasks)];
+    D --> E;
+    E --> F[タスクに基づき実装<br/>/opsx-apply-change];
+    F --> G[実装を検証<br/>/opsx-verify-change];
+    G --> H[アーカイブ<br/>/opsx-archive-change];
 ```
+
+### セキュリティ
+
+- **セキュリティ脆弱性チェック (`security-vulnerability-check`)**: コードの脆弱性をチェックします。
+
+## 同期ルール
+
+スキル定義の正本は `.cursor/skills` ディレクトリに配置します。`.agent/skills`（Antigravity用）への同期ルールについては、[docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照してください。

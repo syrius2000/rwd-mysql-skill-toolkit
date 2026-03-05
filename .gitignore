@@ -30,6 +30,7 @@ chrome_profile_notebooklm/
 .env
 .env.*
 !.env.example
+docs/Artifacts
 
 # logs
 *.log
@@ -45,6 +46,6 @@ tests/csv_data/CH*.txt
 .gemini/
 gha-creds-*.json
 
-skill-output/*
-# 補足: Git は空のディレクトリを追跡しないため、リポジトリに skill-output を残す場合は .gitkeep を追跡する
-!skill-output/.gitkeep
+skill_output/*
+# 補足: Git は空のディレクトリを追跡しないため、リポジトリに skill_output を残す場合は .gitkeep を追跡する
+!skill_output/.gitkeep

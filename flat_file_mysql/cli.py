@@ -6,7 +6,7 @@
   一つのエントリで実行する。ステップ 2 は手動（プロンプトで完成版 SQL 生成）。
 
 使い方（プロジェクトルートを cwd に推奨）:
-  # ステップ 1: サンプル SQL とレポート出力（既定: ./skill-output/step1_sample_sql）
+  # ステップ 1: サンプル SQL とレポート出力（既定: ./skill_output/step1_sample_sql）
   python3 -m flat_file_mysql.cli step1 a.csv b.csv
   python3 -m flat_file_mysql.cli step1 a.csv -o ./out
 
@@ -96,8 +96,8 @@ def main() -> int:
         "-o",
         "--out-dir",
         type=Path,
-        default=Path("./skill-output/step1_sample_sql"),
-        help="出力ディレクトリ（既定: ./skill-output/step1_sample_sql）",
+        default=Path("./skill_output/step1_sample_sql"),
+        help="出力ディレクトリ（既定: ./skill_output/step1_sample_sql）",
     )
     p1.set_defaults(handler=_cmd_step1)
 
@@ -118,8 +118,8 @@ def main() -> int:
         "-o",
         "--out-dir",
         type=Path,
-        default=Path("./skill-output/step1_sample_sql"),
-        help="出力ディレクトリ（既定: ./skill-output/step1_sample_sql）",
+        default=Path("./skill_output/step1_sample_sql"),
+        help="出力ディレクトリ（既定: ./skill_output/step1_sample_sql）",
     )
     pipe.add_argument("--run-step3", action="store_true", help="ステップ 2 完了後、step3 を実行する場合に指定")
     pipe.add_argument("--sql", type=Path, help="完成版 SQL（--run-step3 時必須）")

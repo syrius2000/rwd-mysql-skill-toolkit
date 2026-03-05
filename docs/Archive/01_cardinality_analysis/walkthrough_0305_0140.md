@@ -17,6 +17,7 @@ author: AI Agent (Gemini 2.0 Pro)
 - **カラム数**: 13 カラム
 
 #### カラム別濃度数（抜粋）
+
 | カラム名 | 濃度数 (Unique Values) | データ型 |
 | :--- | :--- | :--- |
 | `APPOINTMENTNO` | 614,688 (Unique) | varchar |

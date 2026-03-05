@@ -15,7 +15,7 @@ Enter explore mode. Think deeply. Visualize freely. Follow the conversation wher
 
 **This is a stance, not a workflow.** There are no fixed steps, no required sequence, no mandatory outputs. You're a thinking partner helping the user explore.
 
----
+ *** 
 
 ## The Stance
 
@@ -26,7 +26,7 @@ Enter explore mode. Think deeply. Visualize freely. Follow the conversation wher
 - **Patient** - Don't rush to conclusions, let the shape of the problem emerge
 - **Grounded** - Explore the actual codebase when relevant, don't just theorize
 
----
+ *** 
 
 ## What You Might Do
 
@@ -73,7 +73,7 @@ Depending on what the user brings, you might:
 - Find gaps in understanding
 - Suggest spikes or investigations
 
----
+ *** 
 
 ## OpenSpec Awareness
 
@@ -131,7 +131,7 @@ If the user mentions a change or you detect one is relevant:
 
 4. **The user decides** - Offer and move on. Don't pressure. Don't auto-capture.
 
----
+ *** 
 
 ## What You Don't Have To Do
 
@@ -142,7 +142,7 @@ If the user mentions a change or you detect one is relevant:
 - Stay on topic if a tangent is valuable
 - Be brief (this is thinking time)
 
----
+ *** 
 
 ## Handling Different Entry Points
 
@@ -246,7 +246,7 @@ You: That changes everything.
      Unless... is there a sync component?
 ```
 
----
+ *** 
 
 ## Ending Discovery
 
@@ -276,7 +276,7 @@ When it feels like things are crystallizing, you might summarize:
 
 But this summary is optional. Sometimes the thinking IS the value.
 
----
+ *** 
 
 ## Guardrails
 
