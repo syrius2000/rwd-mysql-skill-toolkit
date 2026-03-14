@@ -8,7 +8,7 @@
 
 - **フラットファイルMySQL DDL生成 (`flat-file-mysql-ddl-generation`)**: フラットファイルからMySQLのDDLを生成します。
 - **フラットファイルMySQLロード検証 (`flat-file-mysql-load-validation`)**: MySQLへのデータロード結果を検証します。
-- **フラätファイルMySQL概要 (`flat-file-mysql-overview`)**: MySQLにロードされたフラットファイルの概要を把握します。
+- **フラットファイルMySQL概要 (`flat-file-mysql-overview`)**: MySQLにロードされたフラットファイルの概要を把握します。
 - **MySQL ER図生成 (`mysql-er-diagram`)**: 指定されたデータベースのテーブル・カラム情報を基に、PlantUML形式のER図を生成します。
 - **MySQLテーブルカーディナリティ分析 (`mysql-table-cardinality`)**: 指定されたテーブルのカラム一覧、総行数、カーディナリティを分析し、CSV/JSON形式で出力します。
 
