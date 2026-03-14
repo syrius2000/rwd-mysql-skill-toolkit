@@ -12,7 +12,17 @@
 - **MySQL ER図生成 (`mysql-er-diagram`)**: 指定されたデータベースのテーブル・カラム情報を基に、PlantUML形式のER図を生成します。
 - **MySQLテーブルカーディナリティ分析 (`mysql-table-cardinality`)**: 指定されたテーブルのカラム一覧、総行数、カーディナリティを分析し、CSV/JSON形式で出力します。
 
+### セキュリティ
+
+- **セキュリティ脆弱性チェック (`security-vulnerability-check`)**: コードの脆弱性をチェックします。
+
+## 同期ルール
+
+スキル定義の正本は `.cursor/skills` ディレクトリに配置します。`.agent/skills`（Antigravity用）への同期ルールについては、[docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照してください。
+
 ### OpenSpecによるSDD（Specification Driven Development）支援スキル
+
+（注：これは一般的な概念としてのOpenSpecに関する説明であり、本リポジトリでは現在、関連するスキルは利用できません。OpenSpecの詳細については、以下のリポジトリをご参照ください: https://github.com/Fission-AI/OpenSpec）
 
 OpenSpecは、仕様書に基づいた開発を支援する一連のスキル群です。
 
@@ -27,6 +37,8 @@ OpenSpecは、仕様書に基づいた開発を支援する一連のスキル群
 - **`openspec-archive-change`**: 完了した仕様書やタスクをアーカイブします。
 - **`openspec-bulk-archive-change`**: 複数の仕様書やタスクを一括でアーカイブします。
 
+（例：OpenSpecの一般的なワークフロー）
+
 ```mermaid
 graph TD
     A[Start: 新規変更タスク開始<br/>/opsx-new-change] --> B{成果物生成方法を選択};
@@ -38,11 +50,3 @@ graph TD
     F --> G[実装を検証<br/>/opsx-verify-change];
     G --> H[アーカイブ<br/>/opsx-archive-change];
 ```
-
-### セキュリティ
-
-- **セキュリティ脆弱性チェック (`security-vulnerability-check`)**: コードの脆弱性をチェックします。
-
-## 同期ルール
-
-スキル定義の正本は `.cursor/skills` ディレクトリに配置します。`.agent/skills`（Antigravity用）への同期ルールについては、[docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照してください。
