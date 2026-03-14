@@ -22,7 +22,7 @@
 
 ### OpenSpecによるSDD（Specification Driven Development）支援スキル
 
-（注：これは一般的な概念としてのOpenSpecに関する説明であり、本リポジトリでは現在、関連するスキルは利用できません。OpenSpecの詳細については、以下のリポジトリをご参照ください: https://github.com/Fission-AI/OpenSpec）
+（注：これは一般的な概念としてのOpenSpecに関する説明であり、本リポジトリでは現在、関連するスキルは利用できません。）OpenSpecの詳細については、以下のリポジトリをご参照ください: https://github.com/Fission-AI/OpenSpec
 
 OpenSpecは、仕様書に基づいた開発を支援する一連のスキル群です。
 
