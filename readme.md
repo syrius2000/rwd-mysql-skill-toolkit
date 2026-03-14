@@ -32,7 +32,7 @@ graph TD
     A[Start: 新規変更タスク開始<br/>/opsx-new-change] --> B{成果物生成方法を選択};
     B --> C[一括生成<br/>/opsx-ff-change];
     B --> D[対話形式で順次生成<br/>/opsx-continue-change];
-    C --> E[成果物<br/>(proposal, specs, design, tasks)];
+    C --> E[成果物<br/>proposal, specs, design, tasks];
     D --> E;
     E --> F[タスクに基づき実装<br/>/opsx-apply-change];
     F --> G[実装を検証<br/>/opsx-verify-change];
