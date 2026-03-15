@@ -21,7 +21,7 @@ MCP MySQL で指定 DB の**全テーブル一覧**と**各テーブルのカラ
 ## 入力
 
 - **DB 名**（必須）。オプションで特定テーブルのみに限定可能。
-- **出力ディレクトリ**（任意）。未指定時は `docs/Artifacts/`。ユーザーが「ここに出力して」と指定した場合はそのパスに保存する。
+- **出力ディレクトリ**（任意）。未指定時は `./skill_output/mysql-er-diagram/`。ユーザーが「ここに出力して」と指定した場合はそのパスに保存する。
 
 ## 前提
 
@@ -44,7 +44,7 @@ MCP MySQL で指定 DB の**全テーブル一覧**と**各テーブルのカラ
    - エンティティ: `entity "テーブル名 (意味)" as エイリアス { ... }`。カラムは `+ カラム名 : 型 <<PK>>` など。
    - リレーション: list_tables の FK から `親 ||--o{ 子 : "fk名"` 形式で記述する。
    - 出力は `@startuml` … `@enduml` のブロックとする。
-5. **出力保存**: 出力ディレクトリが指定されていればそのパス、未指定なら `docs/Artifacts/` に `er_<db>_MMDD_HHMM.md` を保存する。先頭に `created: YYYY-MM-DD HH:MM`（JST）、`author: AI Agent` を記載し、その下に PlantUML コードブロック（```plantuml … ```）を配置する。
+5. **出力保存**: 出力ディレクトリが指定されていればそのパス、未指定なら `./skill_output/mysql-er-diagram/` に `er_<db>_MMDD_HHMM.md` を保存する。先頭に `created: YYYY-MM-DD HH:MM`（JST）、`author: AI Agent` を記載し、その下に PlantUML コードブロック（```plantuml … ```）を配置する。
 
 ## 出力例（PlantUML）
 

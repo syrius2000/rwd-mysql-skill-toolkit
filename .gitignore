@@ -30,7 +30,6 @@ chrome_profile_notebooklm/
 .env
 .env.*
 !.env.example
-docs/Artifacts
 
 # logs
 *.log

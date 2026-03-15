@@ -11,6 +11,7 @@
 - **フラットファイルMySQL概要 (`flat-file-mysql-overview`)**: MySQLにロードされたフラットファイルの概要を把握します。
 - **MySQL ER図生成 (`mysql-er-diagram`)**: 指定されたデータベースのテーブル・カラム情報を基に、PlantUML形式のER図を生成します。
 - **MySQLテーブルカーディナリティ分析 (`mysql-table-cardinality`)**: 指定されたテーブルのカラム一覧、総行数、カーディナリティを分析し、CSV/JSON形式で出力します。
+- **MySQLエンティティマトリックス生成 (`mysql-entity-matrix`)**: 指定したデータベース内の全テーブルを横断検索し、特定のIDの存在フラグ(0, 1)マトリックスをCSV出力します。
 
 ### セキュリティ
 
