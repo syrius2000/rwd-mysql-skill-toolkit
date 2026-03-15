@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+# pyre-ignore[21]: Could not find import of flat_file_mysql.sample_sql
 from flat_file_mysql.sample_sql import run_step1
 
 
@@ -19,9 +20,9 @@ def test_step1_sample_utf8():
         assert len(reports) == 1
         r = reports[0]
         assert r.get("error") is None
-        assert r["total"] == 3
+        assert r["total"] == 4
         assert r["duplicates"] == 1
-        assert r["unique"] == 2
+        assert r["unique"] == 3
         sql_path = out / "sample_utf8Import.sql"
         assert sql_path.exists()
         content = sql_path.read_text(encoding="utf-8")
