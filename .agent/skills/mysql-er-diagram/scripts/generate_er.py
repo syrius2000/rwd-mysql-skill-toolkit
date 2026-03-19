@@ -26,6 +26,13 @@ from typing import Any
 # ── セキュリティ: DB名に許可する文字パターン (ホワイトリスト) ──
 _SAFE_DB_NAME_PATTERN: re.Pattern[str] = re.compile(r'^[A-Za-z0-9_]+$')
 
+# Draw.io スタイル（環境差で崩れないよう明示）
+_DRAWIO_NODE_FILL = "#f5f5f5"
+_DRAWIO_NODE_STROKE = "#666666"
+_DRAWIO_NODE_FONT = "#333333"
+_DRAWIO_EDGE_STROKE = "#999999"
+_DRAWIO_EDGE_STROKE_WIDTH = "1"
+
 
 def _validate_db_name(db_name: str) -> str:
     """DB名のホワイトリスト検証.
@@ -391,7 +398,8 @@ def generate_files(db_name: str, out_dir: str, env_path: str | None = None) -> N
             'style',
             "rounded=1;whiteSpace=wrap;html=1;align=left;"
             "verticalAlign=top;spacing=4;spacingTop=4;"
-            "fillColor=#f5f5f5;strokeColor=#666666;",
+            "fillColor=%s;strokeColor=%s;fontColor=%s"
+            % (_DRAWIO_NODE_FILL, _DRAWIO_NODE_STROKE, _DRAWIO_NODE_FONT),
         )
         geo: ET.Element = ET.SubElement(
             node, 'mxGeometry',
@@ -426,7 +434,9 @@ def generate_files(db_name: str, out_dir: str, env_path: str | None = None) -> N
                     'style',
                     "edgeStyle=orthogonalEdgeStyle;rounded=0;"
                     "orthogonalLoop=1;jettySize=auto;html=1;"
-                    "endArrow=classic;endFill=1;",
+                    "endArrow=classic;endFill=1;"
+                    "strokeColor=%s;strokeWidth=%s"
+                    % (_DRAWIO_EDGE_STROKE, _DRAWIO_EDGE_STROKE_WIDTH),
                 )
                 edge_geo: ET.Element = ET.SubElement(
                     edge, 'mxGeometry', relative="1",
