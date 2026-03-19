@@ -9,7 +9,7 @@
 - **フラットファイルMySQL DDL生成 (`flat-file-mysql-ddl-generation`)**: フラットファイルからMySQLのDDLを生成します。
 - **フラットファイルMySQLロード検証 (`flat-file-mysql-load-validation`)**: MySQLへのデータロード結果を検証します。
 - **フラットファイルMySQL概要 (`flat-file-mysql-overview`)**: MySQLにロードされたフラットファイルの概要を把握します。
-- **MySQL ER図生成 (`mysql-er-diagram`)**: 指定されたデータベースのテーブル・カラム情報を基に、PlantUML形式のER図を生成します。
+- **MySQL ER図生成 (`mysql-er-diagram`)**: 指定されたデータベースのテーブル（BASE TABLE のみ）から辞書CSVをフル再生成し、Draw.io XML と PlantUML の両方のER図を生成します。
 - **MySQLテーブルカーディナリティ分析 (`mysql-table-cardinality`)**: 指定されたテーブルのカラム一覧、総行数、カーディナリティを分析し、CSV/JSON形式で出力します。
 - **MySQLエンティティマトリックス生成 (`mysql-entity-matrix`)**: 指定したデータベース内の全テーブルを横断検索し、特定のIDの存在フラグ(0, 1)マトリックスをCSV出力します。
 
@@ -21,7 +21,9 @@
 
 スキル定義の正本は `.cursor/skills` ディレクトリに配置します。`.agent/skills`（Antigravity用）への同期ルールについては、[docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照してください。
 
-### OpenSpecによるSDD（Specification Driven Development）支援スキル
+`mysql-er-diagram` スキルは `.cursor/skills/mysql-er-diagram/` と `.agent/skills/mysql-er-diagram/` の両方に `scripts/generate_er.py` と `SKILL.md` を同一内容で配置している。改修時は両ディレクトリの `scripts/generate_er.py` を同内容に更新すること。
+
+## OpenSpecによるSDD（Specification Driven Development）支援スキル
 
 （注：これは一般的な概念としてのOpenSpecに関する説明であり、本リポジトリでは現在、関連するスキルは利用できません。）OpenSpecの詳細については、以下のリポジトリをご参照ください: https://github.com/Fission-AI/OpenSpec
 
