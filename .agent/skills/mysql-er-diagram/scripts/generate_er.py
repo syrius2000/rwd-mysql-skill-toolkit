@@ -168,15 +168,18 @@ def run_mysql_query(
     # (INFORMATION_SCHEMA への読み取り専用クエリ)
     query: str = (
         "SELECT t.TABLE_NAME, c.COLUMN_NAME, c.DATA_TYPE,"
-        " IF(k.CONSTRAINT_NAME = 'PRIMARY', 'TRUE', 'FALSE') AS is_pk"
+        " IF(pk.COLUMN_NAME IS NOT NULL, 'TRUE', 'FALSE') AS is_pk"
         " FROM INFORMATION_SCHEMA.TABLES t"
         " JOIN INFORMATION_SCHEMA.COLUMNS c"
         "   ON t.TABLE_SCHEMA = c.TABLE_SCHEMA"
         "   AND t.TABLE_NAME = c.TABLE_NAME"
-        " LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE k"
-        "   ON c.TABLE_SCHEMA = k.TABLE_SCHEMA"
-        "   AND c.TABLE_NAME = k.TABLE_NAME"
-        "   AND c.COLUMN_NAME = k.COLUMN_NAME"
+        " LEFT JOIN ("
+        "   SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME"
+        "   FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE"
+        "   WHERE CONSTRAINT_NAME = 'PRIMARY'"
+        " ) pk ON c.TABLE_SCHEMA = pk.TABLE_SCHEMA"
+        "   AND c.TABLE_NAME = pk.TABLE_NAME"
+        "   AND c.COLUMN_NAME = pk.COLUMN_NAME"
         f" WHERE t.TABLE_SCHEMA = '{db_name}'"
         "   AND t.TABLE_TYPE = 'BASE TABLE'"
         " ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION;"
@@ -261,7 +264,7 @@ def generate_files(db_name: str, out_dir: str, env_path: str | None = None) -> N
                 potential_masters[cname] = tname
             else:
                 score_current = len(current_master) - (10 if 'demo' in current_master.lower() else 0)
-                score_new = len(tname) - (10 if 'demo' in tname.lower() or 'inpatient' in tname.lower() else 0)
+                score_new = len(tname) - (10 if 'demo' in tname.lower() else 0)
                 if score_new < score_current:
                     potential_masters[cname] = tname
 
