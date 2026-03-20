@@ -48,3 +48,4 @@ gha-creds-*.json
 skill_output/*
 # 補足: Git は空のディレクトリを追跡しないため、リポジトリに skill_output を残す場合は .gitkeep を追跡する
 !skill_output/.gitkeep
+.env_local

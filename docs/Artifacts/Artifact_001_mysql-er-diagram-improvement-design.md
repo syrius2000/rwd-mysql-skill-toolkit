@@ -54,4 +54,3 @@ Draw.io XML 内で、テーブルノードとエッジについて `fillColor` /
   - `SKILL.md`（同一仕様・同一手順）
   - `scripts/generate_er.py`（同一内容を実ファイルとしてコピー）
 - `ln` 等のリンク技術は使用しない。
-
