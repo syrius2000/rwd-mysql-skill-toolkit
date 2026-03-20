@@ -11,6 +11,18 @@ from datetime import datetime
 from pathlib import Path
 
 
+def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
+    """`.cursor` と `.agent` が同時に見つかる上位を repo root として推定する。"""
+    current = start.resolve()
+    for _ in range(max_levels):
+        if (current / ".cursor").is_dir() and (current / ".agent").is_dir():
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+    return Path.cwd()
+
+
 def run_sql_file(
     sql_path: Path,
     database: str,
@@ -93,6 +105,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Step3: execute SQL and validate row count")
     parser.add_argument("sql_file", type=Path, help="完成版 SQL ファイル")
     parser.add_argument("-d", "--database", required=True, help="対象 DB 名")
+    repo_root = _find_repo_root(Path(__file__).resolve().parent)
+    default_report_dir = repo_root / "skill_output" / "step3_report"
     parser.add_argument("--host", default="localhost", help="MySQL host")
     parser.add_argument("--port", type=int, default=3306, help="MySQL port")
     parser.add_argument("-u", "--user", default="root", help="MySQL user")
@@ -102,7 +116,7 @@ def main() -> int:
     parser.add_argument(
         "--report-dir",
         type=Path,
-        default=Path("./skill_output/step3_report"),
+        default=default_report_dir,
         help="レポート出力先（既定: ./skill_output/step3_report）",
     )
     args = parser.parse_args()

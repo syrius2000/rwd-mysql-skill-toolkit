@@ -6,6 +6,19 @@ import sys
 import subprocess
 import csv
 from datetime import datetime
+from pathlib import Path
+
+
+def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
+    """`.cursor` と `.agent` が同時に見つかる上位を repo root として推定する。"""
+    current = start.resolve()
+    for _ in range(max_levels):
+        if (current / ".cursor").is_dir() and (current / ".agent").is_dir():
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+    return Path.cwd()
 
 def run_mysql_query(query, db_name, host=None, port=None, user=None, password=None):
     """
@@ -141,6 +154,8 @@ def generate_matrix_sql(tables, id_column):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate and optionally execute a SQL script to map ID presence across tables using standard mysql CLI.")
+    repo_root = _find_repo_root(Path(__file__).resolve().parent)
+    default_output_dir = repo_root / "skill_output" / "mysql-entity-matrix"
     parser.add_argument("-d", "--database", required=True, help="Target MySQL Database name")
     parser.add_argument("-i", "--id_column", default="PATIENTNO", help="Target ID column name to cross-check (default: PATIENTNO)")
     parser.add_argument("-H", "--host", default=None, help="MySQL Host (If omitted, uses ~/.my.cnf default)")
@@ -148,7 +163,12 @@ def main():
     parser.add_argument("-u", "--user", default=None, help="MySQL User (If omitted, uses ~/.my.cnf default)")
     parser.add_argument("-p", "--password", default=None, help="MySQL Password (If omitted, uses ~/.my.cnf default)")
     parser.add_argument("-e", "--execute", action="store_true", help="Execute the generated query against the database and save results to CSV")
-    parser.add_argument("-o", "--output_dir", default="./skill_output/mysql-entity-matrix", help="Base output directory for generated artifacts")
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        default=str(default_output_dir),
+        help="Base output directory for generated artifacts",
+    )
 
     args = parser.parse_args()
 

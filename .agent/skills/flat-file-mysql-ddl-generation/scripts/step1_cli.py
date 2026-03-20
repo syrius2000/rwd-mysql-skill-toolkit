@@ -13,6 +13,18 @@ from typing import Iterable
 TRY_ENCODINGS = ["utf-8", "utf-8-sig", "cp932", "shift_jis", "euc_jp", "iso2022_jp"]
 
 
+def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
+    """`.cursor` と `.agent` が同時に見つかる上位を repo root として推定する。"""
+    current = start.resolve()
+    for _ in range(max_levels):
+        if (current / ".cursor").is_dir() and (current / ".agent").is_dir():
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+    return Path.cwd()
+
+
 def _read_sample_bytes(path: Path, max_bytes: int = -1, sample_lines: int = 4) -> bytes:
     if max_bytes < 0 and sample_lines < 0:
         return path.read_bytes()
@@ -178,11 +190,13 @@ def run_step1(csv_paths: list[Path], out_dir: Path) -> list[dict[str, object]]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Step1: sample SQL + duplicate report")
     parser.add_argument("csv_paths", nargs="+", type=Path, help="対象 CSV ファイル")
+    repo_root = _find_repo_root(Path(__file__).resolve().parent)
+    default_out_dir = repo_root / "skill_output" / "step1_sample_sql"
     parser.add_argument(
         "-o",
         "--out-dir",
         type=Path,
-        default=Path("./skill_output/step1_sample_sql"),
+        default=default_out_dir,
         help="出力先（既定: ./skill_output/step1_sample_sql）",
     )
     args = parser.parse_args()

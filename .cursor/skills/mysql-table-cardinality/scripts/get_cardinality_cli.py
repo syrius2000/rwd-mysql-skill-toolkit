@@ -13,6 +13,18 @@ from pathlib import Path
 from typing import Any
 
 
+def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
+    """`.cursor` と `.agent` が同時に見つかる上位を repo root として推定する。"""
+    current = start.resolve()
+    for _ in range(max_levels):
+        if (current / ".cursor").is_dir() and (current / ".agent").is_dir():
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+    return Path.cwd()
+
+
 def _escape_identifier(name: str) -> str:
     return "`" + name.replace("`", "``") + "`"
 
@@ -274,6 +286,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="テーブル濃度数を取得し CSV/JSON を出力"
     )
+    repo_root = _find_repo_root(Path(__file__).resolve().parent)
+    default_out_dir = repo_root / "skill_output" / "mysql_table_cardinality"
     parser.add_argument("-d", "--database", required=True, help="DB 名")
     parser.add_argument(
         "-t", "--table", required=True, help="テーブル名（全テーブルは *）"
@@ -291,11 +305,11 @@ def main() -> int:
         "-o",
         "--out-dir",
         type=Path,
-        default=Path("./skill_output/mysql_table_cardinality"),
+        default=default_out_dir,
         help="出力先（既定: ./skill_output/mysql_table_cardinality）",
     )
     args = parser.parse_args()
-    project_root = Path.cwd()
+    project_root = repo_root
     out_dir = args.out_dir.resolve()
 
     host, port, user, password = _resolve_credentials(args, project_root)

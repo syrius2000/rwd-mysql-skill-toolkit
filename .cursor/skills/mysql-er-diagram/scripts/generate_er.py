@@ -21,6 +21,7 @@ import argparse
 import tempfile
 import xml.etree.ElementTree as ET
 from typing import Any
+from pathlib import Path
 
 
 # ── セキュリティ: DB名に許可する文字パターン (ホワイトリスト) ──
@@ -32,6 +33,18 @@ _DRAWIO_NODE_STROKE = "#666666"
 _DRAWIO_NODE_FONT = "#333333"
 _DRAWIO_EDGE_STROKE = "#999999"
 _DRAWIO_EDGE_STROKE_WIDTH = "1"
+
+
+def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
+    """`.cursor` と `.agent` が同時に見つかる上位を repo root として推定する。"""
+    current = start.resolve()
+    for _ in range(max_levels):
+        if (current / ".cursor").is_dir() and (current / ".agent").is_dir():
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+    return Path.cwd()
 
 
 def _validate_db_name(db_name: str) -> str:
@@ -74,15 +87,22 @@ def _find_env_file() -> str | None:
     """プロジェクトルートの .env ファイルを探索する.
 
     探索順序:
-      1. カレントワーキングディレクトリ
-      2. スクリプト自身の祖先ディレクトリを辿り最初に見つかった .env
+      1. repo root（`.cursor` と `.agent` が同時に見つかる上位）の `.env`
+      2. カレントワーキングディレクトリ
+      3. スクリプト自身の祖先ディレクトリを辿り最初に見つかった .env
     """
-    # 1. cwd
+    # 1. repo root
+    repo_root = _find_repo_root(Path(__file__).resolve().parent)
+    repo_env: str = os.path.join(str(repo_root), ".env")
+    if os.path.isfile(repo_env):
+        return repo_env
+
+    # 2. cwd
     cwd_env: str = os.path.join(os.getcwd(), ".env")
     if os.path.isfile(cwd_env):
         return cwd_env
 
-    # 2. スクリプト自身からプロジェクトルートを辿る
+    # 3. スクリプト自身から祖先ディレクトリを辿る
     script_dir: str = os.path.dirname(os.path.abspath(__file__))
     current: str = script_dir
     for _ in range(10):  # 最大10階層まで
@@ -460,7 +480,9 @@ if __name__ == "__main__":
         description="MySQL ER図生成スクリプト (標準ライブラリのみ使用)",
     )
     parser.add_argument("--db", required=True, help="対象データベース名")
-    parser.add_argument("--out", default="./skill_output/", help="出力先ディレクトリ")
+    repo_root = _find_repo_root(Path(__file__).resolve().parent)
+    default_out_dir = str(repo_root / "skill_output")
+    parser.add_argument("--out", default=default_out_dir, help="出力先ディレクトリ")
     parser.add_argument("--env", default=None, help=".env ファイルパス (省略時は自動探索)")
     args: argparse.Namespace = parser.parse_args()
 
