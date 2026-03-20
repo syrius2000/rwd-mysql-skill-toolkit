@@ -307,10 +307,10 @@ def generate_files(db_name: str, out_dir: str, env_path: str | None = None) -> N
     # テーブル別にグルーピング
     tables: dict[str, dict[str, Any]] = {}
     for c in merged_columns:
-        tname: str = c['table_name']
-        if tname not in tables:
-            tables[tname] = {'logical': c['logical_table_name'], 'cols': []}
-        tables[tname]['cols'].append(c)
+        tbl_name: str = c['table_name']
+        if tbl_name not in tables:
+            tables[tbl_name] = {'logical': c['logical_table_name'], 'cols': []}
+        tables[tbl_name]['cols'].append(c)
 
     # ── PlantUML 出力 ──
     md_path: str = os.path.join(out_dir, f"{db_name}_er_{now_str}.md")
