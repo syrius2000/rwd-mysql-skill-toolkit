@@ -1,55 +1,76 @@
 # IDE用スキル管理リポジトリ
 
-このリポジトリは、各種IDE（Cursor, Antigravity）で使用するスキルを管理します。
+このリポジトリは、各種IDE（Cursor, Antigravity）で使用するスキルを一元管理します。
+
+## リポジトリ構造
+
+```
+.
+├── .agent/skills/          # Antigravity 用スキル
+├── .cursor/skills/         # Cursor 用スキル（正本）
+├── .github/
+│   ├── commands/           # Gemini Code Assist 設定（toml）
+│   └── workflows/          # GitHub Actions（Gemini CI/CD）
+├── .gemini/                # Gemini 設定
+├── docs/
+│   ├── Artifacts/          # 生成ドキュメント
+│   ├── Reference/          # 参照ドキュメント（同期ルール等）
+│   ├── Archive/            # アーカイブ
+│   ├── plans/              # 計画書
+│   └── superpowers/        # 拡張機能関連
+├── flat_file_mysql/        # フラットファイル MySQL 関連資産
+└── tests/                  # テスト
+```
 
 ## 管理スキル一覧
 
+`.agent/skills` と `.cursor/skills` の両方に同一の7スキルを配置しています。
+
 ### データ連携・操作スキル
 
-- **フラットファイルMySQL DDL生成 (`flat-file-mysql-ddl-generation`)**: フラットファイルからMySQLのDDLを生成します。
-- **フラットファイルMySQLロード検証 (`flat-file-mysql-load-validation`)**: MySQLへのデータロード結果を検証します。
-- **フラットファイルMySQL概要 (`flat-file-mysql-overview`)**: MySQLにロードされたフラットファイルの概要を把握します。
-- **MySQL ER図生成 (`mysql-er-diagram`)**: 指定されたデータベースのテーブル（BASE TABLE のみ）から辞書CSVをフル再生成し、Draw.io XML と PlantUML の両方のER図を生成します。
-- **MySQLテーブルカーディナリティ分析 (`mysql-table-cardinality`)**: 指定されたテーブルのカラム一覧、総行数、カーディナリティを分析し、CSV/JSON形式で出力します。
-- **MySQLエンティティマトリックス生成 (`mysql-entity-matrix`)**: 指定したデータベース内の全テーブルを横断検索し、特定のIDの存在フラグ(0, 1)マトリックスをCSV出力します。
+| スキル名 | 概要 |
+|----------|------|
+| `flat-file-mysql-overview` | CP932 CSV を MySQL に投入する一連の流れ（ステップ 1→2→3）のオーバービュー |
+| `flat-file-mysql-ddl-generation` | CP932 CSV から DDL 用サンプル SQL とレコード数・重複数レポートを生成（ステップ 1） |
+| `flat-file-mysql-load-validation` | 完成版 SQL の作成支援・DB 名指定・指定 DB への実行・件数比較（ステップ 2〜3） |
+| `mysql-er-diagram` | 指定 MySQL DB のテーブルから辞書 CSV をフル再生成し、Draw.io XML と PlantUML の ER 図を生成 |
+| `mysql-table-cardinality` | 指定テーブルのカラム一覧・総行数・カーディナリティを CSV/JSON で出力 |
+| `mysql-entity-matrix` | 指定 DB 内の全テーブルを横断し、特定 ID の存在フラグ `[0, 1]` マトリックスを生成 |
 
 ### セキュリティ
 
-- **セキュリティ脆弱性チェック (`security-vulnerability-check`)**: コードの脆弱性をチェックします。
+| スキル名 | 概要 |
+|----------|------|
+| `security-vulnerability-check` | ソースコード（Python, SQL, R, C++ 等）の脆弱性チェック（SQL インジェクション、OS コマンドインジェクション、パストラバーサル等） |
 
 ## 同期ルール
 
-スキル定義の正本は `.cursor/skills` ディレクトリに配置します。`.agent/skills`（Antigravity用）への同期ルールについては、[docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md) を参照してください。
+- **正本**: `.cursor/skills` ディレクトリ
+- **同期先**: `.agent/skills`（Antigravity 用）
+- シンボリックリンクは使用しない
 
-`mysql-er-diagram` スキルは `.cursor/skills/mysql-er-diagram/` と `.agent/skills/mysql-er-diagram/` の両方に `scripts/generate_er.py` と `SKILL.md` を同一内容で配置している。改修時は両ディレクトリの `scripts/generate_er.py` を同内容に更新すること。
+詳細な同期ルール（対象ファイル一覧、置換ルール、コマンド例）は以下を参照：
 
-## OpenSpecによるSDD（Specification Driven Development）支援スキル
+- [Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md](docs/Reference/Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md)
 
-（注：これは一般的な概念としてのOpenSpecに関する説明であり、本リポジトリでは現在、関連するスキルは利用できません。）OpenSpecの詳細については、以下のリポジトリをご参照ください: https://github.com/Fission-AI/OpenSpec
+### 同期対象の概要
 
-OpenSpecは、仕様書に基づいた開発を支援する一連のスキル群です。
+| 種別 | 同期方法 |
+|------|----------|
+| スクリプト・プロンプト | `.cursor` → `.agent` へ内容完全一致でコピー |
+| SKILL.md（flat-file-mysql-* 3本, mysql-table-cardinality） | `.cursor` を正本として編集後、パス置換と description 補記で `.agent` 用を派生 |
+| mysql-er-diagram | `.cursor/skills` と `.agent/skills` の両方に同一内容で配置。改修時は両方を更新 |
 
-- **`openspec-onboard`**: プロジェクトの初期設定を行います。
-- **`openspec-new-change`**: 新しい変更を開始します。
-- **`openspec-ff-change`**: 設計書、提案書、タスクリストを一括で生成します。
-- **`openspec-continue-change`**: 設計書、提案書、タスクリストを対話形式で順次作成します。
-- **`openspec-apply-change`**: 生成されたタスクに基づき、AIがコードを実装します。
-- **`openspec-verify-change`**: 実装された変更を検証します。
-- **`openspec-sync-specs`**: 仕様書を同期します。
-- **`openspec-explore`**: 仕様書を探索します。
-- **`openspec-archive-change`**: 完了した仕様書やタスクをアーカイブします。
-- **`openspec-bulk-archive-change`**: 複数の仕様書やタスクを一括でアーカイブします。
+## GitHub Actions（Gemini Code Assist）
 
-（例：OpenSpecの一般的なワークフロー）
+`.github/workflows/` 配下に Gemini Code Assist 連携の GitHub Actions を配置しています。
 
-```mermaid
-graph TD
-    A[Start: 新規変更タスク開始<br/>/opsx-new-change] --> B{成果物生成方法を選択};
-    B --> C[一括生成<br/>/opsx-ff-change];
-    B --> D[対話形式で順次生成<br/>/opsx-continue-change];
-    C --> E[成果物<br/>proposal, specs, design, tasks];
-    D --> E;
-    E --> F[タスクに基づき実装<br/>/opsx-apply-change];
-    F --> G[実装を検証<br/>/opsx-verify-change];
-    G --> H[アーカイブ<br/>/opsx-archive-change];
-```
+| ワークフロー | 用途 |
+|-------------|------|
+| `gemini-review.yml` | PR レビュー |
+| `gemini-triage.yml` | Issue トリアージ |
+| `gemini-scheduled-triage.yml` | 定時 Issue トリアージ |
+| `gemini-invoke.yml` | Gemini 呼び出し |
+| `gemini-dispatch.yml` | ディスパッチ |
+
+設定ファイルは `.github/commands/` 配下の `.toml` ファイルで管理しています。

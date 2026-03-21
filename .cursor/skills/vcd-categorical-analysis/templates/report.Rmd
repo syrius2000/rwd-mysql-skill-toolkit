@@ -1,0 +1,161 @@
+---
+title: "Categorical analysis (vcd, up to 3-way)"
+output:
+  html_document: default
+  pdf_document: default
+params:
+  data_path: ""
+  builtin_dataset: "Titanic"
+  vars: ["Class", "Survived"]
+  output_dir: "./skill_output/vcd_categorical/"
+  residual_table_pkg: "gt"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 8, fig.height = 6)
+if (requireNamespace("pacman", quietly = TRUE)) {
+  pacman::p_load(datasets, vcd, gt, knitr)
+} else {
+  library(datasets)
+  library(vcd)
+  library(gt)
+  library(knitr)
+}
+if (identical(params$residual_table_pkg, "kableExtra")) {
+  if (!requireNamespace("kableExtra", quietly = TRUE)) {
+    stop("Install kableExtra or set residual_table_pkg to \"gt\"")
+  }
+  suppressPackageStartupMessages(library(kableExtra))
+}
+dir.create(params$output_dir, recursive = TRUE, showWarnings = FALSE)
+fig_dir <- file.path(params$output_dir, "figures")
+dir.create(fig_dir, showWarnings = FALSE)
+knitr::opts_chunk$set(fig.path = paste0(fig_dir, "/"))
+```
+
+```{r validate}
+vars <- unlist(params$vars, use.names = FALSE)
+stopifnot(length(vars) >= 1L, length(vars) <= 3L)
+if (anyDuplicated(vars) != 0L) stop("Duplicate variable names in params$vars")
+```
+
+```{r load-data}
+load_builtin <- function(name) {
+  if (identical(name, "Titanic")) {
+    data("Titanic", package = "datasets", envir = environment())
+    as.data.frame(Titanic)
+  } else if (identical(name, "HairEyeColor")) {
+    data("HairEyeColor", package = "datasets", envir = environment())
+    as.data.frame(HairEyeColor)
+  } else {
+    stop("builtin_dataset must be Titanic or HairEyeColor")
+  }
+}
+
+if (is.null(params$data_path) || params$data_path == "") {
+  dat <- load_builtin(params$builtin_dataset)
+} else {
+  dat <- utils::read.csv(params$data_path, stringsAsFactors = TRUE)
+}
+
+if (!all(vars %in% names(dat))) stop("Missing columns: ", paste(setdiff(vars, names(dat)), collapse = ", "))
+if (!"Freq" %in% names(dat)) stop("Aggregated data with column Freq is required")
+
+for (v in vars) {
+  if (all(is.na(dat[[v]]))) stop("All NA in column: ", v)
+  if (!is.factor(dat[[v]])) {
+    warning("Coercing ", v, " to factor")
+    dat[[v]] <- factor(dat[[v]])
+  }
+}
+```
+
+**2-way** で小さい期待度数があると `chisq.test` が**警告**することがある。解釈は慎重に。**3-way 以上**は `chisq.test` 非対応のため、下記で**相互独立（主効果のみ）Poisson GLM**の Pearson 残差を出す。
+
+```{r crosstab}
+xtf <- as.formula(paste("Freq ~", paste(vars, collapse = " + ")))
+tab <- xtabs(xtf, data = dat)
+print(tab)
+```
+
+```{r chisq-test}
+nd <- length(dim(tab))
+if (nd == 2L) {
+  ct <- chisq.test(tab)
+  print(ct)
+  resid_tbl <- as.data.frame(as.table(ct$residuals))
+  names(resid_tbl)[ncol(resid_tbl)] <- "pearson_res"
+} else {
+  df_cells <- as.data.frame(tab, stringsAsFactors = TRUE)
+  f_ind <- as.formula(paste("Freq ~", paste(vars, collapse = " + ")))
+  m_ind <- glm(f_ind, family = poisson, data = df_cells)
+  cat("3-way: Pearson 残差は「主効果のみ（相互独立）」Poisson GLM 基準（chisq.test は使わない）。\n")
+  cat("Deviance:", round(m_ind$deviance, 4), " df:", m_ind$df.residual, "\n")
+  df_cells$pearson_res <- resid(m_ind, type = "pearson")
+  resid_tbl <- df_cells[, c(vars, "pearson_res"), drop = FALSE]
+}
+```
+
+```{r mosaic-plot}
+if (length(dim(tab)) <= 2L) {
+  mosaic(tab, shade = TRUE, main = "Mosaic (shaded)")
+} else {
+  mosaic(tab, shade = TRUE, main = "Mosaic 3-way (shaded)")
+}
+```
+
+```{r assoc-plot}
+d <- length(dim(tab))
+if (d == 2L) {
+  assoc(tab, residuals_type = "Pearson", shade = TRUE, main = "Association plot (Pearson, shaded)")
+} else if (d >= 3L) {
+  assoc(margin.table(tab, c(1L, 2L)), residuals_type = "Pearson", shade = TRUE,
+        main = "Association (margin first two factors, shaded)")
+} else {
+  plot.new()
+  title(main = "assoc supports 2-way; skipped for 1-way margin")
+}
+```
+
+```{r residual-table}
+longdf <- resid_tbl
+mx <- max(abs(longdf$pearson_res), na.rm = TRUE)
+if (!is.finite(mx) || mx < 1e-12) mx <- 1
+
+if (identical(params$residual_table_pkg, "gt")) {
+  gt::gt(longdf) |>
+    gt::fmt_number(columns = pearson_res, decimals = 3) |>
+    gt::data_color(
+      columns = pearson_res,
+      domain = c(-mx, mx),
+      palette = "RdBu"
+    )
+} else {
+  knitr::kable(longdf, digits = 3, caption = "Pearson residuals")
+}
+```
+
+モザイク／assoc の視覚的パターンと、上表の **Pearson 残差**・下記 GLM の**適合度**を対応づけて解釈する。
+
+```{r glm-loglinear}
+ff <- as.formula(paste("Freq ~", paste(vars, collapse = " * ")))
+fit_sat <- glm(ff, family = poisson, data = dat)
+print(summary(fit_sat))
+
+if (length(vars) == 2L) {
+  f0 <- as.formula(paste("Freq ~", paste(vars, collapse = " + ")))
+  fit0 <- glm(f0, family = poisson, data = dat)
+  print(anova(fit0, fit_sat, test = "Chisq"))
+} else if (length(vars) == 3L) {
+  f0 <- as.formula(paste("Freq ~", paste(vars, collapse = " + ")))
+  f1 <- as.formula(paste("Freq ~ (", paste(vars, collapse = " + "), ")^2"))
+  m0 <- glm(f0, family = poisson, data = dat)
+  m1 <- glm(f1, family = poisson, data = dat)
+  m2 <- glm(ff, family = poisson, data = dat)
+  print(anova(m0, m1, m2, test = "Chisq"))
+}
+```
+
+```{r residual-plot, fig.height=4}
+plot(residuals(fit_sat, type = "pearson"), main = "Pearson residuals vs index (saturated loglinear)")
+```
