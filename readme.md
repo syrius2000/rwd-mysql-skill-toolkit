@@ -9,9 +9,6 @@
 ├── .agent/skills/          # Antigravity 用スキル
 ├── .cursor/skills/         # Cursor 用スキル（正本）
 ├── .github/
-│   ├── commands/           # Gemini Code Assist 設定（toml）
-│   └── workflows/          # GitHub Actions（Gemini CI/CD）
-├── .gemini/                # Gemini 設定
 ├── docs/
 │   ├── Artifacts/          # 生成ドキュメント
 │   ├── Reference/          # 参照ドキュメント（同期ルール等）
@@ -24,7 +21,7 @@
 
 ## 管理スキル一覧
 
-`.agent/skills` と `.cursor/skills` の両方に同一の7スキルを配置しています。
+`.agent/skills` と `.cursor/skills` の両方に同一の8スキルを配置しています。
 
 ### データ連携・操作スキル
 
@@ -43,6 +40,12 @@
 |----------|------|
 | `security-vulnerability-check` | ソースコード（Python, SQL, R, C++ 等）の脆弱性チェック（SQL インジェクション、OS コマンドインジェクション、パストラバーサル等） |
 
+### 統計・分析スキル
+
+| スキル名 | 概要 |
+|----------|------|
+| `vcd-categorical-analysis` | 名義カテゴリカル変数（最大 3-way）に対し、クロス表・独立性検定・Pearson 残差表示・mosaic/assoc 可視化等を行う |
+
 ## 同期ルール
 
 - **正本**: `.cursor/skills` ディレクトリ
@@ -60,17 +63,3 @@
 | スクリプト・プロンプト | `.cursor` → `.agent` へ内容完全一致でコピー |
 | SKILL.md（flat-file-mysql-* 3本, mysql-table-cardinality） | `.cursor` を正本として編集後、パス置換と description 補記で `.agent` 用を派生 |
 | mysql-er-diagram | `.cursor/skills` と `.agent/skills` の両方に同一内容で配置。改修時は両方を更新 |
-
-## GitHub Actions（Gemini Code Assist）
-
-`.github/workflows/` 配下に Gemini Code Assist 連携の GitHub Actions を配置しています。
-
-| ワークフロー | 用途 |
-|-------------|------|
-| `gemini-review.yml` | PR レビュー |
-| `gemini-triage.yml` | Issue トリアージ |
-| `gemini-scheduled-triage.yml` | 定時 Issue トリアージ |
-| `gemini-invoke.yml` | Gemini 呼び出し |
-| `gemini-dispatch.yml` | ディスパッチ |
-
-設定ファイルは `.github/commands/` 配下の `.toml` ファイルで管理しています。
