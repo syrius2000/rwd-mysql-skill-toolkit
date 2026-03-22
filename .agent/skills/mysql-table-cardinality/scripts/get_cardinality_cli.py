@@ -287,7 +287,7 @@ def main() -> int:
         description="テーブル濃度数を取得し CSV/JSON を出力"
     )
     repo_root = _find_repo_root(Path(__file__).resolve().parent)
-    default_out_dir = repo_root / "skill_output" / "mysql_table_cardinality"
+    default_out_dir = repo_root / "skill_out" / "mysql_table_cardinality"
     parser.add_argument("-d", "--database", required=True, help="DB 名")
     parser.add_argument(
         "-t", "--table", required=True, help="テーブル名（全テーブルは *）"
@@ -306,7 +306,7 @@ def main() -> int:
         "--out-dir",
         type=Path,
         default=default_out_dir,
-        help="出力先（既定: ./skill_output/mysql_table_cardinality）",
+        help="出力先（既定: ./skill_out/mysql_table_cardinality）",
     )
     args = parser.parse_args()
     project_root = repo_root

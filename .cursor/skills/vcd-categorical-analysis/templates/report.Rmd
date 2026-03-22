@@ -7,20 +7,15 @@ params:
   data_path: ""
   builtin_dataset: "Titanic"
   vars: ["Class", "Survived"]
-  output_dir: "./skill_output/vcd_categorical/"
+  output_dir: "./skill_out/vcd_categorical/"
   residual_table_pkg: "gt"
+  alpha: 0.05
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 8, fig.height = 6)
-if (requireNamespace("pacman", quietly = TRUE)) {
-  pacman::p_load(datasets, vcd, gt, knitr)
-} else {
-  library(datasets)
-  library(vcd)
-  library(gt)
-  library(knitr)
-}
+if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+pacman::p_load(datasets, vcd, gt, knitr, ggplot2)
 if (identical(params$residual_table_pkg, "kableExtra")) {
   if (!requireNamespace("kableExtra", quietly = TRUE)) {
     stop("Install kableExtra or set residual_table_pkg to \"gt\"")
@@ -41,15 +36,16 @@ if (anyDuplicated(vars) != 0L) stop("Duplicate variable names in params$vars")
 
 ```{r load-data}
 load_builtin <- function(name) {
-  if (identical(name, "Titanic")) {
-    data("Titanic", package = "datasets", envir = environment())
-    as.data.frame(Titanic)
-  } else if (identical(name, "HairEyeColor")) {
-    data("HairEyeColor", package = "datasets", envir = environment())
-    as.data.frame(HairEyeColor)
+  if (name %in% c("Titanic", "HairEyeColor", "UCBAdmissions")) {
+    pkg <- "datasets"
+  } else if (name == "Arthritis") {
+    pkg <- "vcd"
   } else {
-    stop("builtin_dataset must be Titanic or HairEyeColor")
+    stop("Supported builtin_dataset: Titanic, HairEyeColor, UCBAdmissions, Arthritis")
   }
+  data(list = name, package = pkg, envir = environment())
+  obj <- get(name, envir = environment())
+  if (is.table(obj)) as.data.frame(obj) else as.data.frame(obj)
 }
 
 if (is.null(params$data_path) || params$data_path == "") {
@@ -59,7 +55,10 @@ if (is.null(params$data_path) || params$data_path == "") {
 }
 
 if (!all(vars %in% names(dat))) stop("Missing columns: ", paste(setdiff(vars, names(dat)), collapse = ", "))
-if (!"Freq" %in% names(dat)) stop("Aggregated data with column Freq is required")
+if (!"Freq" %in% names(dat)) {
+  message("Freq 列が見つかりません。自動的に行数ベースの集約(xtabs)を実行します。")
+  dat <- as.data.frame(xtabs(as.formula(paste("~", paste(vars, collapse = " + "))), data = dat))
+}
 
 for (v in vars) {
   if (all(is.na(dat[[v]]))) stop("All NA in column: ", v)
@@ -80,9 +79,24 @@ print(tab)
 
 ```{r chisq-test}
 nd <- length(dim(tab))
+N <- sum(tab)
+has_small_expected <- FALSE
+v_val <- NA
+
 if (nd == 2L) {
   ct <- chisq.test(tab)
   print(ct)
+
+  if (any(ct$expected < 5)) {
+    has_small_expected <- TRUE
+    warning("期待度数 < 5 のセルがあります。Fisher の正確検定を併記します。")
+    print(fisher.test(tab, simulate.p.value = TRUE, B = 2000))
+  }
+
+  ast_res <- suppressWarnings(vcd::assocstats(tab))
+  v_val <- ast_res$cramer
+  cat("\nCramer's V (効果量):", round(v_val, 3), "\n")
+
   resid_tbl <- as.data.frame(as.table(ct$residuals))
   names(resid_tbl)[ncol(resid_tbl)] <- "pearson_res"
 } else {
@@ -96,11 +110,41 @@ if (nd == 2L) {
 }
 ```
 
+`r if(nd == 2L && N >= 500) { paste0("**【大規模データの解釈】** サンプルサイズが $N = ", N, "$ と大きいため、実質的に意味のない微小な差でもカイ二乗検定のP値が有意（P < ", params$alpha, "）判定されやすくなります。P値だけでなく**効果量 (Cramer\\'s V = ", round(v_val, 3), ")** を中心に評価してください。", ifelse(!is.na(v_val) && v_val < 0.1, " ここでは V < 0.1 となっているため、統計的に有意であっても**変数間の関連は非常に弱い（無視できるレベル）**と考えられます。", "")) }`
+
+```{r summary-text, results='asis', echo=FALSE}
+if (nd == 2L) {
+  cat("\n**分析サマリー (2-way)**\n\n")
+  cat(sprintf("χ² 検定の結果: χ²(%d) = %.2f, p %s。\n",
+              ct$parameter, ct$statistic,
+              ifelse(ct$p.value < 0.001, "< 0.001", sprintf("= %.4f", ct$p.value))))
+  max_res_idx <- which.max(abs(ct$residuals))
+  val_res <- ct$residuals[max_res_idx]
+  # 行と列の名前を取得
+  r_nm <- rownames(ct$residuals)[(max_res_idx-1) %% nrow(ct$residuals) + 1]
+  c_nm <- colnames(ct$residuals)[(max_res_idx-1) %/% nrow(ct$residuals) + 1]
+  cat(sprintf("残差の絶対値が最大のセルは `%s:%s` (Pearson残差: %.2f) です。\n",
+              r_nm, c_nm, val_res))
+  if(!is.na(v_val)) cat(sprintf("Cramer's V は %.3f でした。\n", v_val))
+} else {
+  cat("\n**分析サマリー (3-way)**\n\n")
+  cat(sprintf("主効果のみの相互独立 Poisson GLM に対する残差逸脱度 (Deviance) は %.2f (df = %d) です。\n",
+              m_ind$deviance, m_ind$df.residual))
+  max_res_idx <- which.max(abs(df_cells$pearson_res))
+  val_res <- df_cells$pearson_res[max_res_idx]
+  cell_name <- paste(df_cells[max_res_idx, unlist(vars)], collapse=":")
+  cat(sprintf("残差の絶対値が最大のセルは `%s` (Pearson残差: %.2f) です。\n",
+              cell_name, val_res))
+}
+```
+
 ```{r mosaic-plot}
 if (length(dim(tab)) <= 2L) {
   mosaic(tab, shade = TRUE, main = "Mosaic (shaded)")
 } else {
   mosaic(tab, shade = TRUE, main = "Mosaic 3-way (shaded)")
+  vcd::cotabplot(tab, panel = vcd::cotab_mosaic, shade = TRUE,
+                 main = "Conditional mosaic (by 3rd factor)")
 }
 ```
 
@@ -146,6 +190,8 @@ if (length(vars) == 2L) {
   f0 <- as.formula(paste("Freq ~", paste(vars, collapse = " + ")))
   fit0 <- glm(f0, family = poisson, data = dat)
   print(anova(fit0, fit_sat, test = "Chisq"))
+  fit_resid <- fit0
+  resid_main <- "Pearson residuals vs index (independence loglinear)"
 } else if (length(vars) == 3L) {
   f0 <- as.formula(paste("Freq ~", paste(vars, collapse = " + ")))
   f1 <- as.formula(paste("Freq ~ (", paste(vars, collapse = " + "), ")^2"))
@@ -153,9 +199,39 @@ if (length(vars) == 2L) {
   m1 <- glm(f1, family = poisson, data = dat)
   m2 <- glm(ff, family = poisson, data = dat)
   print(anova(m0, m1, m2, test = "Chisq"))
+  fit_resid <- m1
+  resid_main <- "Pearson residuals vs index (2-way interaction loglinear)"
 }
 ```
 
-```{r residual-plot, fig.height=4}
-plot(residuals(fit_sat, type = "pearson"), main = "Pearson residuals vs index (saturated loglinear)")
+```{r residual-plot, fig.height=8}
+# 残差データフレーム構築
+res_df <- data.frame(
+  pearson_res = residuals(fit_resid, type = "pearson"),
+  dat[, vars, drop = FALSE]
+)
+# セルラベル（例: "Male:1st:Yes"）
+res_df$cell_label <- apply(res_df[, vars, drop = FALSE], 1,
+                           paste, collapse = ":")
+# ラベルが長すぎる場合の折り返し処理（文字数目安: 15文字で改行）
+res_df$cell_label_wrap <- sapply(res_df$cell_label, function(x) {
+  paste(strwrap(x, width = 15), collapse = "\n")
+})
+# 色分け用の第1因子
+res_df$color_var <- res_df[[vars[1]]]
+# 有意閾値線 (±1.96)
+ggplot2::ggplot(res_df, ggplot2::aes(x = reorder(cell_label_wrap, seq_len(nrow(res_df))),
+                   y = pearson_res, color = color_var)) +
+  ggplot2::geom_point(size = 3) +
+  ggplot2::geom_hline(yintercept = c(-1.96, 1.96), linetype = "dashed",
+             color = "grey50") +
+  # 横長ラベル対応のため、X軸とY軸を入れ替え（coord_flip）
+  ggplot2::coord_flip() +
+  ggplot2::labs(title = resid_main,
+       x = paste(vars, collapse = " : "),
+       y = "Pearson residual",
+       color = vars[1]) +
+  ggplot2::theme_minimal(base_size = 13) +
+  # 縦軸（元のX軸）のラベル設定。横書きのまま表示される
+  ggplot2::theme(axis.text.y = ggplot2::element_text(size = 10))
 ```

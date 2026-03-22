@@ -106,7 +106,7 @@ def main() -> int:
     parser.add_argument("sql_file", type=Path, help="完成版 SQL ファイル")
     parser.add_argument("-d", "--database", required=True, help="対象 DB 名")
     repo_root = _find_repo_root(Path(__file__).resolve().parent)
-    default_report_dir = repo_root / "skill_output" / "step3_report"
+    default_report_dir = repo_root / "skill_out" / "step3_report"
     parser.add_argument("--host", default="localhost", help="MySQL host")
     parser.add_argument("--port", type=int, default=3306, help="MySQL port")
     parser.add_argument("-u", "--user", default="root", help="MySQL user")
@@ -117,7 +117,7 @@ def main() -> int:
         "--report-dir",
         type=Path,
         default=default_report_dir,
-        help="レポート出力先（既定: ./skill_output/step3_report）",
+        help="レポート出力先（既定: ./skill_out/step3_report）",
     )
     args = parser.parse_args()
 

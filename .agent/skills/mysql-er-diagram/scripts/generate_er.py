@@ -480,7 +480,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--db", required=True, help="対象データベース名")
     repo_root = _find_repo_root(Path(__file__).resolve().parent)
-    default_out_dir = str(repo_root / "skill_output")
+    default_out_dir = str(repo_root / "skill_out")
     parser.add_argument("--out", default=default_out_dir, help="出力先ディレクトリ")
     parser.add_argument("--env", default=None, help=".env ファイルパス (省略時は自動探索)")
     args: argparse.Namespace = parser.parse_args()

@@ -7,7 +7,7 @@ sequenceDiagram
   participant User
   participant Template as templates_R_or_Rmd
   participant R as R_or_rmarkdown
-  participant Out as skill_output_vcd_categorical
+  participant Out as skill_out_vcd_categorical
   User->>Template: コピー・params 編集
   User->>R: Rscript または render
   R->>Out: 表・図・HTML_PDF

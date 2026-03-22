@@ -155,7 +155,7 @@ def generate_matrix_sql(tables, id_column):
 def main():
     parser = argparse.ArgumentParser(description="Generate and optionally execute a SQL script to map ID presence across tables using standard mysql CLI.")
     repo_root = _find_repo_root(Path(__file__).resolve().parent)
-    default_output_dir = repo_root / "skill_output" / "mysql-entity-matrix"
+    default_output_dir = repo_root / "skill_out" / "mysql-entity-matrix"
     parser.add_argument("-d", "--database", required=True, help="Target MySQL Database name")
     parser.add_argument("-i", "--id_column", default="PATIENTNO", help="Target ID column name to cross-check (default: PATIENTNO)")
     parser.add_argument("-H", "--host", default=None, help="MySQL Host (If omitted, uses ~/.my.cnf default)")

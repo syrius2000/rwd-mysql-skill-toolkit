@@ -191,13 +191,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Step1: sample SQL + duplicate report")
     parser.add_argument("csv_paths", nargs="+", type=Path, help="対象 CSV ファイル")
     repo_root = _find_repo_root(Path(__file__).resolve().parent)
-    default_out_dir = repo_root / "skill_output" / "step1_sample_sql"
+    default_out_dir = repo_root / "skill_out" / "step1_sample_sql"
     parser.add_argument(
         "-o",
         "--out-dir",
         type=Path,
         default=default_out_dir,
-        help="出力先（既定: ./skill_output/step1_sample_sql）",
+        help="出力先（既定: ./skill_out/step1_sample_sql）",
     )
     args = parser.parse_args()
     reports = run_step1(list(args.csv_paths), args.out_dir.resolve())

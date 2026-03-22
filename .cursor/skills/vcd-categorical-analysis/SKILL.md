@@ -1,6 +1,6 @@
 ---
 name: vcd-categorical-analysis
-description: アンケート等の名義カテゴリカル変数（最大 3-way）に対し、クロス表・独立性検定・Pearson 残差（色分け表）・mosaic/assoc 可視化・対数線形モデル適合度を R コードまたは R Markdown テンプレとして生成する。出力は ./skill_output/vcd_categorical/。序数リッカートの扱いは references の高度な分析に誘導する。
+description: アンケート等の名義カテゴリカル変数（最大 3-way）に対し、クロス表・独立性検定・Pearson 残差（色分け表）・mosaic/assoc 可視化・対数線形モデル適合度を R コードまたは R Markdown テンプレとして生成する。出力は ./skill_out/vcd_categorical/。序数リッカートの扱いは references の高度な分析に誘導する。
 license: MIT
 metadata:
   author: vcd-categorical-analysis-skill
@@ -22,7 +22,7 @@ metadata:
 
 ## 出力先
 
-分析例・図表・レンダー結果はプロジェクトルートの **`./skill_output/vcd_categorical/`**（必要に応じて `ordinal/` 等のサブディレクトリ）。
+分析例・図表・レンダー結果はプロジェクトルートの **`./skill_out/vcd_categorical/`**（必要に応じて `ordinal/` 等のサブディレクトリ）。
 
 ## リソースの使い分け
 
