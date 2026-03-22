@@ -19,7 +19,7 @@ author: AI Agent (Gemini 2.0 Flash)
       "MYSQL_PORT": "3306",
       "MYSQL_DATABASE": "VACCINE",
       "MYSQL_USER": "root",
-      "MYSQL_PASSWORD": "ROOT3543"
+      "MYSQL_PASSWORD": "[REDACTED]"
     }
   }
   ```

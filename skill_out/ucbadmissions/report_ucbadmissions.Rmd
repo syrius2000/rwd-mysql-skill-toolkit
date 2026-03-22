@@ -86,17 +86,17 @@ v_val <- NA
 if (nd == 2L) {
   ct <- chisq.test(tab)
   print(ct)
-  
+
   if (any(ct$expected < 5)) {
     has_small_expected <- TRUE
     warning("期待度数 < 5 のセルがあります。Fisher の正確検定を併記します。")
     print(fisher.test(tab, simulate.p.value = TRUE, B = 2000))
   }
-  
+
   ast_res <- suppressWarnings(vcd::assocstats(tab))
   v_val <- ast_res$cramer
   cat("\nCramer's V (効果量):", round(v_val, 3), "\n")
-  
+
   resid_tbl <- as.data.frame(as.table(ct$residuals))
   names(resid_tbl)[ncol(resid_tbl)] <- "pearson_res"
 } else {
@@ -115,15 +115,15 @@ if (nd == 2L) {
 ```{r summary-text, results='asis', echo=FALSE}
 if (nd == 2L) {
   cat("\n**分析サマリー (2-way)**\n\n")
-  cat(sprintf("χ² 検定の結果: χ²(%d) = %.2f, p %s。\n", 
-              ct$parameter, ct$statistic, 
+  cat(sprintf("χ² 検定の結果: χ²(%d) = %.2f, p %s。\n",
+              ct$parameter, ct$statistic,
               ifelse(ct$p.value < 0.001, "< 0.001", sprintf("= %.4f", ct$p.value))))
   max_res_idx <- which.max(abs(ct$residuals))
   val_res <- ct$residuals[max_res_idx]
   # 行と列の名前を取得
   r_nm <- rownames(ct$residuals)[(max_res_idx-1) %% nrow(ct$residuals) + 1]
   c_nm <- colnames(ct$residuals)[(max_res_idx-1) %/% nrow(ct$residuals) + 1]
-  cat(sprintf("残差の絶対値が最大のセルは `%s:%s` (Pearson残差: %.2f) です。\n", 
+  cat(sprintf("残差の絶対値が最大のセルは `%s:%s` (Pearson残差: %.2f) です。\n",
               r_nm, c_nm, val_res))
   if(!is.na(v_val)) cat(sprintf("Cramer's V は %.3f でした。\n", v_val))
 } else {

@@ -23,7 +23,7 @@ metadata:
 ## 入力
 
 - **DB 名**（必須）。
-- **出力ディレクトリ**（任意）。未指定時は `./skill_output/`。
+- **出力ディレクトリ**（任意）。未指定時は `./skill_out/`。
 
 ## 前提
 
@@ -48,7 +48,7 @@ metadata:
    python3 .agent/skills/mysql-er-diagram/scripts/generate_er.py --db <ターゲットDB名>
    ```
    **オプション:**
-   - `--out <出力ディレクトリ>`: 出力先（デフォルト: `./skill_output/`）
+   - `--out <出力ディレクトリ>`: 出力先（デフォルト: `./skill_out/`）
    - `--env <.envファイルパス>`: 認証用 .env を明示指定
 3. 生成された `[DB名]_dictionary.csv`、`[DB名]_er_MMDD_HHMM.xml`、`[DB名]_er_MMDD_HHMM.md` を確認し、ユーザーに報告する。
 

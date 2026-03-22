@@ -1,18 +1,18 @@
 ---
 name: mysql-table-cardinality
-description: 指定 MySQL DB・テーブルからカラム一覧・総行数・カラムごとの濃度数（cardinality）を取得し、./skill_output/mysql_table_cardinality に CSV/JSON を出力する。MCP 利用可時は execute_sql、不可時は CLI。DB 名・テーブル名必須。全テーブルは -t '*'。濃度数・cardinality を確認したいとき、テーブル統計を取得したいときに使う。Cursor および Antigravity で利用可能。
+description: 指定 MySQL DB・テーブルからカラム一覧・総行数・カラムごとの濃度数（cardinality）を取得し、./skill_out/mysql_table_cardinality に CSV/JSON を出力する。MCP 利用可時は execute_sql、不可時は CLI。DB 名・テーブル名必須。全テーブルは -t '*'。濃度数・cardinality を確認したいとき、テーブル統計を取得したいときに使う。Cursor および Antigravity で利用可能。
 license: MIT
 metadata:
   author: mysql-table-cardinality-skill
   version: "1.0"
 ---
 
-指定 DB・テーブルからカラム一覧、テーブル総行数、カラムごとの濃度数（COUNT(DISTINCT col)）を取得し、`./skill_output/mysql_table_cardinality` へ CSV と JSON を出力する。MCP (user-dbhub) が利用可能なら `execute_sql` を、利用できない場合は CLI を実行する。
+指定 DB・テーブルからカラム一覧、テーブル総行数、カラムごとの濃度数（COUNT(DISTINCT col)）を取得し、`./skill_out/mysql_table_cardinality` へ CSV と JSON を出力する。MCP (user-dbhub) が利用可能なら `execute_sql` を、利用できない場合は CLI を実行する。
 
 ## 実行前提
 
 - 実行 cwd は **プロジェクトルート**。
-- 出力先は `./skill_output/mysql_table_cardinality`（`-o` 未指定時の既定）。
+- 出力先は `./skill_out/mysql_table_cardinality`（`-o` 未指定時の既定）。
 - エージェントが本 Skill に従い、MCP または `scripts/get_cardinality_cli.py` を呼び出す。
 - **Cursor** では `.cursor/skills/mysql-table-cardinality/`、**Antigravity** では `.agent/skills/mysql-table-cardinality/` を参照。同一内容を両方に配置する（MUST）。
 
@@ -26,8 +26,8 @@ metadata:
 
 ## 出力の場所
 
-- `./skill_output/mysql_table_cardinality/<db>_<table>_columns_cardinality.csv` … カラム一覧＋濃度数
-- `./skill_output/mysql_table_cardinality/<db>_<table>_report.json` … database, table, total_rows, columns_count, timestamp
+- `./skill_out/mysql_table_cardinality/<db>_<table>_columns_cardinality.csv` … カラム一覧＋濃度数
+- `./skill_out/mysql_table_cardinality/<db>_<table>_report.json` … database, table, total_rows, columns_count, timestamp
 
 ## 覚えておくこと
 
@@ -46,7 +46,7 @@ metadata:
 
 - `.env` または ~/.my.cnf に認証情報が設定されているか確認する
 - `mysql` コマンドが PATH にあることを確認する（CLI 利用時）
-- 出力先ディレクトリ (`./skill_output`) への書き込み権限があることを確認する
+- 出力先ディレクトリ (`./skill_out`) への書き込み権限があることを確認する
 - 全テーブル指定時はユーザーに確認を取る
 
 ## 手順（MCP 優先）
@@ -58,22 +58,22 @@ metadata:
    - 総行数: `SELECT COUNT(*) FROM \`db\`.\`table\``
    - 各カラム濃度数: `SELECT COUNT(DISTINCT \`col\`) FROM \`db\`.\`table\``
    - 識別子はバッククォートでエスケープ（` 内の ` は `` に二重化）
-   - 取得結果を CSV/JSON 形式で `./skill_output/mysql_table_cardinality/` に出力する
+   - 取得結果を CSV/JSON 形式で `./skill_out/mysql_table_cardinality/` に出力する
 3. **MCP 利用不可**: CLI を呼び出す
-   - Cursor: `python3 .cursor/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill_output/mysql_table_cardinality`
-   - Antigravity: `python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill_output/mysql_table_cardinality`
+   - Cursor: `python3 .cursor/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill_out/mysql_table_cardinality`
+   - Antigravity: `python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill_out/mysql_table_cardinality`
    - 全テーブル: `-t '*'`
 
 ## コマンド例
 
 単一テーブル:
 ```
-python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d mydb -t mytable -o ./skill_output/mysql_table_cardinality
+python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d mydb -t mytable -o ./skill_out/mysql_table_cardinality
 ```
 
 全テーブル（事前にユーザー確認）:
 ```
-python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d mydb -t '*' -o ./skill_output/mysql_table_cardinality
+python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d mydb -t '*' -o ./skill_out/mysql_table_cardinality
 ```
 
 ## 参照

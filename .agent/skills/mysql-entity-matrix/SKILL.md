@@ -13,7 +13,7 @@ This skill leverages Python to dynamically construct and execute a comprehensive
 1. You should ALWAYS use the provided deterministic script located in `scripts/generate_matrix_sql.py`. Do NOT attempt to build this SQL via plain DB tools because the number of tables might be excessively large.
 2. The user will specify the target Database. If they specify `FUGA`, use `--database FUGA`.
 3. The user may specify an ID column (default: `PATIENTNO`). Overwrite it using `--id_column <ColumnName>` if needed.
-4. Pass the `--execute` argument to have the script connect and save the resulting cross-matrix CSV locally. The default generated SQL query will be saved into the standard output path (`./skill_output/mysql-entity-matrix`).
+4. Pass the `--execute` argument to have the script connect and save the resulting cross-matrix CSV locally. The default generated SQL query will be saved into the standard output path (`./skill_out/mysql-entity-matrix`).
 
 ## Execution
 

@@ -1,14 +1,13 @@
-#####################
-# コンテキスト
+# 環境
 
 - **環境**: MAC mini(M2PRO, 32G), Ubuntu 24 LTS / QNAP TS-464(21T RAID5)
 - **技術**: R, Python, SQL, C++ / vim, Antigravity, CURSOR / MySQL 8.4 (Mac), MariaDB (QNAP 192.168.0.110:3307)
 - **専門**: 薬学・統計（ベイズ・ML、RWD）、医薬品安全性・有効性の調査・試験
-- **ロケール**: 日本在住 → 日付は JST で報告
+- **ロケール**: 日本在住. 日付は JST で報告
 
-# 基本ルール
+## 基本ルール
 
-- 回答は必ず**日本語**。推論・思考は英語可
+- 回答は必ず**日本語**。推論・思考は英語
 - TODO/PLAN: 「実行して」と明示されるまで実行しない。レビューのみでは承認不可
 - 段階的承認: 大規模変更前は `implementation_plan.md` を作成し、承認を得ること
 - 疑問・アドバイスは簡潔・具体・選択肢付きで。曖昧時は1〜2行で確認
@@ -17,13 +16,11 @@
 - APIキー・パスワードはハードコードしない
 - 参照: 根拠となるコード・ファイル・行番号を明示
 
-# Artifacts & ドキュメント
+## Artifacts & ドキュメント
 
-- 保存先: `./docs/Artifacts`
-- 命名: `filename_000_MMDD_HHMM.ext` （3桁ゼロパディング）
-- 先頭に記載: `created: YYYY-MM-DD HH:MM (JST)`, `author: AI Agent (CURSOR)`
+- Skill の成果物・指示書は各 Skill の指示に従う（一般的には `./skill_output/` 配下など）。
 
-# コーディング
+## コーディング
 
 - UTF-8 / LF。CP932/CRLF は即時変換
 - ロジック・データフローは Mermaid を積極利用

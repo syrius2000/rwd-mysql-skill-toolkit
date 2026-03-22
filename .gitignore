@@ -19,6 +19,7 @@ build/
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+*.zip
 
 # OS
 .DS_Store
@@ -50,3 +51,5 @@ skill_output/*
 !skill_output/.gitkeep
 .env_local
 *.excalidraw
+.agent/skills/*/*/*.png
+.cursor/skills/*/*/*.png

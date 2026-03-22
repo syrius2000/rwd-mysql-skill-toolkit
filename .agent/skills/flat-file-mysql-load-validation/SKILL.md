@@ -12,8 +12,8 @@ metadata:
 ## 実行前提
 
 - 実行 cwd は **プロジェクトルート**。
-- ステップ 2 の成果物は `./skill_output/step2_complete_sql` に保存する。
-- ステップ 3 のレポートは `./skill_output/step3_report` に保存する。
+- ステップ 2 の成果物は `./skill_out/step2_complete_sql` に保存する。
+- ステップ 3 のレポートは `./skill_out/step3_report` に保存する。
 
 ## 実行前の前提条件・注意・確認事項
 
@@ -31,7 +31,7 @@ metadata:
 
 1. DB 名が指定されているか確認。未指定なら上記メッセージでストップ。
 2. ステップ 1 の出力（サンプル SQL ファイル）と、保存されたプロンプト（`.agent/skills/flat-file-mysql-load-validation/prompts/step2-complete-sql.prompt.md`）を用い、`{{database_name}}` にユーザー指定の DB 名を渡して完成版インポート SQL を生成する。
-3. 完成版 SQL を `./skill_output/step2_complete_sql` に保存する。複数 CSV の場合は CSV ごとに 1 本。
+3. 完成版 SQL を `./skill_out/step2_complete_sql` に保存する。複数 CSV の場合は CSV ごとに 1 本。
 
 ## ステップ 3 の実行前確認（問い合わせ）
 
@@ -42,7 +42,7 @@ metadata:
 ## 手順（ステップ 3）
 
 1. 上記の問い合わせでユーザーが実施すると答えた場合のみ、エージェントが **Python CLI**（ステップ 3 用：SQL 実行・件数比較）を呼び出す。CLI に完成版 SQL のパスと対象 DB 接続情報を渡す。
-   - `python3 .agent/skills/flat-file-mysql-load-validation/scripts/step3_cli.py <complete.sql> -d <database> --table <table> --expected-count <n> --report-dir ./skill_output/step3_report`
+   - `python3 .agent/skills/flat-file-mysql-load-validation/scripts/step3_cli.py <complete.sql> -d <database> --table <table> --expected-count <n> --report-dir ./skill_out/step3_report`
 2. CLI が指定 DB に対して SQL を実行し、投入後の件数カウントと件数比較バリデーション（元件数・重複件数・投入件数）を行う。バリデーション完了＝ステップ 1 のユニーク数と DB レコード数が一致したとき。
 3. レポート出力（`step3_report.json`）を確認し、成功/失敗をユーザーに報告する。
 

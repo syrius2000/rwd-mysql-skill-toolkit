@@ -30,4 +30,4 @@ python3 .cursor/skills/mysql-entity-matrix/scripts/generate_matrix_sql.py -d FUG
 ```
 
 > [!TIP]
-> This command systematically places resulting CSV rows resolving Pattern A (Base ID maps to TABLE_A, TABLE_B [1/0 flags]) under the target local namespace: `./skill_output/mysql-entity-matrix/`.
+> This command systematically places resulting CSV rows resolving Pattern A (Base ID maps to TABLE_A, TABLE_B [1/0 flags]) under the target local namespace: `./skill_out/mysql-entity-matrix/`.
