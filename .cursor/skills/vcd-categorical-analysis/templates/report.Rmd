@@ -176,7 +176,7 @@ n_significant_cells <- sum(resid_tbl$abs_res > 1.96, na.rm = TRUE)
 n_total_cells <- nrow(resid_tbl)
 top3_residual_cells <- paste(utils::head(resid_tbl$cell_label, 3L), collapse = "|")
 residual_table_view <- utils::head(
-  resid_tbl[, c(vars, "pearson_res", "abs_res", "cell_label"), drop = FALSE],
+  resid_tbl[, c(vars, "pearson_res", "abs_res"), drop = FALSE],
   20L
 )
 ```

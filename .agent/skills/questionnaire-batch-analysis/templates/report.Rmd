@@ -391,7 +391,7 @@ residual_plot_obj
 ```
 
 ```{r residual-table}
-gt::gt(utils::head(resid_tbl[, c(vars, "pearson_res", "abs_res", "cell_label")], 20))
+gt::gt(utils::head(resid_tbl[, c(vars, "pearson_res", "abs_res")], 20))
 ```
 
 ```{r write-metrics, include=FALSE}
