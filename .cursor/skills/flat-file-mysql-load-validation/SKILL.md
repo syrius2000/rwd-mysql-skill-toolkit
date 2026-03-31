@@ -1,6 +1,6 @@
 ---
 name: flat-file-mysql-load-validation
-description: 完成版 SQL の作成支援・DB 名指定・指定 DB への実行・件数比較（ステップ 2〜3）。ステップ 3 実行前にユーザーに確認し、依頼に応じて CLI を呼ぶ。
+description: 完成版 SQL の作成支援・DB 名指定・指定 DB への実行・件数比較（ステップ 2〜3）。ステップ 3 実行前にユーザーに確認し、依頼に応じて CLI を呼ぶ。Antigravity 用。
 license: MIT
 metadata:
   author: flat-file-to-mysql-ddl-creator
@@ -30,7 +30,7 @@ metadata:
 ## 手順（ステップ 2）
 
 1. DB 名が指定されているか確認。未指定なら上記メッセージでストップ。
-2. ステップ 1 の出力（サンプル SQL ファイル）と、保存されたプロンプト（`.cursor/skills/flat-file-mysql-load-validation/prompts/step2-complete-sql.prompt.md`）を用い、`{{database_name}}` にユーザー指定の DB 名を渡して完成版インポート SQL を生成する。
+2. ステップ 1 の出力（サンプル SQL ファイル）と、保存されたプロンプト（`.agent/skills/flat-file-mysql-load-validation/prompts/step2-complete-sql.prompt.md`）を用い、`{{database_name}}` にユーザー指定の DB 名を渡して完成版インポート SQL を生成する。
 3. 完成版 SQL を `./skill_out/step2_complete_sql` に保存する。複数 CSV の場合は CSV ごとに 1 本。
 
 ## ステップ 3 の実行前確認（問い合わせ）
@@ -42,7 +42,7 @@ metadata:
 ## 手順（ステップ 3）
 
 1. 上記の問い合わせでユーザーが実施すると答えた場合のみ、エージェントが **Python CLI**（ステップ 3 用：SQL 実行・件数比較）を呼び出す。CLI に完成版 SQL のパスと対象 DB 接続情報を渡す。
-   - `python3 .cursor/skills/flat-file-mysql-load-validation/scripts/step3_cli.py <complete.sql> -d <database> --table <table> --expected-count <n> --report-dir ./skill_out/step3_report`
+   - `python3 .agent/skills/flat-file-mysql-load-validation/scripts/step3_cli.py <complete.sql> -d <database> --table <table> --expected-count <n> --report-dir ./skill_out/step3_report`
 2. CLI が指定 DB に対して SQL を実行し、投入後の件数カウントと件数比較バリデーション（元件数・重複件数・投入件数）を行う。バリデーション完了＝ステップ 1 のユニーク数と DB レコード数が一致したとき。
 3. レポート出力（`step3_report.json`）を確認し、成功/失敗をユーザーに報告する。
 

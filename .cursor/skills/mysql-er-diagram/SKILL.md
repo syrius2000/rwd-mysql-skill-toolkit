@@ -45,7 +45,7 @@ metadata:
 1. ユーザー指示から対象の **データベース名** を取得する。
 2. 以下のコマンドを実行する。
    ```bash
-   python3 .cursor/skills/mysql-er-diagram/scripts/generate_er.py --db <ターゲットDB名>
+   python3 .agent/skills/mysql-er-diagram/scripts/generate_er.py --db <ターゲットDB名>
    ```
    **オプション:**
    - `--out <出力ディレクトリ>`: 出力先（デフォルト: `./skill_out/`）

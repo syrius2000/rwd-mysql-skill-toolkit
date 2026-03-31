@@ -5,6 +5,8 @@ import os
 import sys
 import subprocess
 import csv
+import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -20,12 +22,34 @@ def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
         current = current.parent
     return Path.cwd()
 
+def validate_identifier(identifier: str, field_name: str) -> str:
+    """
+    Validate that an identifier (like database name or column name) contains only
+    safe alphanumeric characters and underscores/hyphens to prevent SQL injection
+    and path traversal.
+    """
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', identifier):
+        print(f"[ERROR] Invalid {field_name}: '{identifier}'. Only alphanumeric characters, hyphens, and underscores are allowed.", file=sys.stderr)
+        sys.exit(1)
+    return identifier
+
+def get_mysql_cmd() -> str:
+    """
+    Finds the absolute path to the mysql binary to avoid B607 security warnings.
+    """
+    mysql_path = shutil.which("mysql")
+    if not mysql_path:
+        print("[ERROR] 'mysql' command not found in PATH.", file=sys.stderr)
+        sys.exit(1)
+    return str(mysql_path)
+
 def run_mysql_query(query, db_name, host=None, port=None, user=None, password=None):
     """
     Execute a query using the mysql CLI via subprocess and return the results.
     By default, relies on ~/.my.cnf for auth unless explicitly provided.
     """
-    cmd: list[str] = ["mysql", "--batch", "--raw", "--skip-column-names", "-e", query, db_name]
+    mysql_cmd = get_mysql_cmd()
+    cmd: list[str] = [mysql_cmd, "--batch", "--raw", "--skip-column-names", "-e", query, db_name]
     
     if host:
         cmd.extend(["-h", host])
@@ -55,7 +79,8 @@ def execute_and_save_csv(query, db_name, output_path, host=None, port=None, user
     print(f"[INFO] Connecting to MySQL using CLI targeting database '{db_name}'...")
     
     # We want column names for the final output, so no --skip-column-names here
-    cmd: list[str] = ["mysql", "--batch", "--raw", "-e", query, db_name]
+    mysql_cmd = get_mysql_cmd()
+    cmd: list[str] = [mysql_cmd, "--batch", "--raw", "-e", query, db_name]
     
     if host:
         cmd.extend(["-h", host])
@@ -171,6 +196,10 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Security Validation (Sanitization)
+    validate_identifier(args.database, "Database Name")
+    validate_identifier(args.id_column, "ID Column Name")
 
     print(f"[INFO] Scanning database '{args.database}' for tables containing column '{args.id_column}'...")
     

@@ -1,0 +1,4 @@
+survey_id,question_id,analysis_type,var1,var2,var3,output_slug,question_label,subset_expr,na_policy,ordered_levels,reference_note
+drug_timing_survey,q01_drug_timing_headache,nominal_2way,drug,timing,,q01_headache,頭痛時の服用タイミングと薬剤の関連,symptom == '頭痛',drop,痛くなりそうなとき・熱が出そうなとき|痛くなったとき・熱が出始めたとき|ひどくはなっていないが、痛みや熱がひかないとき|痛みがひどくなりそうなとき・熱が更に上がりそうなとき|痛みが我慢できなくなったとき・熱が高くなったとき|その他,
+drug_timing_survey,q02_symptom_timing_bufferin,nominal_2way,symptom,timing,,q02_bufferin,バファリンAの服用タイミングと症状の関連,drug == 'バファリンA',drop,痛くなりそうなとき・熱が出そうなとき|痛くなったとき・熱が出始めたとき|ひどくはなっていないが、痛みや熱がひかないとき|痛みがひどくなりそうなとき・熱が更に上がりそうなとき|痛みが我慢できなくなったとき・熱が高くなったとき|その他,
+drug_timing_survey,q03_all_3way,nominal_3way,symptom,drug,timing,q03_all_3way,症状・薬剤・タイミングの3元分析,,drop,痛くなりそうなとき・熱が出そうなとき|痛くなったとき・熱が出始めたとき|ひどくはなっていないが、痛みや熱がひかないとき|痛みがひどくなりそうなとき・熱が更に上がりそうなとき|痛みが我慢できなくなったとき・熱が高くなったとき|その他,

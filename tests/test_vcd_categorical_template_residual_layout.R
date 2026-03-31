@@ -54,6 +54,14 @@ for (p in paths) {
   if (!any(grepl("utils::head\\(", lines)) || !any(grepl("20L", lines, fixed = TRUE))) {
     stop("Residual table top-N truncation is missing in: ", p)
   }
+
+  if (!any(grepl("should_render_mosaic", lines))) {
+    stop("should_render_mosaic helper is missing in: ", p)
+  }
+
+  if (!any(grepl("plot_mode", lines))) {
+    stop("plot_mode parameter is missing in: ", p)
+  }
 }
 
 message("OK: residual plot + table layout present in both vcd report templates.")

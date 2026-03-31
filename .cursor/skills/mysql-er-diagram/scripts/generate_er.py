@@ -46,7 +46,6 @@ def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
         current = current.parent
     return Path.cwd()
 
-
 def _validate_db_name(db_name: str) -> str:
     """DB名のホワイトリスト検証.
 

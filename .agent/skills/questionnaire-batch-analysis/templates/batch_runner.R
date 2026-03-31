@@ -31,6 +31,7 @@ if (!file.exists(report_template)) {
 if (is.null(opt$data) || is.null(opt$config)) {
   stop("Both --data and --config are required")
 }
+opt$data <- normalizePath(opt$data, winslash = "/", mustWork = TRUE)
 
 cfg <- utils::read.csv(opt$config, stringsAsFactors = FALSE, check.names = FALSE)
 required <- c("survey_id", "question_id", "analysis_type", "var1", "var2", "output_slug")
@@ -67,7 +68,8 @@ summary_columns <- c(
   "na_policy","n_total","n_used","n_missing","model_name","statistic_name",
   "statistic_value","df","p_value","effect_name","effect_value","max_abs_pearson_res",
   "max_residual_cell","n_significant_cells","n_total_cells","top3_residual_cells",
-  "interpretation_flag","residual_plot_path","mosaic_plot_path","assoc_plot_path",
+  "interpretation_flag","mosaic_rendered","assoc_rendered","skip_reason","residual_plot_mode",
+  "residual_plot_path","mosaic_plot_path","assoc_plot_path",
   "report_path","status","error_message","executed_at"
 )
 
@@ -131,6 +133,10 @@ for (i in seq_len(nrow(cfg))) {
     n_total_cells       = NA_integer_,
     top3_residual_cells = "",
     interpretation_flag = "",
+    mosaic_rendered  = NA,
+    assoc_rendered   = NA,
+    skip_reason      = "",
+    residual_plot_mode = "",
     residual_plot_path  = residual_plot,
     mosaic_plot_path    = mosaic_plot,
     assoc_plot_path     = assoc_plot
@@ -169,6 +175,10 @@ for (i in seq_len(nrow(cfg))) {
     n_total_cells        = m$n_total_cells,
     top3_residual_cells  = m$top3_residual_cells,
     interpretation_flag  = m$interpretation_flag,
+    mosaic_rendered      = ifelse(is.null(m$mosaic_rendered), NA, m$mosaic_rendered),
+    assoc_rendered       = ifelse(is.null(m$assoc_rendered), NA, m$assoc_rendered),
+    skip_reason          = ifelse(is.null(m$skip_reason), "", m$skip_reason),
+    residual_plot_mode   = ifelse(is.null(m$residual_plot_mode), "", m$residual_plot_mode),
     residual_plot_path   = m$residual_plot_path,
     mosaic_plot_path     = m$mosaic_plot_path,
     assoc_plot_path      = m$assoc_plot_path,

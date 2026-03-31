@@ -15,7 +15,35 @@ metadata:
 |------|------|
 | **次元** | **3-way まで**（`xtabs(~ A + B + C, data)`）。**4-way 以上は対象外**（ユーザーに明示し、分割・集約を提案）。 |
 | **主用途** | 比率・クロス表・独立性からの乖離（Pearson 残差の解釈）。 |
-| **可視化** | **主**: `vcd::mosaic(..., shade = TRUE)`。**補**: `vcd::assoc(..., residuals_type = "Pearson", shade = TRUE)`（着色し忘れに注意）。 |
+| **可視化** | **主**: `vcd::mosaic(..., shade = TRUE)`。**補**: `vcd::assoc(..., residuals_type = "Pearson", shade = TRUE)`（着色し忘れに注意）。水準数・ラベル長が大きい場合は auto 省略される（下記参照）。 |
+
+### mosaic / assoc 自動省略 (`plot_mode`)
+
+水準数が多い・ラベルが長いテーブルでは mosaic/assoc が判読不能になるため、既定 `auto` で自動省略し GLM 残差プロットを主表示にする。
+
+| パラメータ | 既定値 | 説明 |
+|---|---|---|
+| `plot_mode` | `auto` | `auto` / `always` / `residual_only` |
+| `max_cells_2way` | 16 | 2-way セル数しきい値（超過で省略） |
+| `max_cells_3way` | 36 | 3-way セル数しきい値（超過で省略） |
+| `max_label_chars` | 24 | 最長ラベル文字数しきい値（超過で省略） |
+
+セル数 **または** ラベル長のいずれかが超過した場合に省略。`always` で強制描画も可。
+
+### 残差プロット自動形式切り替え (`residual_plot_mode`)
+
+セル数が多い場合、従来の dotplot（coord_flip）もラベルが潰れるため、ヒートマップ形式に自動切り替えする。
+
+| パラメータ | 既定値 | 説明 |
+|---|---|---|
+| `max_cells_dotplot` | 25 | dotplot で描画可能な最大セル数（超過でヒートマップ） |
+
+| 条件 | 描画形式 | 説明 |
+|---|---|---|
+| 2-way & セル ≤ 25 | `dotplot` | 従来の geom_point + coord_flip |
+| 2-way & セル > 25 | `heatmap` | geom_tile（X=var2, Y=var1, fill=残差） |
+| 3-way & セル ≤ 25 | `dotplot` | 従来形式 |
+| 3-way & セル > 25 | `facet_heatmap` | facet_wrap(var3) + geom_tile |
 | **残差表** | **既定は `gt`（HTML）**。PDF/LaTeX 主目的は `params$residual_table_pkg: "kableExtra"`（`references/dependencies.md`）。 |
 | **対象外** | **Correlogram**（連続変数の相関ヒートマップ等）。多数項目のざっくり関連は `references/literature-and-packages.md` の **Cramer's V 参考**のみ。 |
 | **序数・リッカート** | メインは 1 段落。**詳細は** `references/ordinal-likert-advanced.md`。 |

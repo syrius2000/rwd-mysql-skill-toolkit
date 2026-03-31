@@ -94,6 +94,16 @@ if (file.exists(summary_csv)) {
   check("p_value is filled", all(!is.na(s$p_value)))
   check("max_abs_pearson_res is filled", all(!is.na(s$max_abs_pearson_res)))
 
+  # mosaic_rendered: UCBAdmissions q01 = 2x2 (4 cells <= 16) → TRUE
+  #                  UCBAdmissions q02 = 2x2x6 (24 cells <= 36) → TRUE
+  check("mosaic_rendered column exists", "mosaic_rendered" %in% names(s))
+  check("assoc_rendered column exists", "assoc_rendered" %in% names(s))
+  check("skip_reason column exists", "skip_reason" %in% names(s))
+  if ("mosaic_rendered" %in% names(s)) {
+    check("q01 2x2 mosaic_rendered = TRUE (4 cells <= 16)", isTRUE(s$mosaic_rendered[s$question_id == "q01_admit_gender"]))
+    check("q02 2x2x6 mosaic_rendered = TRUE (24 cells <= 36)", isTRUE(s$mosaic_rendered[s$question_id == "q02_admit_gender_dept"]))
+  }
+
   q_slugs <- c("q01_admit_gender", "q02_admit_gender_dept")
   for (slug in q_slugs) {
     check(

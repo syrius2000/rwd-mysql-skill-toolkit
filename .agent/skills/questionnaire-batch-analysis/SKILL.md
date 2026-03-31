@@ -17,7 +17,7 @@ metadata:
 | 次元 | 2-way / 3-way |
 | 入力 | survey 本体 CSV + question_config.csv |
 | 出力 | 設問別 HTML + 図表 + 集約 summary.csv |
-| 中核可視化 | ggplot2 による Pearson 残差（モデル乖離） |
+| 中核可視化 | ggplot2 による Pearson 残差（モデル乖離）。セル数が少ない場合は dotplot、多い場合は heatmap に自動切り替え。mosaic/assoc は水準数・ラベル長が小さい場合のみ描画（auto 省略あり） |
 | 対象外 | 連続値解析、4-way 以上、Excel 直接読込 |
 
 ## ディレクトリ
@@ -71,6 +71,9 @@ metadata:
 - `effect_value`
 - `max_abs_pearson_res`
 - `max_residual_cell`
+- `mosaic_rendered`
+- `assoc_rendered`
+- `skip_reason`
 - `residual_plot_path`
 - `mosaic_plot_path`
 - `assoc_plot_path`
@@ -92,4 +95,5 @@ Rscript .agent/skills/questionnaire-batch-analysis/templates/batch_runner.R \
 
 - `analysis_type` が `likert_*` の場合、`ordered_levels` をできるだけ指定する。
 - 3-way は分かりにくくなりやすいので、残差図で乖離上位セルを確認する。
+- mosaic/assoc は `plot_mode=auto`（既定）でセル数 > 16 (2-way) / > 36 (3-way) またはラベル長 > 24 文字の場合に自動省略される。`always` で強制描画も可。
 - `.agent` と `.cursor` で同一内容を維持する。

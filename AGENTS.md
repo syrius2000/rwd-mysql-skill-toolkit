@@ -18,7 +18,7 @@
 
 ## Artifacts & ドキュメント
 
-- Skill の成果物・指示書は各 Skill の指示に従う（一般的には `./skill_output/` 配下など）。
+- Skill の成果物・指示書は各 Skill の指示に従う（一般的には `./skill_out` 配下など）。
 
 ## コーディング
 
@@ -27,3 +27,8 @@
 - M2 PRO / Ubuntu を前提にしたコード
 - 不要になったコードは削除する
 - macOS/Ubuntu: BSD vs GNU の差異に注意。`sed -i` 等は実行前にチェック。GNU版（Homebrew）優先、不明時は POSIX 準拠で可搬性を確保
+
+## スキルの設置制限
+.agent
+.cursor
+両方に同一内容のskillを配置すること。

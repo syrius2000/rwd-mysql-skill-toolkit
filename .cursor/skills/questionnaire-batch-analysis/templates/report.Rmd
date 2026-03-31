@@ -13,6 +13,11 @@ params:
   na_policy: "drop"
   ordered_levels: ""
   output_dir: "./skill_out/questionnaire/"
+  plot_mode: "auto"
+  max_cells_2way: 16
+  max_cells_3way: 36
+  max_label_chars: 24
+  max_cells_dotplot: 25
 ---
 
 ```{r setup, include=FALSE}
@@ -22,6 +27,50 @@ pacman::p_load(vcd, ggplot2, knitr, gt)
 dir.create(params$output_dir, recursive = TRUE, showWarnings = FALSE)
 fig_dir <- file.path(params$output_dir, "figures")
 dir.create(fig_dir, recursive = TRUE, showWarnings = FALSE)
+
+detect_jp_font <- function() {
+  os <- Sys.info()[["sysname"]]
+  candidates <- switch(os,
+    "Darwin"  = c("Hiragino Sans", "HiraginoSans-W3", "Hiragino Kaku Gothic Pro"),
+    "Windows" = c("Yu Gothic", "Meiryo", "MS Gothic"),
+    "Linux"   = c("Noto Sans CJK JP", "IPAexGothic", "IPAGothic"),
+    character(0)
+  )
+  if (requireNamespace("systemfonts", quietly = TRUE)) {
+    avail <- unique(systemfonts::system_fonts()$family)
+    for (f in candidates) {
+      if (f %in% avail) return(f)
+    }
+  }
+  if (length(candidates) > 0L) return(candidates[1L])
+  ""
+}
+jp_font <- detect_jp_font()
+
+should_render_mosaic <- function(tbl, plot_mode = params$plot_mode,
+                                 max_cells_2way = params$max_cells_2way,
+                                 max_cells_3way = params$max_cells_3way,
+                                 max_label_chars = params$max_label_chars) {
+  if (identical(plot_mode, "always")) return(TRUE)
+  if (identical(plot_mode, "residual_only")) return(FALSE)
+  dims <- dim(tbl)
+  n_way <- length(dims)
+  total_cells <- prod(dims)
+  cell_limit <- if (n_way <= 2L) max_cells_2way else max_cells_3way
+  if (total_cells > cell_limit) return(FALSE)
+  all_labels <- unlist(dimnames(tbl))
+  if (max(nchar(all_labels), na.rm = TRUE) > max_label_chars) return(FALSE)
+  TRUE
+}
+
+residual_plot_mode <- function(tbl, max_cells_dotplot = params$max_cells_dotplot) {
+  dims <- dim(tbl)
+  n_way <- length(dims)
+  total_cells <- prod(dims)
+  if (total_cells <= max_cells_dotplot) return("dotplot")
+  if (n_way <= 2L) return("heatmap")
+  "facet_heatmap"
+}
 ```
 
 ```{r validate-input}
@@ -66,13 +115,26 @@ if (identical(params$na_policy, "drop")) {
   dat <- dat[stats::complete.cases(dat[, vars, drop = FALSE]), , drop = FALSE]
 }
 
-n_total <- nrow(dat_raw)
-n_used <- nrow(dat)
+freq_candidates <- c("Freq", "freq", "count", "n", "frequency")
+freq_col <- intersect(freq_candidates, setdiff(names(dat), vars))
+if (length(freq_col) > 0L) {
+  freq_col <- freq_col[1L]
+  n_total <- sum(dat_raw[[freq_col]], na.rm = TRUE)
+  n_used <- sum(dat[[freq_col]], na.rm = TRUE)
+} else {
+  freq_col <- NULL
+  n_total <- nrow(dat_raw)
+  n_used <- nrow(dat)
+}
 n_missing <- n_total - n_used
 ```
 
 ```{r crosstab}
-tab <- xtabs(as.formula(paste("~", paste(vars, collapse = " + "))), data = dat)
+if (!is.null(freq_col)) {
+  tab <- xtabs(as.formula(paste(freq_col, "~", paste(vars, collapse = " + "))), data = dat)
+} else {
+  tab <- xtabs(as.formula(paste("~", paste(vars, collapse = " + "))), data = dat)
+}
 nd <- length(dim(tab))
 ```
 
@@ -150,42 +212,88 @@ resid_main <- if (nd == 2L) {
 
 # プロット用: factor level 順を保持（元データのカテゴリ順）
 resid_plot_df <- resid_tbl
-resid_plot_df$cell_label_f <- factor(
-  resid_plot_df$cell_label,
-  levels = rev(unique(apply(dat[, vars, drop = FALSE], 1, paste, collapse = ":")))
-)
-resid_plot_df$cell_label_wrap_f <- factor(
-  vapply(as.character(resid_plot_df$cell_label_f), function(x) {
-    paste(strwrap(x, width = 18), collapse = "\n")
-  }, character(1)),
-  levels = rev(unique(vapply(
-    rev(unique(apply(dat[, vars, drop = FALSE], 1, paste, collapse = ":"))),
-    function(x) paste(strwrap(x, width = 18), collapse = "\n"),
-    character(1)
-  )))
-)
+resid_plot_df$color_var <- resid_plot_df[[vars[1]]]
 
-residual_plot_obj <- ggplot2::ggplot(
-  resid_plot_df,
-  ggplot2::aes(
-    x = cell_label_wrap_f,
-    y = pearson_res,
-    color = color_var
+rp_mode <- residual_plot_mode(tab)
+
+if (rp_mode == "dotplot") {
+  resid_plot_df$cell_label_f <- factor(
+    resid_plot_df$cell_label,
+    levels = rev(unique(apply(dat[, vars, drop = FALSE], 1, paste, collapse = ":")))
   )
-) +
-  ggplot2::geom_point(size = 3) +
-  ggplot2::geom_hline(yintercept = c(-1.96, 1.96), linetype = "dashed", color = "grey50") +
-  ggplot2::geom_hline(yintercept = c(-2.58, 2.58), linetype = "dotted", color = "red", alpha = 0.5) +
-  ggplot2::coord_flip() +
-  ggplot2::labs(
-    title = resid_main,
-    subtitle = "Dashed grey: \u00b11.96 (5%), Dotted red: \u00b12.58 (1%)",
-    x = paste(vars, collapse = " : "),
-    y = "Pearson residual",
-    color = vars[1]
+  resid_plot_df$cell_label_wrap_f <- factor(
+    vapply(as.character(resid_plot_df$cell_label_f), function(x) {
+      paste(strwrap(x, width = 18), collapse = "\n")
+    }, character(1)),
+    levels = rev(unique(vapply(
+      rev(unique(apply(dat[, vars, drop = FALSE], 1, paste, collapse = ":"))),
+      function(x) paste(strwrap(x, width = 18), collapse = "\n"),
+      character(1)
+    )))
+  )
+  residual_plot_obj <- ggplot2::ggplot(
+    resid_plot_df,
+    ggplot2::aes(x = cell_label_wrap_f, y = pearson_res, color = color_var)
   ) +
-  ggplot2::theme_minimal(base_size = 13) +
-  ggplot2::theme(axis.text.y = ggplot2::element_text(size = 10))
+    ggplot2::geom_point(size = 3) +
+    ggplot2::geom_hline(yintercept = c(-1.96, 1.96), linetype = "dashed", color = "grey50") +
+    ggplot2::geom_hline(yintercept = c(-2.58, 2.58), linetype = "dotted", color = "red", alpha = 0.5) +
+    ggplot2::coord_flip() +
+    ggplot2::labs(
+      title = resid_main,
+      subtitle = "Dashed grey: \u00b11.96 (5%), Dotted red: \u00b12.58 (1%)",
+      x = paste(vars, collapse = " : "),
+      y = "Pearson residual",
+      color = vars[1]
+    ) +
+    ggplot2::theme_minimal(base_size = 13, base_family = jp_font) +
+    ggplot2::theme(axis.text.y = ggplot2::element_text(size = 10))
+
+} else if (rp_mode == "heatmap") {
+  residual_plot_obj <- ggplot2::ggplot(
+    resid_plot_df,
+    ggplot2::aes(x = .data[[vars[2]]], y = .data[[vars[1]]], fill = pearson_res)
+  ) +
+    ggplot2::geom_tile(color = "white", linewidth = 0.3) +
+    ggplot2::geom_text(
+      ggplot2::aes(label = sprintf("%.2f", pearson_res)),
+      size = 3, color = "black"
+    ) +
+    ggplot2::scale_fill_gradient2(
+      low = "steelblue", mid = "white", high = "firebrick",
+      midpoint = 0, name = "Pearson\nresidual"
+    ) +
+    ggplot2::labs(
+      title = paste(resid_main, "(heatmap)"),
+      subtitle = "|res| > 1.96: significant at 5%",
+      x = vars[2], y = vars[1]
+    ) +
+    ggplot2::theme_minimal(base_size = 13, base_family = jp_font) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+
+} else {
+  residual_plot_obj <- ggplot2::ggplot(
+    resid_plot_df,
+    ggplot2::aes(x = .data[[vars[2]]], y = .data[[vars[1]]], fill = pearson_res)
+  ) +
+    ggplot2::geom_tile(color = "white", linewidth = 0.3) +
+    ggplot2::geom_text(
+      ggplot2::aes(label = sprintf("%.2f", pearson_res)),
+      size = 2.5, color = "black"
+    ) +
+    ggplot2::scale_fill_gradient2(
+      low = "steelblue", mid = "white", high = "firebrick",
+      midpoint = 0, name = "Pearson\nresidual"
+    ) +
+    ggplot2::facet_wrap(ggplot2::vars(.data[[vars[3]]]), scales = "free") +
+    ggplot2::labs(
+      title = paste(resid_main, "(faceted heatmap)"),
+      subtitle = "|res| > 1.96: significant at 5%",
+      x = vars[2], y = vars[1]
+    ) +
+    ggplot2::theme_minimal(base_size = 12, base_family = jp_font) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+}
 
 ggplot2::ggsave(
   filename = residual_plot_path,
@@ -196,16 +304,37 @@ ggplot2::ggsave(
   dpi = 100
 )
 
+render_mosaic <- should_render_mosaic(tab)
+mosaic_skip_reason <- ""
+assoc_skip_reason <- ""
+
+if (!render_mosaic) {
+  skip_msg <- sprintf("cells=%d, max_label=%d chars, plot_mode=%s",
+                      prod(dim(tab)), max(nchar(unlist(dimnames(tab))), na.rm = TRUE), params$plot_mode)
+  mosaic_skip_reason <- skip_msg
+  assoc_skip_reason <- skip_msg
+}
+
 png(mosaic_plot_path, width = 1400, height = 900)
-vcd::mosaic(tab, shade = TRUE, main = "Mosaic (shaded)")
+if (render_mosaic) {
+  vcd::mosaic(tab, shade = TRUE, main = "Mosaic (shaded)")
+} else {
+  plot.new()
+  title(main = paste("Mosaic plot omitted:", mosaic_skip_reason))
+}
 dev.off()
 
 png(assoc_plot_path, width = 1400, height = 900)
-if (nd == 2L) {
-  vcd::assoc(tab, residuals_type = "Pearson", shade = TRUE, main = "Association (Pearson)")
+if (render_mosaic) {
+  if (nd == 2L) {
+    vcd::assoc(tab, residuals_type = "Pearson", shade = TRUE, main = "Association (Pearson)")
+  } else {
+    vcd::assoc(margin.table(tab, c(1L, 2L)), residuals_type = "Pearson", shade = TRUE,
+               main = "Association (first two margins)")
+  }
 } else {
-  vcd::assoc(margin.table(tab, c(1L, 2L)), residuals_type = "Pearson", shade = TRUE,
-             main = "Association (first two margins)")
+  plot.new()
+  title(main = paste("Assoc plot omitted:", assoc_skip_reason))
 }
 dev.off()
 ```
@@ -284,6 +413,10 @@ metrics <- list(
   n_total_cells       = n_total_cells,
   top3_residual_cells = top3_residual_cells,
   interpretation_flag = interpretation_flag,
+  mosaic_rendered     = render_mosaic,
+  assoc_rendered      = render_mosaic,
+  skip_reason         = mosaic_skip_reason,
+  residual_plot_mode  = rp_mode,
   residual_plot_path  = residual_plot_path,
   mosaic_plot_path    = mosaic_plot_path,
   assoc_plot_path     = assoc_plot_path

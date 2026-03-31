@@ -70,7 +70,9 @@ if (file.exists(summary_csv)) {
   expected_cols <- c(
     "run_id","survey_id","question_id","analysis_type","n_total","n_used","n_missing",
     "model_name","statistic_value","p_value","effect_value",
-    "max_abs_pearson_res","max_residual_cell","report_path","status"
+    "max_abs_pearson_res","max_residual_cell",
+    "mosaic_rendered","assoc_rendered","skip_reason","residual_plot_mode",
+    "report_path","status"
   )
   check("summary.csv has expected columns",
         all(expected_cols %in% names(s)))
@@ -122,8 +124,13 @@ if (file.exists(summary_csv)) {
   }
 
   # summary 内容確認
+  check("residual_plot_mode is filled",
+        all(!is.na(s$residual_plot_mode) & nzchar(s$residual_plot_mode)))
+  check("residual_plot_mode values are valid",
+        all(s$residual_plot_mode %in% c("dotplot", "heatmap", "facet_heatmap")))
+
   cat("\n--- summary.csv preview ---\n")
-  print(s[, c("question_id","n_total","n_used","p_value","max_abs_pearson_res","status")])
+  print(s[, c("question_id","n_total","n_used","p_value","max_abs_pearson_res","residual_plot_mode","status")])
 }
 
 cat("\n===============================\n")
