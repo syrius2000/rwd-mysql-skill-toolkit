@@ -48,10 +48,18 @@ optional_defaults <- list(
   reference_note = ""
 )
 for (nm in names(optional_defaults)) {
-  if (!nm %in% names(cfg)) cfg[[nm]] <- optional_defaults[[nm]]
+  if (!nm %in% names(cfg)) {
+    cfg[[nm]] <- optional_defaults[[nm]]
+    next
+  }
+
+  values <- cfg[[nm]]
+  values[is.na(values)] <- optional_defaults[[nm]]
+  cfg[[nm]] <- as.character(values)
 }
 
 dir.create(opt$out, recursive = TRUE, showWarnings = FALSE)
+opt$out <- normalizePath(opt$out, winslash = "/", mustWork = FALSE)
 summary_path <- file.path(opt$out, "summary.csv")
 
 summary_columns <- c(

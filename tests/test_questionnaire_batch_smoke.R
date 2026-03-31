@@ -106,6 +106,15 @@ if (file.exists(summary_csv)) {
     check(sprintf("report.html exists: %s", slug), file.exists(rpath))
   }
 
+  for (slug in q_slugs) {
+    rpath <- file.path(out_dir, slug, "report.html")
+    html_lines <- if (file.exists(rpath)) readLines(rpath, warn = FALSE, encoding = "UTF-8") else character()
+    check(
+      sprintf("report.html includes residual plot section: %s", slug),
+      any(grepl("Residual plot|Pearson residuals vs index", html_lines))
+    )
+  }
+
   # 残差プロットの存在確認
   for (slug in q_slugs) {
     ppath <- file.path(out_dir, slug, "figures", "residual_plot.png")
