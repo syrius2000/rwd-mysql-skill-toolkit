@@ -51,6 +51,7 @@ skill_output/*
 !skill_output/.gitkeep
 skill_out/*
 !skill_out/.gitkeep
+tests/skill_out_smoke/
 .env_local
 *.excalidraw
 .agent/skills/*/*/*.png
