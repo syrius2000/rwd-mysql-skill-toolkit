@@ -66,7 +66,8 @@ summary_columns <- c(
   "run_id","survey_id","question_id","analysis_type","variables","subset_expr_applied",
   "na_policy","n_total","n_used","n_missing","model_name","statistic_name",
   "statistic_value","df","p_value","effect_name","effect_value","max_abs_pearson_res",
-  "max_residual_cell","residual_plot_path","mosaic_plot_path","assoc_plot_path",
+  "max_residual_cell","n_significant_cells","n_total_cells","top3_residual_cells",
+  "interpretation_flag","residual_plot_path","mosaic_plot_path","assoc_plot_path",
   "report_path","status","error_message","executed_at"
 )
 
@@ -126,6 +127,10 @@ for (i in seq_len(nrow(cfg))) {
     effect_value        = NA_real_,
     max_abs_pearson_res = NA_real_,
     max_residual_cell   = "",
+    n_significant_cells = NA_integer_,
+    n_total_cells       = NA_integer_,
+    top3_residual_cells = "",
+    interpretation_flag = "",
     residual_plot_path  = residual_plot,
     mosaic_plot_path    = mosaic_plot,
     assoc_plot_path     = assoc_plot
@@ -160,6 +165,10 @@ for (i in seq_len(nrow(cfg))) {
     effect_value         = m$effect_value,
     max_abs_pearson_res  = m$max_abs_pearson_res,
     max_residual_cell    = m$max_residual_cell,
+    n_significant_cells  = m$n_significant_cells,
+    n_total_cells        = m$n_total_cells,
+    top3_residual_cells  = m$top3_residual_cells,
+    interpretation_flag  = m$interpretation_flag,
     residual_plot_path   = m$residual_plot_path,
     mosaic_plot_path     = m$mosaic_plot_path,
     assoc_plot_path      = m$assoc_plot_path,
