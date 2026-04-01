@@ -56,3 +56,7 @@ tests/skill_out_smoke/
 *.excalidraw
 .agent/skills/*/*/*.png
 .cursor/skills/*/*/*.png
+
+# skill templates may produce outputs (do not track)
+.agent/skills/**/templates/skill_out/
+.cursor/skills/**/templates/skill_out/
