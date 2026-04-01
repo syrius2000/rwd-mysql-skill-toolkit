@@ -22,3 +22,11 @@
 - If `p_value` is small but `effect_value` is tiny, practical impact may be weak.
 - In 3-way analyses, review subgroup patterns before making conclusions.
 - Always report top residual cells with plain language labels.
+
+## Cramer's V and `summary.csv`
+
+- **`cramer_v_marginal` / `cramer_v_effect_label`**: Effect size for the **first two** config variables. For 3-way, this is the **collapsed** var1×var2 table (marginal over var3), not the saturated 3-way model.
+- **`cramer_v_strata_*`**: For 3-way only. Strata follow **`vcd::assocstats`**: dimensions **after the first two** define strata (your `var3`). JSON holds per-stratum `V`, `df_star`, and `label`.
+- **`marginal_strata_signal`**: If `review_stratified`, `|V_marginal - mean(V_strata)| ≥ 0.05` — **prefer stratified** tables/plots when describing var1×var2. This is a **heuristic**, not a formal Simpson's paradox test. V measures **strength**, not **direction**. The mean of stratum V is **unweighted** across strata.
+
+Read the **Decision summary** section in each `report.html` for the same numbers and caveats in English.

@@ -52,6 +52,13 @@ metadata:
 
 分析例・図表・レンダー結果はプロジェクトルートの **`./skill_out/vcd_categorical/`**（必要に応じて `ordinal/` 等のサブディレクトリ）。
 
+レンダー後、同じディレクトリに **`.metrics.rds`** が書かれ、Cramér の V 関連指標（`cramer_v_marginal`, `cramer_v_df_star`, `cramer_v_effect_label`, 3-way の層別 JSON・平均・最大、`marginal_strata_signal` など）を回収できる。
+
+## 効果量（Cramér の V）
+
+- **2-way**: 表全体の V。ラベルは英語（`negligible` / `small` / `medium` / `large`）。閾値は 0.1, 0.3, 0.5 を `sqrt(min(r-1,c-1))` で割った値、境界は **≥**。
+- **3-way**: **周辺** var1×var2 の V に加え、`vcd::assocstats` による **第3次元の層別** V（リスト）。`|V_marginal - mean(V_strata)| ≥ 0.05` で `marginal_strata_signal = review_stratified`（層別優先の注意）。探索的ヒューリスティックであり、シンプソン・パラドックスの正式検定ではない。
+
 ## リソースの使い分け
 
 | パス | 役割 |

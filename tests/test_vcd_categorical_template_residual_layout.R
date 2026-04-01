@@ -21,6 +21,7 @@ for (p in paths) {
 
   chunk_names <- c(
     "summary-text",
+    "decision-summary",
     "residual-model",
     "residual-plot-heading",
     "residual-plot",
