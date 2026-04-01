@@ -69,6 +69,13 @@ metadata:
 - `p_value`
 - `effect_name`
 - `effect_value`
+- `cramer_v_marginal` — 2-way: 全体の Cramér V。3-way: var1×var2 の周辺表の V（`effect_value` と同値）
+- `cramer_v_df_star` — `min(r-1,c-1)`（周辺 2-way 表に基づく）
+- `cramer_v_effect_label` — 英語ラベル（`negligible` / `small` / `medium` / `large`）。閾値は 0.1,0.3,0.5 を `sqrt(df*)` で割った値、境界は **≥** で上の帯
+- `cramer_v_strata_json` — 3-way のみ。層別 V・各層の df*・ラベルを JSON（2-way は空文字）
+- `cramer_v_strata_mean` / `cramer_v_strata_max` / `cramer_v_strata_max_level` — 3-way の層別 V の要約（2-way は NA / 空）
+- `marginal_strata_signal` — `none` または `review_stratified`（`|V_marginal - mean(V_strata)| ≥ 0.05` のとき）
+- `marginal_strata_note` — 上記の理由コードまたは閾値内の注記
 - `max_abs_pearson_res`
 - `max_residual_cell`
 - `mosaic_rendered`
@@ -93,6 +100,7 @@ Rscript .agent/skills/questionnaire-batch-analysis/templates/batch_runner.R \
 
 ## 注意
 
+- `report.Rmd` は層別 Cramér V の JSON 出力に **`jsonlite`** を使う（`pacman::p_load` 既定で読み込み）。
 - `analysis_type` が `likert_*` の場合、`ordered_levels` をできるだけ指定する。
 - 3-way は分かりにくくなりやすいので、残差図で乖離上位セルを確認する。
 - mosaic/assoc は `plot_mode=auto`（既定）でセル数 > 16 (2-way) / > 36 (3-way) またはラベル長 > 24 文字の場合に自動省略される。`always` で強制描画も可。

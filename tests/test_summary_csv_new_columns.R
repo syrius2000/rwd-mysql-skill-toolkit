@@ -110,6 +110,31 @@ if (file.exists(summary_csv)) {
     check("interpretation_flag values are valid",
           all(s$interpretation_flag %in% valid_flags))
   }
+
+  cram_cols <- c(
+    "cramer_v_marginal", "cramer_v_df_star", "cramer_v_effect_label",
+    "cramer_v_strata_json", "cramer_v_strata_mean", "cramer_v_strata_max",
+    "cramer_v_strata_max_level", "marginal_strata_signal", "marginal_strata_note"
+  )
+  for (col in cram_cols) {
+    check(paste("column exists:", col), col %in% names(s))
+  }
+
+  if (all(cram_cols %in% names(s))) {
+    row2 <- s[s$question_id == "q02", , drop = FALSE]
+    check("3-way cramer_v_marginal is finite", length(row2) == 1L && is.finite(row2$cramer_v_marginal[1]))
+    check("3-way cramer_v_strata_json parses as JSON",
+          length(row2) == 1L && nzchar(row2$cramer_v_strata_json[1]))
+    if (length(row2) == 1L && nzchar(row2$cramer_v_strata_json[1])) {
+      suppressPackageStartupMessages({
+        if (!requireNamespace("jsonlite", quietly = TRUE)) install.packages("jsonlite")
+      })
+      parsed <- tryCatch(jsonlite::parse_json(row2$cramer_v_strata_json[1]), error = function(e) NULL)
+      check("cramer_v_strata_json is valid JSON", is.list(parsed) && length(parsed) >= 1L))
+    }
+    sig_ok <- row2$marginal_strata_signal[1] %in% c("none", "review_stratified")
+    check("marginal_strata_signal is none or review_stratified", length(row2) == 1L && sig_ok)
+  }
 }
 
 cat(sprintf("\n--- Results: %d passed, %d failed ---\n", pass, fail))

@@ -70,6 +70,9 @@ if (file.exists(summary_csv)) {
   expected_cols <- c(
     "run_id","survey_id","question_id","analysis_type","n_total","n_used","n_missing",
     "model_name","statistic_value","p_value","effect_value",
+    "cramer_v_marginal","cramer_v_df_star","cramer_v_effect_label",
+    "cramer_v_strata_json","cramer_v_strata_mean","cramer_v_strata_max",
+    "cramer_v_strata_max_level","marginal_strata_signal","marginal_strata_note",
     "max_abs_pearson_res","max_residual_cell",
     "mosaic_rendered","assoc_rendered","skip_reason","residual_plot_mode",
     "report_path","status"

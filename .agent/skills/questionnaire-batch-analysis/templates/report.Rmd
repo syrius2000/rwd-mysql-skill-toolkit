@@ -23,7 +23,7 @@ params:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 9, fig.height = 7)
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
-pacman::p_load(vcd, ggplot2, knitr, gt)
+pacman::p_load(vcd, ggplot2, knitr, gt, jsonlite)
 dir.create(params$output_dir, recursive = TRUE, showWarnings = FALSE)
 fig_dir <- file.path(params$output_dir, "figures")
 dir.create(fig_dir, recursive = TRUE, showWarnings = FALSE)
@@ -70,6 +70,42 @@ residual_plot_mode <- function(tbl, max_cells_dotplot = params$max_cells_dotplot
   if (total_cells <= max_cells_dotplot) return("dotplot")
   if (n_way <= 2L) return("heatmap")
   "facet_heatmap"
+}
+
+cramer_v_df_star <- function(tab2) {
+  d <- dim(tab2)
+  as.integer(min(d[1L] - 1L, d[2L] - 1L))
+}
+
+cramer_effect_label_from_v <- function(V, tab2) {
+  if (length(V) != 1L || is.na(V)) return(NA_character_)
+  dfs <- cramer_v_df_star(tab2)
+  if (!is.finite(dfs) || dfs < 1L) return(NA_character_)
+  w_s <- 0.1 / sqrt(dfs)
+  w_m <- 0.3 / sqrt(dfs)
+  w_l <- 0.5 / sqrt(dfs)
+  if (V >= w_l) "large"
+  else if (V >= w_m) "medium"
+  else if (V >= w_s) "small"
+  else "negligible"
+}
+
+cramer_strata_list_to_json <- function(strata_named_vs, tab2_per_stratum) {
+  if (length(strata_named_vs) == 0L) return("{}")
+  obj <- vector("list", length(strata_named_vs))
+  names(obj) <- names(strata_named_vs)
+  for (i in seq_along(strata_named_vs)) {
+    Vi <- unname(strata_named_vs[[i]])
+    t2 <- tab2_per_stratum[[i]]
+    lab <- NA_character_
+    if (!is.null(t2) && length(Vi) == 1L && !is.na(Vi)) lab <- cramer_effect_label_from_v(Vi, t2)
+    obj[[i]] <- list(
+      V = Vi,
+      df_star = if (is.null(t2)) NA_integer_ else cramer_v_df_star(t2),
+      label = lab
+    )
+  }
+  jsonlite::toJSON(obj, auto_unbox = TRUE)
 }
 ```
 
@@ -139,6 +175,8 @@ nd <- length(dim(tab))
 ```
 
 ```{r model-and-residual}
+MARGINAL_STRATA_DELTA <- 0.05
+
 model_name <- NA_character_
 statistic_name <- NA_character_
 statistic_value <- NA_real_
@@ -146,6 +184,15 @@ df_val <- NA_real_
 p_value <- NA_real_
 effect_name <- "none"
 effect_value <- NA_real_
+cramer_v_marginal <- NA_real_
+cramer_v_df_star_val <- NA_integer_
+cramer_v_effect_label <- NA_character_
+cramer_v_strata_json <- ""
+cramer_v_strata_mean <- NA_real_
+cramer_v_strata_max <- NA_real_
+cramer_v_strata_max_level <- NA_character_
+marginal_strata_signal <- "none"
+marginal_strata_note <- ""
 
 if (nd == 2L) {
   ct <- suppressWarnings(chisq.test(tab))
@@ -159,6 +206,9 @@ if (nd == 2L) {
   assoc_stat <- suppressWarnings(vcd::assocstats(tab))
   effect_name <- "cramers_v"
   effect_value <- unname(assoc_stat$cramer)
+  cramer_v_marginal <- effect_value
+  cramer_v_df_star_val <- cramer_v_df_star(tab)
+  cramer_v_effect_label <- cramer_effect_label_from_v(cramer_v_marginal, tab)
 } else {
   df_cells <- as.data.frame(tab, stringsAsFactors = TRUE)
   f0 <- as.formula(paste("Freq ~", paste(vars, collapse = " + ")))
@@ -173,6 +223,55 @@ if (nd == 2L) {
   statistic_value <- an$Deviance[2]
   df_val <- an$Df[2]
   p_value <- an$`Pr(>Chi)`[2]
+
+  tab_m <- stats::margin.table(tab, c(1L, 2L))
+  ast_m <- suppressWarnings(vcd::assocstats(tab_m))
+  cramer_v_marginal <- unname(ast_m$cramer)
+  effect_name <- "cramers_v"
+  effect_value <- cramer_v_marginal
+  cramer_v_df_star_val <- cramer_v_df_star(tab_m)
+  cramer_v_effect_label <- cramer_effect_label_from_v(cramer_v_marginal, tab_m)
+
+  ast_s <- suppressWarnings(vcd::assocstats(tab))
+  if (!("cramer" %in% names(ast_s))) {
+    n_str <- dim(tab)[3L]
+    dn3 <- dimnames(tab)[[3L]]
+    if (is.null(dn3)) dn3 <- as.character(seq_len(n_str))
+    strata_vs <- vapply(ast_s, function(z) unname(z$cramer), numeric(1))
+    nm_ast <- names(ast_s)
+    names(strata_vs) <- if (!is.null(nm_ast) && all(nzchar(nm_ast))) nm_ast else dn3
+    tab2_list <- vector("list", n_str)
+    names(tab2_list) <- dn3
+    for (i in seq_len(n_str)) {
+      sl <- rep(list(TRUE), nd)
+      sl[[3L]] <- i
+      t2 <- do.call(`[`, c(list(tab), sl, list(drop = TRUE)))
+      t2 <- as.table(t2)
+      dimnames(t2) <- dimnames(tab)[1:2]
+      tab2_list[[i]] <- t2
+    }
+    cramer_v_strata_mean <- mean(strata_vs, na.rm = TRUE)
+    cramer_v_strata_max <- max(strata_vs, na.rm = TRUE)
+    im <- which.max(stats::replace(strata_vs, is.na(strata_vs), -Inf))
+    if (length(im) == 1L && is.finite(strata_vs[im])) {
+      cramer_v_strata_max_level <- names(strata_vs)[im]
+    }
+    cramer_v_strata_json <- as.character(
+      cramer_strata_list_to_json(as.list(strata_vs), tab2_list)
+    )
+    ddiff <- abs(cramer_v_marginal - cramer_v_strata_mean)
+    if (!is.finite(ddiff) || !any(is.finite(strata_vs))) {
+      marginal_strata_note <- "insufficient_strata_or_na"
+    } else if (ddiff >= MARGINAL_STRATA_DELTA) {
+      marginal_strata_signal <- "review_stratified"
+      marginal_strata_note <- sprintf(
+        "|V_marginal - mean(V_strata)|=%.4f >= %.2f",
+        ddiff, MARGINAL_STRATA_DELTA
+      )
+    } else {
+      marginal_strata_note <- "within_threshold"
+    }
+  }
 }
 
 resid_tbl$cell_label <- apply(resid_tbl[, vars, drop = FALSE], 1, paste, collapse = ":")
@@ -352,9 +451,55 @@ cat("- Model:", model_name, "\n")
 cat("- Statistic:", statistic_name, "=", round(statistic_value, 4), "\n")
 cat("- p-value:", format(p_value, digits = 4), "\n")
 cat("- Effect:", effect_name, "=", ifelse(is.na(effect_value), "", round(effect_value, 4)), "\n")
+if (nd == 2L) {
+  cat("- Cramer's V (numeric):", ifelse(is.na(cramer_v_marginal), "", round(cramer_v_marginal, 4)),
+      "; df*:", cramer_v_df_star_val,
+      "; label:", cramer_v_effect_label, "\n")
+} else {
+  cat("- Cramer's V marginal (var1 x var2 collapsed):",
+      ifelse(is.na(cramer_v_marginal), "", round(cramer_v_marginal, 4)),
+      "; df*:", cramer_v_df_star_val,
+      "; label:", cramer_v_effect_label, "\n")
+  cat("- Strata (vcd::assocstats last dim =", vars[3], "): mean(V) =",
+      ifelse(is.na(cramer_v_strata_mean), "", round(cramer_v_strata_mean, 4)),
+      "; max(V) =", ifelse(is.na(cramer_v_strata_max), "", round(cramer_v_strata_max, 4)),
+      ifelse(nzchar(cramer_v_strata_max_level), paste0(" (max stratum: ", cramer_v_strata_max_level, ")"), ""),
+      "\n")
+  cat("- Marginal vs stratified signal:", marginal_strata_signal,
+      ifelse(nzchar(marginal_strata_note), paste0(" (", marginal_strata_note, ")"), ""), "\n")
+}
+
 cat("- Max |Pearson residual|:", round(max_abs_pearson_res, 3), "at", max_residual_cell, "\n")
 cat("- Significant cells (|res| > 1.96):", n_significant_cells, "/", n_total_cells, "\n")
 cat("- Interpretation:", interpretation_flag, "\n")
+```
+
+## Decision summary
+
+```{r decision-summary, results='asis'}
+cat("### Decision summary\n\n")
+if (nd == 3L) {
+  cat("- **Cramer's V (marginal, ", vars[1], " x ", vars[2], ")**: ",
+      ifelse(is.na(cramer_v_marginal), "NA", sprintf("%.4f", cramer_v_marginal)),
+      " (label: **", cramer_v_effect_label, "**)\n", sep = "")
+  cat("- **Stratified V (by ", vars[3], ")**: mean = ",
+      ifelse(is.na(cramer_v_strata_mean), "NA", sprintf("%.4f", cramer_v_strata_mean)),
+      ", max = ",
+      ifelse(is.na(cramer_v_strata_max), "NA", sprintf("%.4f", cramer_v_strata_max)),
+      ifelse(nzchar(cramer_v_strata_max_level),
+             sprintf(" (max at stratum `%s`)", cramer_v_strata_max_level), ""),
+      "\n", sep = "")
+  if (identical(marginal_strata_signal, "review_stratified")) {
+    cat("\n**Attention:** Marginal Cramer's V and the mean of stratum-specific V differ by at least 0.05. **Prefer stratified tables and plots** when describing the association between `",
+        vars[1], "` and `", vars[2], "`.\n\n", sep = "")
+  }
+  cat("\n**Caveats:** This flag is a **heuristic** only; it does not prove or disprove Simpson's paradox. Cramer's V measures **strength**, not **direction** of association—check cell counts or rates if reversal is a concern. The mean of stratum V uses **equal weights across strata** (not sample-size weighted). `vcd::assocstats` treats dimensions **after the first two** as strata—your `var1`, `var2`, `var3` order defines this.\n\n")
+} else {
+  cat("- **Cramer's V**: ",
+      ifelse(is.na(cramer_v_marginal), "NA", sprintf("%.4f", cramer_v_marginal)),
+      " (df* = ", cramer_v_df_star_val, ", label: **", cramer_v_effect_label, "**)\n\n", sep = "")
+  cat("**Caveats:** Labels use Cohen-style thresholds scaled by \\(1/\\sqrt{\\min(r-1,c-1)}\\); boundaries use **≥** to the next band. This is a rule-of-thumb, not a formal test.\n\n")
+}
 ```
 
 ## 残差解釈ガイド
@@ -407,6 +552,15 @@ metrics <- list(
   p_value             = p_value,
   effect_name         = effect_name,
   effect_value        = effect_value,
+  cramer_v_marginal   = cramer_v_marginal,
+  cramer_v_df_star    = cramer_v_df_star_val,
+  cramer_v_effect_label = cramer_v_effect_label,
+  cramer_v_strata_json = cramer_v_strata_json,
+  cramer_v_strata_mean = cramer_v_strata_mean,
+  cramer_v_strata_max = cramer_v_strata_max,
+  cramer_v_strata_max_level = cramer_v_strata_max_level,
+  marginal_strata_signal = marginal_strata_signal,
+  marginal_strata_note = marginal_strata_note,
   max_abs_pearson_res = max_abs_pearson_res,
   max_residual_cell   = max_residual_cell,
   n_significant_cells = n_significant_cells,
