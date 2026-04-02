@@ -1,0 +1,7 @@
+{
+  "feature": "vcd-ai-evaluation-report",
+  "status": "tasks",
+  "language": "Japanese",
+  "created_at": "2026-04-02T15:22:07+09:00",
+  "description": "vcd-categorical-analysis スキルのAI寄与度を深め、結果の一気通貫出力から個別結果表の保存とAIによる評価レポート出力に改造する。"
+}

@@ -5,12 +5,19 @@
 ```mermaid
 sequenceDiagram
   participant User
-  participant Template as templates_R_or_Rmd
-  participant R as R_or_rmarkdown
+  participant R as R Script
   participant Out as skill_out_vcd_categorical
-  User->>Template: コピー・params 編集
-  User->>R: Rscript または render
-  R->>Out: 表・図・HTML_PDF
+  participant AI as AI Agent (Evaluation)
+  participant Report as AI Artifact (3 chapters)
+  
+  User->>AI: データ指定＆レポート作成依頼
+  AI->>R: `analysis.R` 実行
+  R->>Out: JSON(評価指標)、CSV(残差)、PNG(図表)
+  Out->>AI: 抽出結果の取得
+  AI->>AI: 第1段階(主効果残差)、第2段階(2-way残差) 解釈
+  AI->>AI: 第一章(評価)、第二章(残差)、第三章(図表) を構成
+  AI->>Report: レポート (Markdown) 出力
+  Report->>User: 報告
 ```
 
 ## 判断木
