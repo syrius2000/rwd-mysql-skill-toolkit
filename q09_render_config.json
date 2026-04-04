@@ -1,0 +1,8 @@
+{
+  "collapse_below_n": 2,
+  "max_levels_per_var": 10,
+  "strata_to_render": [
+    "痛くなりそうなとき・熱が出そうなとき",
+    "痛みが我慢できなくなったとき・熱が高くなったとき"
+  ]
+}

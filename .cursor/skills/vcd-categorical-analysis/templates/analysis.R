@@ -43,14 +43,36 @@ load_input_data <- function(data_path, vars_str, freq_col_arg, label_arg) {
     for (j in base::seq_len(base::ncol(df))) {
       if (base::is.character(df[[j]])) df[[j]] <- base::trimws(df[[j]])
     }
+
     if (base::is.null(vars_str)) base::stop("[ERROR] --vars is required when --data is specified")
     vars <- base::trimws(base::strsplit(vars_str, ",")[[1]])
     freq_col <- base::trimws(freq_col_arg)
+
     missing_cols <- base::setdiff(c(vars, freq_col), base::names(df))
     if (base::length(missing_cols) > 0) {
       base::stop("[ERROR] Columns not found in data: ", base::paste(missing_cols, collapse = ", "),
                  "\n  Available columns: ", base::paste(base::names(df), collapse = ", "))
     }
+
+    # Validate frequency column is numeric
+    if (!base::is.numeric(df[[freq_col]])) {
+      base::message("[WARNING] frequency column '", freq_col, "' is not numeric. Attempting conversion.")
+      df[[freq_col]] <- base::as.numeric(base::as.character(df[[freq_col]]))
+    }
+
+    # Ensure categorical variables are factors
+    for (v in vars) {
+      if (!base::is.factor(df[[v]])) {
+        base::message("[INFO] Converting '", v, "' to factor.")
+        df[[v]] <- base::as.factor(df[[v]])
+      }
+    }
+
+    # Handle empty levels
+    for (v in vars) {
+      df[[v]] <- base::droplevels(df[[v]])
+    }
+
     data_label <- if (!base::is.null(label_arg)) label_arg else
       base::gsub("\\.[^.]+$", "", base::basename(data_path))
   }
@@ -83,7 +105,8 @@ generate_profile <- function(df, vars, freq_col = "Freq", output_dir) {
     total_cells = total_cells,
     total_cells_2way_marginal = marginal_cells,
     n_nonzero_cells = n_nonzero,
-    sparsity_ratio = base::round(n_nonzero / total_cells, 3)
+    sparsity_ratio = base::round(n_nonzero / total_cells, 3),
+    warning = if (n_nonzero < total_cells) "Contains zero-count cells (Sparsity). GLM may have convergence issues." else NULL
   )
   jsonlite::write_json(profile, base::file.path(output_dir, "data_profile.json"),
                        auto_unbox = TRUE, pretty = TRUE)
