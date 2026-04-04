@@ -1,155 +1,327 @@
-# Minimal categorical pipeline (nominal, up to 3-way). Copy to project and edit paths/vars.
+# VCD Categorical Analysis Pipeline (v2.0)
+# 2-pass mode: --profile (Pass 1) or --render --config <path> (Pass 2)
 # Outputs under ./skill_out/vcd_categorical/
-# AI-Pipeline mode: each result is saved as JSON/CSV for AI evaluation
-
-output_dir <- "./skill_out/vcd_categorical/"
-base::dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 # --- Packages ---
 if (!base::requireNamespace("pacman", quietly = TRUE)) utils::install.packages("pacman")
-pacman::p_load(datasets, vcd, gt, ggplot2, jsonlite)
+pacman::p_load(vcd, gt, DT, htmlwidgets, ggplot2, jsonlite)
 
-# --- Example: 2-way (Titanic) ---
-base::data("Titanic", package = "datasets")
-df <- base::as.data.frame(Titanic)
-tab <- stats::xtabs(Freq ~ Class + Survived, data = df)
-
-base::print(tab)
-ct <- stats::chisq.test(tab)
-base::print(ct)
-
-grDevices::png(base::file.path(output_dir, "mosaic_titanic.png"), width = 800, height = 600)
-vcd::mosaic(tab, shade = TRUE, main = "Titanic Class x Survived")
-grDevices::dev.off()
-
-grDevices::png(base::file.path(output_dir, "assoc_titanic.png"), width = 800, height = 600)
-vcd::assoc(tab, residuals_type = "Pearson", shade = TRUE, main = "Association (Pearson, shaded)")
-grDevices::dev.off()
-
-res <- ct$residuals
-longdf <- base::as.data.frame(base::as.table(res))
-base::names(longdf) <- c("Var1", "Var2", "pearson_res")
-longdf$abs_pearson_res <- base::abs(longdf$pearson_res)
-longdf <- longdf[base::order(-longdf$abs_pearson_res), ]
-mx <- base::max(longdf$abs_pearson_res, na.rm = TRUE)
-if (!base::is.finite(mx) || mx < 1e-12) mx <- 1
-
-tbl <- gt::gt(longdf) |>
-  gt::fmt_number(columns = pearson_res, decimals = 3) |>
-  gt::data_color(
-    columns = pearson_res,
-    domain = c(-mx, mx),
-    palette = "RdBu"
-  )
-gt::gtsave(tbl, base::file.path(output_dir, "residuals_titanic.html"))
-
-# AI評価用：CSVとJSONの出力
-utils::write.csv(longdf, base::file.path(output_dir, "residuals_titanic.csv"), row.names = FALSE)
-ast_res <- base::suppressWarnings(vcd::assocstats(tab))
-titanic_summary <- base::list(
-  test_used = "stats::chisq.test",
-  statistic = base::unname(ct$statistic),
-  p_value = ct$p.value,
-  cramers_v = ast_res$cramer,
-  max_residual_cell = base::paste(longdf[1, c("Var1", "Var2")], collapse = ":"),
-  max_residual_value = longdf$abs_pearson_res[1]
-)
-jsonlite::write_json(titanic_summary, base::file.path(output_dir, "summary_titanic.json"), auto_unbox = TRUE)
-
-# --- Poisson loglinear (2-way) ---
-fit <- base::tryCatch(
-  stats::glm(Freq ~ Class * Survived, family = stats::poisson, data = df),
-  error = function(e) { base::message("[ERROR] glm fit failed: ", base::conditionMessage(e)); NULL }
-)
-if (!base::is.null(fit)) base::print(base::summary(fit))
-
-# --- Example: 3-way (HairEyeColor) ---
-base::data("HairEyeColor", package = "datasets")
-df3 <- base::as.data.frame(HairEyeColor)
-vars3 <- c("Hair", "Eye", "Sex")
-tab3 <- stats::xtabs(Freq ~ Hair + Eye + Sex, data = df3)
-
-grDevices::png(base::file.path(output_dir, "mosaic_haireye.png"), width = 800, height = 600)
-vcd::mosaic(tab3, shade = TRUE, main = "HairEyeColor 3-way")
-grDevices::dev.off()
-
-grDevices::png(base::file.path(output_dir, "cotab_haireye.png"), width = 800, height = 600)
-vcd::cotabplot(tab3, panel = vcd::cotab_mosaic, shade = TRUE, main = "Conditional mosaic (by Sex)")
-grDevices::dev.off()
-
-# 2段階ポアソンモデル (Phase 1: 主効果のみ, Phase 2: 2-way交互作用)
-fit3_ind <- base::tryCatch(
-  stats::glm(Freq ~ Hair + Eye + Sex, family = stats::poisson, data = df3),
-  error = function(e) { base::message("[ERROR] fit3_ind failed: ", base::conditionMessage(e)); NULL }
-)
-fit3_2way <- base::tryCatch(
-  stats::glm(Freq ~ (Hair + Eye + Sex)^2, family = stats::poisson, data = df3),
-  error = function(e) { base::message("[ERROR] fit3_2way failed: ", base::conditionMessage(e)); NULL }
-)
-fit3_sat <- base::tryCatch(
-  stats::glm(Freq ~ Hair * Eye * Sex, family = stats::poisson, data = df3),
-  error = function(e) { base::message("[ERROR] fit3_sat failed: ", base::conditionMessage(e)); NULL }
-)
-
-anova_res <- base::tryCatch(
-  stats::anova(fit3_ind, fit3_2way, fit3_sat, test = "Chisq"),
-  error = function(e) {
-    base::message("[WARNING] stats::anova failed (possibly sparse data): ", base::conditionMessage(e))
-    NULL
-  }
-)
-if (!base::is.null(anova_res)) base::print(anova_res)
-
-# 残差データの回収 (Main & 2-Way)
-collect_res <- function(fit, label, vars) {
-  if (base::is.null(fit)) return(NULL)
-  d <- base::as.data.frame(base::as.table(stats::xtabs(base::stats::formula(fit), data = df3)))
-  # Note: xtabs(formula(fit)) matches the data structure of fit's response
-  # However, it's safer to use the original df3 with residual values
-  res_df <- df3
-  res_df$model_type <- label
-  res_df$pearson_res <- stats::residuals(fit, type = "pearson")
-  res_df$abs_pearson_res <- base::abs(res_df$pearson_res)
-  res_df$cell_label <- base::apply(res_df[, vars, drop = FALSE], 1, base::paste, collapse = ":")
-  return(res_df)
+# --- CLI args ---
+args <- base::commandArgs(trailingOnly = TRUE)
+mode <- if ("--profile" %in% args) "profile" else "render"
+config_path <- NULL
+if ("--config" %in% args) {
+  idx <- base::which(args == "--config")
+  if (idx < base::length(args)) config_path <- args[idx + 1]
 }
 
-res_main <- collect_res(fit3_ind, "Main", vars3)
-res_2way <- collect_res(fit3_2way, "2-Way", vars3)
-res_combined <- base::rbind(res_main, res_2way)
+# ============================================================
+# generate_profile: Pass 1 - lightweight data profiling
+# ============================================================
+generate_profile <- function(df, vars, freq_col = "Freq", output_dir) {
+  var_info <- base::lapply(vars, function(v) {
+    lvls <- base::levels(base::factor(df[[v]]))
+    base::list(n_levels = base::length(lvls), levels = lvls)
+  })
+  base::names(var_info) <- vars
 
-# AI評価用フットプリントの出力
-utils::write.csv(res_combined, base::file.path(output_dir, "residuals_haireye_raw.csv"), row.names = FALSE)
+  tab <- stats::xtabs(stats::as.formula(
+    base::paste(freq_col, "~", base::paste(vars, collapse = " + "))
+  ), data = df)
+  total_cells <- base::prod(base::dim(tab))
+  n_nonzero <- base::sum(base::as.vector(tab) > 0)
 
-# 有意または上位残差の抽出 (トークン節約)
-sig_res <- res_combined[res_combined$abs_pearson_res >= 1.96, ]
-sig_res <- sig_res[base::order(-sig_res$abs_pearson_res), ]
-# 各モデルタイプから最低限いくつか残す
-top_n <- 20
-sig_compact <- base::rbind(
-  utils::head(res_main[base::order(-res_main$abs_pearson_res), ], top_n),
-  utils::head(res_2way[base::order(-res_2way$abs_pearson_res), ], top_n)
-)
-sig_compact <- sig_compact[!base::duplicated(base::paste(sig_compact$model_type, sig_compact$cell_label)), ]
-utils::write.csv(sig_compact, base::file.path(output_dir, "residuals_haireye_significant.csv"), row.names = FALSE)
+  marginal_cells <- if (base::length(vars) >= 2) {
+    base::prod(base::dim(tab)[1:2])
+  } else total_cells
 
-anova_p <- if (!base::is.null(anova_res)) anova_res$`Pr(>Chi)`[2] else NA
-haireye_summary <- base::list(
-  test_used = "stats::anova (Poisson GLM)",
-  models_tested = c("Main Effects (A+B+C)", "All 2-way Interactions ((A+B+C)^2)"),
-  deviance_main = if (!base::is.null(fit3_ind)) fit3_ind$deviance else NA,
-  df_main = if (!base::is.null(fit3_ind)) fit3_ind$df.residual else NA,
-  deviance_2way = if (!base::is.null(fit3_2way)) fit3_2way$deviance else NA,
-  df_2way = if (!base::is.null(fit3_2way)) fit3_2way$df.residual else NA,
-  p_value_main_vs_2way = anova_p,
-  cramers_v_marginal = base::suppressWarnings(vcd::assocstats(base::margin.table(tab3, c(1, 2)))$cramer),
-  top_residual_main_effects = if (!base::is.null(res_main)) {
-    base::list(cell = res_main$cell_label[base::which.max(res_main$abs_pearson_res)], 
-               res = res_main$pearson_res[base::which.max(res_main$abs_pearson_res)])
-  } else NULL,
-  top_residual_2way_interactions = if (!base::is.null(res_2way)) {
-    base::list(cell = res_2way$cell_label[base::which.max(res_2way$abs_pearson_res)], 
-               res = res_2way$pearson_res[base::which.max(res_2way$abs_pearson_res)])
-  } else NULL
-)
-jsonlite::write_json(haireye_summary, base::file.path(output_dir, "summary_haireye.json"), auto_unbox = TRUE)
+  profile <- base::list(
+    n_dimensions = base::length(vars),
+    variables = var_info,
+    total_cells = total_cells,
+    total_cells_2way_marginal = marginal_cells,
+    n_nonzero_cells = n_nonzero,
+    sparsity_ratio = base::round(n_nonzero / total_cells, 3)
+  )
+  jsonlite::write_json(profile, base::file.path(output_dir, "data_profile.json"),
+                       auto_unbox = TRUE, pretty = TRUE)
+  base::message("[PROFILE] data_profile.json written to ", output_dir)
+  return(base::invisible(profile))
+}
+
+# ============================================================
+# generate_data: Pass 2 - GLM fitting, residuals, JSON/CSV
+# ============================================================
+generate_data <- function(df, vars, freq_col = "Freq", output_dir, config, data_label = "data") {
+  if (!base::is.null(config$collapse_below_n) && config$collapse_below_n > 0) {
+    for (v in vars) {
+      freq_by_level <- stats::tapply(df[[freq_col]], df[[v]], base::sum)
+      minor_levels <- base::names(freq_by_level[freq_by_level <= config$collapse_below_n])
+      if (base::length(minor_levels) > 0) {
+        df[[v]] <- base::ifelse(df[[v]] %in% minor_levels, "Other", base::as.character(df[[v]]))
+        df[[v]] <- base::factor(df[[v]])
+      }
+    }
+  }
+
+  fml_main <- stats::as.formula(base::paste(freq_col, "~", base::paste(vars, collapse = " + ")))
+  fml_2way <- stats::as.formula(base::paste(freq_col, "~ (", base::paste(vars, collapse = " + "), ")^2"))
+  fml_sat  <- stats::as.formula(base::paste(freq_col, "~", base::paste(vars, collapse = " * ")))
+
+  fit_main <- base::tryCatch(stats::glm(fml_main, family = stats::poisson, data = df),
+    error = function(e) { base::message("[ERROR] fit_main: ", base::conditionMessage(e)); NULL })
+  fit_2way <- base::tryCatch(stats::glm(fml_2way, family = stats::poisson, data = df),
+    error = function(e) { base::message("[ERROR] fit_2way: ", base::conditionMessage(e)); NULL })
+  fit_sat  <- base::tryCatch(stats::glm(fml_sat, family = stats::poisson, data = df),
+    error = function(e) { base::message("[ERROR] fit_sat: ", base::conditionMessage(e)); NULL })
+
+  anova_res <- base::tryCatch(stats::anova(fit_main, fit_2way, fit_sat, test = "Chisq"),
+    error = function(e) { base::message("[WARNING] anova: ", base::conditionMessage(e)); NULL })
+
+  collect_res <- function(fit, label) {
+    if (base::is.null(fit)) return(NULL)
+    res_df <- df
+    res_df$model_type <- label
+    res_df$pearson_res <- stats::residuals(fit, type = "pearson")
+    res_df$abs_pearson_res <- base::abs(res_df$pearson_res)
+    res_df$cell_label <- base::apply(res_df[, vars, drop = FALSE], 1, base::paste, collapse = ":")
+    return(res_df)
+  }
+
+  res_main <- collect_res(fit_main, "Main")
+  res_2way <- collect_res(fit_2way, "2-Way")
+  res_combined <- base::rbind(res_main, res_2way)
+  utils::write.csv(res_combined, base::file.path(output_dir,
+    base::paste0("residuals_", data_label, ".csv")), row.names = FALSE)
+
+  top_n <- 20
+  sig_compact <- base::rbind(
+    utils::head(res_main[base::order(-res_main$abs_pearson_res), ], top_n),
+    utils::head(res_2way[base::order(-res_2way$abs_pearson_res), ], top_n)
+  )
+  sig_compact <- sig_compact[!base::duplicated(
+    base::paste(sig_compact$model_type, sig_compact$cell_label)), ]
+  utils::write.csv(sig_compact, base::file.path(output_dir,
+    base::paste0("residuals_", data_label, "_significant.csv")), row.names = FALSE)
+
+  tab <- stats::xtabs(stats::as.formula(
+    base::paste(freq_col, "~", base::paste(vars, collapse = " + "))), data = df)
+
+  anova_p <- if (!base::is.null(anova_res)) anova_res$`Pr(>Chi)`[2] else NA
+
+  strata_info <- NULL
+  if (base::length(vars) >= 3) {
+    strata_var <- vars[3]
+    strata_levels <- base::levels(base::factor(df[[strata_var]]))
+    max_res_per <- base::sapply(strata_levels, function(lv) {
+      sub <- res_main[res_main[[strata_var]] == lv, ]
+      if (base::nrow(sub) == 0) return(NA)
+      base::max(sub$abs_pearson_res, na.rm = TRUE)
+    })
+    cv_per <- base::sapply(strata_levels, function(lv) {
+      sub_tab <- stats::xtabs(stats::as.formula(
+        base::paste(freq_col, "~", base::paste(vars[1:2], collapse = " + "))),
+        data = df[df[[strata_var]] == lv, ])
+      base::tryCatch(vcd::assocstats(sub_tab)$cramer, error = function(e) NA)
+    })
+    n_sig_5 <- base::sum(res_combined$abs_pearson_res >= 1.96, na.rm = TRUE)
+    n_sig_1 <- base::sum(res_combined$abs_pearson_res >= 2.58, na.rm = TRUE)
+    strata_info <- base::list(
+      strata_var = strata_var, n_strata = base::length(strata_levels),
+      max_abs_res_per_stratum = base::as.list(max_res_per),
+      cramers_v_per_stratum = base::as.list(cv_per),
+      n_significant_cells_5pct = n_sig_5,
+      n_significant_cells_1pct = n_sig_1,
+      total_cells = base::nrow(res_combined)
+    )
+  }
+
+  summary_obj <- base::list(
+    interface_version = "2.0",
+    test_used = "stats::anova (Poisson GLM)",
+    models_tested = c("Main Effects", "2-way Interactions"),
+    deviance_main = if (!base::is.null(fit_main)) fit_main$deviance else NA,
+    df_main = if (!base::is.null(fit_main)) fit_main$df.residual else NA,
+    deviance_2way = if (!base::is.null(fit_2way)) fit_2way$deviance else NA,
+    df_2way = if (!base::is.null(fit_2way)) fit_2way$df.residual else NA,
+    p_value_main_vs_2way = anova_p,
+    cramers_v_marginal = base::tryCatch(
+      vcd::assocstats(base::margin.table(tab, c(1, 2)))$cramer, error = function(e) NA),
+    top_residuals_main = if (!base::is.null(res_main)) {
+      idx <- utils::head(base::order(-res_main$abs_pearson_res), 5)
+      base::lapply(idx, function(i) base::list(cell = res_main$cell_label[i], res = res_main$pearson_res[i]))
+    } else NULL,
+    top_residuals_2way = if (!base::is.null(res_2way)) {
+      idx <- utils::head(base::order(-res_2way$abs_pearson_res), 5)
+      base::lapply(idx, function(i) base::list(cell = res_2way$cell_label[i], res = res_2way$pearson_res[i]))
+    } else NULL,
+    strata_summary = strata_info
+  )
+  jsonlite::write_json(summary_obj, base::file.path(output_dir,
+    base::paste0("summary_", data_label, ".json")), auto_unbox = TRUE, pretty = TRUE)
+
+  base::message("[DATA] JSON/CSV written for: ", data_label)
+  return(base::list(df = df, tab = tab, res_main = res_main, res_2way = res_2way,
+                    fit_main = fit_main, fit_2way = fit_2way))
+}
+
+# ============================================================
+# generate_gt_matrix: Pass 2 - gt pivot residual matrix
+# ============================================================
+generate_gt_matrix <- function(res_df, vars, freq_col = "Freq",
+                               output_dir, config, data_label = "data") {
+  row_var <- vars[1]
+  col_var <- vars[2]
+
+  build_matrix <- function(sub_df, suffix) {
+    agg <- stats::aggregate(
+      stats::as.formula(base::paste("pearson_res ~", row_var, "+", col_var)),
+      data = sub_df, FUN = base::mean
+    )
+    wide <- stats::reshape(agg, idvar = row_var, timevar = col_var,
+                           direction = "wide")
+    base::names(wide) <- base::gsub("^pearson_res\\.", "", base::names(wide))
+    row_names <- wide[[row_var]]
+    wide[[row_var]] <- NULL
+
+    mx <- base::max(base::abs(base::unlist(wide)), na.rm = TRUE)
+    if (!base::is.finite(mx) || mx < 1e-12) mx <- 1
+
+    tbl <- gt::gt(base::cbind(data.frame(V1 = row_names), wide),
+                  rowname_col = "V1") |>
+      gt::fmt_number(decimals = 3) |>
+      gt::data_color(columns = base::names(wide),
+                     domain = c(-mx, mx), palette = c("#D73027", "#FFFFFF", "#4575B4")) |>
+      gt::tab_header(title = base::paste("Pearson Residuals:", suffix)) |>
+      gt::tab_stubhead(label = row_var) |>
+      gt::tab_style(
+        style = gt::cell_borders(sides = "all", weight = gt::px(2), color = "#333333"),
+        locations = gt::cells_body(
+          columns = base::names(wide),
+          rows = base::apply(wide, 1, function(r) base::any(base::abs(r) >= 1.96, na.rm = TRUE))
+        )
+      )
+    fname <- base::paste0("matrix_", suffix, ".html")
+    gt::gtsave(tbl, base::file.path(output_dir, fname))
+    base::message("[GT] ", fname)
+  }
+
+  main_df <- res_df[res_df$model_type == "Main", ]
+  build_matrix(main_df, base::paste0("marginal_", data_label))
+
+  if (base::length(vars) >= 3) {
+    strata_var <- vars[3]
+    strata_to_render <- if (!base::is.null(config$strata_to_render) &&
+                            base::length(config$strata_to_render) > 0) {
+      config$strata_to_render
+    } else {
+      base::levels(base::factor(main_df[[strata_var]]))
+    }
+    for (lv in strata_to_render) {
+      sub <- main_df[main_df[[strata_var]] == lv, ]
+      if (base::nrow(sub) > 0) {
+        build_matrix(sub, base::paste0(data_label, "_", lv))
+      }
+    }
+  }
+}
+
+# ============================================================
+# generate_dt_table: Pass 2 - DT interactive residual table
+# ============================================================
+generate_dt_table <- function(res_df, vars, output_dir, config, data_label = "data") {
+  display_cols <- c(vars, "Freq", "pearson_res", "abs_pearson_res", "model_type")
+  dt_df <- res_df[, display_cols, drop = FALSE]
+  dt_df <- dt_df[base::order(-dt_df$abs_pearson_res), ]
+
+  mx <- base::max(dt_df$abs_pearson_res, na.rm = TRUE)
+  if (!base::is.finite(mx) || mx < 1e-12) mx <- 1
+
+  n_brk <- 100
+  cuts <- base::seq(-mx, mx, length.out = n_brk + 1)
+  cuts_inner <- cuts[-c(1, base::length(cuts))]
+  clrs <- grDevices::colorRampPalette(c("#D73027", "#FFFFFF", "#4575B4"))(base::length(cuts_inner) + 1)
+
+  widget <- DT::datatable(dt_df,
+    filter = "top",
+    options = base::list(
+      pageLength = 50,
+      order = base::list(base::list(
+        base::which(base::names(dt_df) == "abs_pearson_res") - 1, "desc")),
+      dom = "lftipr"
+    ),
+    caption = base::paste("Pearson Residuals:", data_label, "| Click headers to sort")
+  ) |>
+    DT::formatRound(columns = c("pearson_res", "abs_pearson_res"), digits = 3) |>
+    DT::formatStyle("pearson_res",
+      backgroundColor = DT::styleInterval(cuts_inner, clrs))
+
+  fname <- base::paste0("dt_residuals_", data_label, ".html")
+  htmlwidgets::saveWidget(widget, base::file.path(
+    base::normalizePath(output_dir), fname), selfcontained = TRUE)
+  base::message("[DT] ", fname)
+}
+
+# ============================================================
+# generate_plots: Pass 2 - Mosaic / Association PNG
+# ============================================================
+generate_plots <- function(tab, vars, output_dir, config, data_label = "data") {
+  grDevices::png(base::file.path(output_dir, base::paste0("mosaic_", data_label, ".png")),
+                 width = 1000, height = 800)
+  vcd::mosaic(tab, shade = TRUE,
+              main = base::paste("Mosaic:", base::paste(vars, collapse = " x ")))
+  grDevices::dev.off()
+
+  if (base::length(vars) == 2) {
+    grDevices::png(base::file.path(output_dir, base::paste0("assoc_", data_label, ".png")),
+                   width = 1000, height = 800)
+    vcd::assoc(tab, residuals_type = "Pearson", shade = TRUE,
+               main = base::paste("Association:", base::paste(vars, collapse = " x ")))
+    grDevices::dev.off()
+  }
+
+  if (base::length(vars) >= 3) {
+    grDevices::png(base::file.path(output_dir, base::paste0("cotab_", data_label, ".png")),
+                   width = 1000, height = 800)
+    vcd::cotabplot(tab, panel = vcd::cotab_mosaic, shade = TRUE,
+                   main = base::paste("Conditional mosaic (by", vars[3], ")"))
+    grDevices::dev.off()
+  }
+  base::message("[PLOTS] PNG files written for: ", data_label)
+}
+
+# ============================================================
+# Main dispatcher
+# ============================================================
+output_dir <- "./skill_out/vcd_categorical/"
+base::dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+# --- User must set these ---
+# df <- utils::read.csv("your_data.csv")
+# vars <- c("var1", "var2", "var3")  # 2 or 3 variables
+# freq_col <- "Freq"
+# data_label <- "mydata"
+
+# Example: HairEyeColor
+utils::data("HairEyeColor", package = "datasets")
+df <- base::as.data.frame(HairEyeColor)
+vars <- c("Hair", "Eye", "Sex")
+freq_col <- "Freq"
+data_label <- "haireye"
+
+if (mode == "profile") {
+  generate_profile(df, vars, freq_col, output_dir)
+} else {
+  config <- if (!base::is.null(config_path) && base::file.exists(config_path)) {
+    jsonlite::read_json(config_path)
+  } else {
+    base::list()
+  }
+  result <- generate_data(df, vars, freq_col, output_dir, config, data_label)
+  generate_gt_matrix(base::rbind(result$res_main, result$res_2way),
+                     vars, freq_col, output_dir, config, data_label)
+  res_all <- base::rbind(result$res_main, result$res_2way)
+  generate_dt_table(res_all, vars, output_dir, config, data_label)
+  generate_plots(result$tab, vars, output_dir, config, data_label)
+  base::message("[DONE] All outputs generated for: ", data_label)
+}
