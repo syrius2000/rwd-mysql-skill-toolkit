@@ -10,7 +10,8 @@
 | **必須（Rmd）** | `jsonlite` | 3-way 層別 Cramér V の JSON 出力（`report.Rmd`） |
 | **実質必須（Rmd 利用時）** | `rmarkdown`, `knitr` | `templates/report.Rmd` のレンダリング。**純 R のみ**なら不要。 |
 | **推奨（テンプレ）** | `pacman` | `pacman::p_load()` で一括ロード。**オフライン・企業環境では自動 install を使わず**、`library()` + 手動 `install.packages()` に切り替え。 |
-| **推奨** | `vcdExtra` | 補助データ・拡張例 |
+| **必須** | `DT` | ソート可能インタラクティブ残差テーブル（`DT::datatable`） |
+| **必須** | `htmlwidgets` | DT の self-contained HTML 出力（`htmlwidgets::saveWidget`） |
 | **オプション** | `gnm` | 対称性・非線形対数線形 |
 | **オプション（序数）** | `psych`, `polycor`, `ordinal` 等 | `ordinal-likert-advanced.md` |
 
