@@ -31,4 +31,5 @@
 ## スキルの設置制限
 .agent
 .cursor
-両方に同一内容のskillを配置すること。
+両方に同一内容のskillを配置すること。火発は.agentで実行すること。
+開発は、.agentのskillを変更し、後に.cursorへ反映させること。
