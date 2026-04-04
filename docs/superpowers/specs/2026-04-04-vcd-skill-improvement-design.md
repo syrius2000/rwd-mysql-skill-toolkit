@@ -12,6 +12,7 @@
 2. **残差の可視化**: ggplot2 ヒートマップは水準が多いと判読困難
 3. **インタラクティブ性**: 残差テーブルのソートやフィルタが不可能
 4. **スキルの凝集度**: 分析とレポーティングが密結合で、独立した改善が困難
+5. **データ適応性**: 水準数や次元数によって最適な表示方法が異なるが、事前にデータ特性を把握する仕組みがない
 
 ## 設計方針
 
@@ -40,41 +41,71 @@
         └── evaluation-criteria.md
 ```
 
-### データフロー
+### データフロー（2パス方式）
+
+データの次元数・水準数によって最適な可視化方法が異なるため、**2パス方式**を採用する。
+Pass 1 で軽量なデータプロファイルを生成し、AI がデータ特性を把握した上で表示パラメータを決定。
+Pass 2 でそのパラメータに基づき本生成を行う。これによりフルループの再実行を回避し、トークンコストを最小化する。
 
 ```mermaid
-flowchart TD
-    subgraph R ["vcd-categorical-analysis"]
-        A1[データ読込・xtabs] --> A2[Poisson GLM<br/>主効果 / 2-way / 飽和]
-        A2 --> A3[summary_*.json<br/>モデル指標＋層別統計]
-        A2 --> A4[residuals_*.csv<br/>全残差データ]
-        A2 --> A5[gt マトリックスHTML<br/>周辺＋全層分割]
-        A2 --> A6[DT ソート可能テーブルHTML]
-        A2 --> A7[Mosaic / Assoc PNG]
-    end
+sequenceDiagram
+    participant AI as AI Agent
+    participant R as analysis.R
+    participant Out as skill_out/
 
-    subgraph AI ["vcd-categorical-reporting"]
-        B1[JSON/CSV読取] --> B2[第1段階: 主効果残差の俯瞰]
-        B2 --> B3[第2段階: 交互作用の洞察]
-        B3 --> B4[層別判断: strata_summary から<br/>前面配置する層を選択]
-        B4 --> B5[レポート構成]
-    end
+    Note over AI,R: Pass 1: プロファイリング（軽量）
+    AI->>R: analysis.R --profile
+    R->>Out: data_profile.json
+    Out->>AI: 次元数・水準数・セル数・疎密度を確認
 
-    subgraph Report ["vcd_analysis_report.md"]
-        C1["第1章：結論と所見"]
-        C2["第2章：判断根拠"]
-        C3["第3章：詳細データ"]
-    end
+    Note over AI: AI がデータ特性に基づき表示パラメータを決定
+    Note over AI: 例: 水準集約・層選択・表示モード
 
-    A3 --> B1
-    A4 --> B1
-    A5 --> C2
-    A5 --> C3
-    A6 --> C3
-    A7 --> C3
-    B5 --> C1
-    B5 --> C2
-    B5 --> C3
+    Note over AI,R: Pass 2: 本生成（パラメータ付き）
+    AI->>R: analysis.R --render --config render_config.json
+    R->>Out: JSON, CSV, gt HTML, DT HTML, PNG
+    Out->>AI: 成果物読取
+
+    Note over AI: AI 判断フェーズ
+    AI->>AI: 第1段階 主効果残差の俯瞰
+    AI->>AI: 第2段階 交互作用の洞察
+    AI->>AI: 層別判断 前面配置する層を選択
+
+    Note over AI: レポート構成
+    AI->>Out: vcd_analysis_report.md 作成
+```
+
+#### Pass 1 出力: `data_profile.json`
+
+極小のプロファイル（10行程度）で、AI が可視化の方針を事前に判断できるようにする。
+
+```json
+{
+  "n_dimensions": 3,
+  "variables": {
+    "symptom": {"n_levels": 10, "levels": ["発熱", "頭痛", "..."]},
+    "drug": {"n_levels": 7, "levels": ["リングルアイビー", "..."]},
+    "timing": {"n_levels": 7, "levels": ["その他", "..."]}
+  },
+  "total_cells": 490,
+  "total_cells_2way_marginal": 70,
+  "n_nonzero_cells": 312,
+  "sparsity_ratio": 0.36
+}
+```
+
+#### AI が生成する `render_config.json`
+
+AI がプロファイルを読み取り、以下のような設定を生成して Pass 2 に渡す。
+
+```json
+{
+  "collapse_below_n": 5,
+  "max_levels_per_var": 8,
+  "strata_to_render": ["その他", "痛くなりそうなとき"],
+  "gt_matrix_vars": [1, 2],
+  "plot_mode": "auto"
+}
 ```
 
 ## 詳細設計
@@ -82,14 +113,19 @@ flowchart TD
 ### 1. analysis.R の関数構成
 
 ```r
-generate_data(df, vars, output_dir)
-generate_gt_matrix(tab, vars, output_dir)
-generate_dt_table(res_df, output_dir)
-generate_plots(tab, vars, output_dir)
+# Pass 1: プロファイリング（軽量）
+generate_profile(df, vars, output_dir)
+
+# Pass 2: 本生成（config 付き）
+generate_data(df, vars, output_dir, config)
+generate_gt_matrix(tab, vars, output_dir, config)
+generate_dt_table(res_df, output_dir, config)
+generate_plots(tab, vars, output_dir, config)
 ```
 
+- `generate_profile`: データの次元・水準数・疎密度を `data_profile.json` として出力（Pass 1 専用）
 - `generate_data`: Poisson GLM フィッティング、残差計算、JSON/CSV 出力
-- `generate_gt_matrix`: ピボット形式の残差マトリックスを `gt` で生成（周辺表＋全層分割表）
+- `generate_gt_matrix`: ピボット形式の残差マトリックスを `gt` で生成。`config` に基づき生成する層を制御
 - `generate_dt_table`: `DT::datatable` によるソート可能テーブルを self-contained HTML で生成
 - `generate_plots`: Mosaic / Association プロットを PNG で生成
 
@@ -230,6 +266,7 @@ R側は `recommended_focus_stratum` を出力しない（判断はAIに委ねる
 | スキル分割 | 2分割（analysis + reporting） | 独立進化可能。3分割はオーバーヘッド過多 |
 | DT HTML サイズ | self-contained 維持 | 可搬性を優先。PC性能上問題なし |
 | 協調メカニズム | interface.md（共有契約） | バージョニングで互換性を管理 |
+| 実行方式 | 2パス（profile → render） | データ特性を事前把握しトークンコスト最小化。フルループ再実行を回避 |
 
 ## スコープ外
 
