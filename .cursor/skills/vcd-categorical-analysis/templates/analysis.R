@@ -1,18 +1,60 @@
 # VCD Categorical Analysis Pipeline (v2.0)
 # 2-pass mode: --profile (Pass 1) or --render --config <path> (Pass 2)
 # Outputs under ./skill_out/vcd_categorical/
+#
+# Usage:
+#   Pass 1: Rscript analysis.R --profile --data data.csv --vars x,y,z --freq Freq
+#   Pass 2: Rscript analysis.R --render  --data data.csv --vars x,y,z --freq Freq --label mydata
+#   Default (no --data): uses built-in HairEyeColor dataset
 
 # --- Packages ---
 if (!base::requireNamespace("pacman", quietly = TRUE)) utils::install.packages("pacman")
 pacman::p_load(vcd, gt, DT, htmlwidgets, ggplot2, jsonlite)
 
-# --- CLI args ---
+# --- CLI argument parser ---
+parse_cli_arg <- function(args, flag, default = NULL) {
+  if (flag %in% args) {
+    idx <- base::which(args == flag)
+    if (idx < base::length(args)) return(args[idx + 1])
+  }
+  return(default)
+}
+
 args <- base::commandArgs(trailingOnly = TRUE)
-mode <- if ("--profile" %in% args) "profile" else "render"
-config_path <- NULL
-if ("--config" %in% args) {
-  idx <- base::which(args == "--config")
-  if (idx < base::length(args)) config_path <- args[idx + 1]
+mode        <- if ("--profile" %in% args) "profile" else "render"
+config_path <- parse_cli_arg(args, "--config")
+data_path   <- parse_cli_arg(args, "--data")
+vars_str    <- parse_cli_arg(args, "--vars")
+freq_col_arg <- parse_cli_arg(args, "--freq", "Freq")
+label_arg   <- parse_cli_arg(args, "--label")
+out_arg     <- parse_cli_arg(args, "--out")
+
+# --- Data loader (CRLF-safe) ---
+load_input_data <- function(data_path, vars_str, freq_col_arg, label_arg) {
+  if (base::is.null(data_path)) {
+    utils::data("HairEyeColor", package = "datasets")
+    df <- base::as.data.frame(HairEyeColor)
+    vars <- c("Hair", "Eye", "Sex")
+    freq_col <- "Freq"
+    data_label <- if (!base::is.null(label_arg)) label_arg else "haireye"
+  } else {
+    df <- utils::read.csv(data_path, check.names = FALSE, fileEncoding = "UTF-8")
+    base::names(df) <- base::trimws(base::names(df))
+    for (j in base::seq_len(base::ncol(df))) {
+      if (base::is.character(df[[j]])) df[[j]] <- base::trimws(df[[j]])
+    }
+    if (base::is.null(vars_str)) base::stop("[ERROR] --vars is required when --data is specified")
+    vars <- base::trimws(base::strsplit(vars_str, ",")[[1]])
+    freq_col <- base::trimws(freq_col_arg)
+    missing_cols <- base::setdiff(c(vars, freq_col), base::names(df))
+    if (base::length(missing_cols) > 0) {
+      base::stop("[ERROR] Columns not found in data: ", base::paste(missing_cols, collapse = ", "),
+                 "\n  Available columns: ", base::paste(base::names(df), collapse = ", "))
+    }
+    data_label <- if (!base::is.null(label_arg)) label_arg else
+      base::gsub("\\.[^.]+$", "", base::basename(data_path))
+  }
+  base::list(df = df, vars = vars, freq_col = freq_col, data_label = data_label)
 }
 
 # ============================================================
@@ -293,21 +335,17 @@ generate_plots <- function(tab, vars, output_dir, config, data_label = "data") {
 # ============================================================
 # Main dispatcher
 # ============================================================
-output_dir <- "./skill_out/vcd_categorical/"
+output_dir <- if (!base::is.null(out_arg)) out_arg else "./skill_out/vcd_categorical/"
 base::dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-# --- User must set these ---
-# df <- utils::read.csv("your_data.csv")
-# vars <- c("var1", "var2", "var3")  # 2 or 3 variables
-# freq_col <- "Freq"
-# data_label <- "mydata"
+input <- load_input_data(data_path, vars_str, freq_col_arg, label_arg)
+df         <- input$df
+vars       <- input$vars
+freq_col   <- input$freq_col
+data_label <- input$data_label
 
-# Example: HairEyeColor
-utils::data("HairEyeColor", package = "datasets")
-df <- base::as.data.frame(HairEyeColor)
-vars <- c("Hair", "Eye", "Sex")
-freq_col <- "Freq"
-data_label <- "haireye"
+base::message("[INFO] data_label=", data_label, " vars=", base::paste(vars, collapse=","),
+              " freq=", freq_col, " mode=", mode)
 
 if (mode == "profile") {
   generate_profile(df, vars, freq_col, output_dir)
@@ -325,3 +363,4 @@ if (mode == "profile") {
   generate_plots(result$tab, vars, output_dir, config, data_label)
   base::message("[DONE] All outputs generated for: ", data_label)
 }
+
