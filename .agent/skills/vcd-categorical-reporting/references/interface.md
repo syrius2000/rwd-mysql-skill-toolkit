@@ -1,6 +1,6 @@
 # VCD Analysis ↔ Reporting インターフェース契約
 
-interface_version: "2.0"
+interface_version: "2.1"
 
 ## 出力ディレクトリ
 
@@ -16,6 +16,7 @@ interface_version: "2.0"
 | total_cells_2way_marginal | int | 2-way 周辺表のセル数 |
 | n_nonzero_cells | int | Freq > 0 のセル数 |
 | sparsity_ratio | float | n_nonzero_cells / total_cells |
+| warning | string or null | ゼロセルがある場合の警告メッセージ（なければ null） |
 
 ## Pass 2 入力: render_config.json
 
@@ -32,6 +33,7 @@ interface_version: "2.0"
 | ファイル名パターン | 形式 | 生成元 | 消費先 |
 | :--- | :--- | :--- | :--- |
 | `data_profile.json` | JSON | analysis (Pass 1) | reporting |
+| `data_profile_post.json` | JSON | analysis (Pass 2) | reporting（集約後のプロファイル） |
 | `summary_{data}.json` | JSON | analysis (Pass 2) | reporting |
 | `residuals_{data}.csv` | CSV | analysis (Pass 2) | reporting |
 | `residuals_{data}_significant.csv` | CSV | analysis (Pass 2) | reporting |
@@ -45,7 +47,7 @@ interface_version: "2.0"
 
 ```json
 {
-  "interface_version": "2.0",
+  "interface_version": "2.1",
   "test_used": "string",
   "models_tested": ["string"],
   "deviance_main": "number",

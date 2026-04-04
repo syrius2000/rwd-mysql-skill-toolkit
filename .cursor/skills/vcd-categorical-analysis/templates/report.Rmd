@@ -1,5 +1,5 @@
 ---
-title: "Categorical analysis (vcd, up to 3-way)"
+title: "Categorical analysis (vcd, up to 3-way) [LEGACY v1.x]"
 output:
   html_document: default
   pdf_document: default

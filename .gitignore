@@ -56,3 +56,8 @@ tests/skill_out_smoke/
 *.excalidraw
 .agent/skills/*/*/*.png
 .cursor/skills/*/*/*.png
+
+# Test artifacts (vcd skill)
+**/tests/temp_test.csv
+**/tests/test_out_logic/
+**/vcd-categorical-analysis/templates/skill_out/

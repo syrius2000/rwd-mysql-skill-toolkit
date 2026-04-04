@@ -29,6 +29,50 @@ freq_col_arg <- parse_cli_arg(args, "--freq", "Freq")
 label_arg   <- parse_cli_arg(args, "--label")
 out_arg     <- parse_cli_arg(args, "--out")
 
+# --- Config validator ---
+validate_config <- function(raw) {
+  defaults <- base::list(
+    collapse_below_n = 0L,
+    max_levels_per_var = 999L,
+    strata_to_render = base::character(0),
+    gt_matrix_vars = c(1L, 2L),
+    plot_mode = "auto"
+  )
+  known_keys <- base::names(defaults)
+  unknown <- base::setdiff(base::names(raw), known_keys)
+  if (base::length(unknown) > 0) {
+    base::message("[WARNING] Unknown config keys ignored: ", base::paste(unknown, collapse = ", "))
+  }
+
+  cfg <- defaults
+  if ("collapse_below_n" %in% base::names(raw)) {
+    v <- base::suppressWarnings(base::as.integer(raw$collapse_below_n))
+    if (!base::is.na(v)) cfg$collapse_below_n <- v
+    else base::message("[WARNING] collapse_below_n: not integer, using default 0")
+  }
+  if ("max_levels_per_var" %in% base::names(raw)) {
+    v <- base::suppressWarnings(base::as.integer(raw$max_levels_per_var))
+    if (!base::is.na(v)) cfg$max_levels_per_var <- v
+    else base::message("[WARNING] max_levels_per_var: not integer, using default 999")
+  }
+  if ("strata_to_render" %in% base::names(raw)) {
+    v <- raw$strata_to_render
+    if (base::is.character(v) || base::is.list(v)) cfg$strata_to_render <- base::as.character(base::unlist(v))
+    else base::message("[WARNING] strata_to_render: not character array, using default []")
+  }
+  if ("gt_matrix_vars" %in% base::names(raw)) {
+    v <- base::suppressWarnings(base::as.integer(base::unlist(raw$gt_matrix_vars)))
+    if (base::length(v) >= 2 && !base::any(base::is.na(v))) cfg$gt_matrix_vars <- v[1:2]
+    else base::message("[WARNING] gt_matrix_vars: invalid, using default [1,2]")
+  }
+  if ("plot_mode" %in% base::names(raw)) {
+    v <- raw$plot_mode
+    if (base::is.character(v) && v %in% c("auto", "always", "residual_only")) cfg$plot_mode <- v
+    else base::message("[WARNING] plot_mode: invalid '", v, "', using default 'auto'")
+  }
+  cfg
+}
+
 # --- Data loader (CRLF-safe) ---
 load_input_data <- function(data_path, vars_str, freq_col_arg, label_arg) {
   if (base::is.null(data_path)) {
@@ -82,7 +126,34 @@ load_input_data <- function(data_path, vars_str, freq_col_arg, label_arg) {
 # ============================================================
 # generate_profile: Pass 1 - lightweight data profiling
 # ============================================================
-generate_profile <- function(df, vars, freq_col = "Freq", output_dir) {
+generate_profile <- function(df, vars, freq_col = "Freq", output_dir,
+                             config = NULL, out_filename = "data_profile.json") {
+  if (!base::is.null(config)) {
+    if (!base::is.null(config$collapse_below_n) && config$collapse_below_n > 0) {
+      for (v in vars) {
+        freq_by_level <- stats::tapply(df[[freq_col]], df[[v]], base::sum)
+        minor_levels <- base::names(freq_by_level[freq_by_level <= config$collapse_below_n])
+        if (base::length(minor_levels) > 0) {
+          df[[v]] <- base::ifelse(df[[v]] %in% minor_levels, "Other", base::as.character(df[[v]]))
+          df[[v]] <- base::factor(df[[v]])
+        }
+      }
+    }
+    max_lev <- config$max_levels_per_var
+    if (!base::is.null(max_lev) && base::is.numeric(max_lev) && max_lev < 999) {
+      for (v in vars) {
+        lvls <- base::levels(df[[v]])
+        if (base::length(lvls) > max_lev) {
+          freq_by_level <- stats::tapply(df[[freq_col]], df[[v]], base::sum)
+          top_levels <- base::names(base::sort(freq_by_level, decreasing = TRUE))[base::seq_len(max_lev)]
+          df[[v]] <- base::ifelse(base::as.character(df[[v]]) %in% top_levels,
+                                  base::as.character(df[[v]]), "Other")
+          df[[v]] <- base::factor(df[[v]])
+        }
+      }
+    }
+  }
+
   var_info <- base::lapply(vars, function(v) {
     lvls <- base::levels(base::factor(df[[v]]))
     base::list(n_levels = base::length(lvls), levels = lvls)
@@ -108,9 +179,9 @@ generate_profile <- function(df, vars, freq_col = "Freq", output_dir) {
     sparsity_ratio = base::round(n_nonzero / total_cells, 3),
     warning = if (n_nonzero < total_cells) "Contains zero-count cells (Sparsity). GLM may have convergence issues." else NULL
   )
-  jsonlite::write_json(profile, base::file.path(output_dir, "data_profile.json"),
+  jsonlite::write_json(profile, base::file.path(output_dir, out_filename),
                        auto_unbox = TRUE, pretty = TRUE)
-  base::message("[PROFILE] data_profile.json written to ", output_dir)
+  base::message("[PROFILE] ", out_filename, " written to ", output_dir)
   return(base::invisible(profile))
 }
 
@@ -125,6 +196,21 @@ generate_data <- function(df, vars, freq_col = "Freq", output_dir, config, data_
       if (base::length(minor_levels) > 0) {
         df[[v]] <- base::ifelse(df[[v]] %in% minor_levels, "Other", base::as.character(df[[v]]))
         df[[v]] <- base::factor(df[[v]])
+      }
+    }
+  }
+
+  max_lev <- config$max_levels_per_var
+  if (!base::is.null(max_lev) && base::is.numeric(max_lev) && max_lev < 999) {
+    for (v in vars) {
+      lvls <- base::levels(df[[v]])
+      if (base::length(lvls) > max_lev) {
+        freq_by_level <- stats::tapply(df[[freq_col]], df[[v]], base::sum)
+        top_levels <- base::names(base::sort(freq_by_level, decreasing = TRUE))[base::seq_len(max_lev)]
+        df[[v]] <- base::ifelse(base::as.character(df[[v]]) %in% top_levels,
+                                base::as.character(df[[v]]), "Other")
+        df[[v]] <- base::factor(df[[v]])
+        base::message("[INFO] Variable '", v, "' trimmed to top ", max_lev, " levels + Other")
       }
     }
   }
@@ -202,7 +288,7 @@ generate_data <- function(df, vars, freq_col = "Freq", output_dir, config, data_
   }
 
   summary_obj <- base::list(
-    interface_version = "2.0",
+    interface_version = "2.1",
     test_used = "stats::anova (Poisson GLM)",
     models_tested = c("Main Effects", "2-way Interactions"),
     deviance_main = if (!base::is.null(fit_main)) fit_main$deviance else NA,
@@ -235,8 +321,13 @@ generate_data <- function(df, vars, freq_col = "Freq", output_dir, config, data_
 # ============================================================
 generate_gt_matrix <- function(res_df, vars, freq_col = "Freq",
                                output_dir, config, data_label = "data") {
-  row_var <- vars[1]
-  col_var <- vars[2]
+  gm_vars <- config$gt_matrix_vars
+  row_idx <- if (!base::is.null(gm_vars) && base::length(gm_vars) >= 2) gm_vars[[1]] else 1L
+  col_idx <- if (!base::is.null(gm_vars) && base::length(gm_vars) >= 2) gm_vars[[2]] else 2L
+  row_idx <- base::min(base::max(row_idx, 1L), base::length(vars))
+  col_idx <- base::min(base::max(col_idx, 1L), base::length(vars))
+  row_var <- vars[row_idx]
+  col_var <- vars[col_idx]
 
   build_matrix <- function(sub_df, suffix) {
     agg <- stats::aggregate(
@@ -331,28 +422,47 @@ generate_dt_table <- function(res_df, vars, output_dir, config, data_label = "da
 # generate_plots: Pass 2 - Mosaic / Association PNG
 # ============================================================
 generate_plots <- function(tab, vars, output_dir, config, data_label = "data") {
-  grDevices::png(base::file.path(output_dir, base::paste0("mosaic_", data_label, ".png")),
-                 width = 1000, height = 800)
-  vcd::mosaic(tab, shade = TRUE,
-              main = base::paste("Mosaic:", base::paste(vars, collapse = " x ")))
-  grDevices::dev.off()
+  pm <- if (!base::is.null(config$plot_mode)) config$plot_mode else "auto"
 
-  if (base::length(vars) == 2) {
-    grDevices::png(base::file.path(output_dir, base::paste0("assoc_", data_label, ".png")),
-                   width = 1000, height = 800)
-    vcd::assoc(tab, residuals_type = "Pearson", shade = TRUE,
-               main = base::paste("Association:", base::paste(vars, collapse = " x ")))
-    grDevices::dev.off()
+  should_render <- if (base::identical(pm, "always")) {
+    TRUE
+  } else if (base::identical(pm, "residual_only")) {
+    FALSE
+  } else {
+    total_cells <- base::prod(base::dim(tab))
+    max_label <- base::max(base::nchar(base::unlist(base::dimnames(tab))), na.rm = TRUE)
+    threshold_cells <- if (base::length(vars) == 2) 16L else 36L
+    total_cells <= threshold_cells && max_label <= 24L
   }
 
-  if (base::length(vars) >= 3) {
-    grDevices::png(base::file.path(output_dir, base::paste0("cotab_", data_label, ".png")),
+  if (should_render) {
+    grDevices::png(base::file.path(output_dir, base::paste0("mosaic_", data_label, ".png")),
                    width = 1000, height = 800)
-    vcd::cotabplot(tab, panel = vcd::cotab_mosaic, shade = TRUE,
-                   main = base::paste("Conditional mosaic (by", vars[3], ")"))
+    vcd::mosaic(tab, shade = TRUE,
+                main = base::paste("Mosaic:", base::paste(vars, collapse = " x ")))
     grDevices::dev.off()
+
+    if (base::length(vars) == 2) {
+      grDevices::png(base::file.path(output_dir, base::paste0("assoc_", data_label, ".png")),
+                     width = 1000, height = 800)
+      vcd::assoc(tab, residuals_type = "Pearson", shade = TRUE,
+                 main = base::paste("Association:", base::paste(vars, collapse = " x ")))
+      grDevices::dev.off()
+    }
+
+    if (base::length(vars) >= 3) {
+      grDevices::png(base::file.path(output_dir, base::paste0("cotab_", data_label, ".png")),
+                     width = 1000, height = 800)
+      vcd::cotabplot(tab, panel = vcd::cotab_mosaic, shade = TRUE,
+                     main = base::paste("Conditional mosaic (by", vars[3], ")"))
+      grDevices::dev.off()
+    }
+    base::message("[PLOTS] PNG files written for: ", data_label)
+  } else {
+    base::message("[PLOTS] Skipped (plot_mode=", pm,
+                  ", cells=", base::prod(base::dim(tab)),
+                  ", max_label=", base::max(base::nchar(base::unlist(base::dimnames(tab))), na.rm = TRUE), ")")
   }
-  base::message("[PLOTS] PNG files written for: ", data_label)
 }
 
 # ============================================================
@@ -373,11 +483,14 @@ base::message("[INFO] data_label=", data_label, " vars=", base::paste(vars, coll
 if (mode == "profile") {
   generate_profile(df, vars, freq_col, output_dir)
 } else {
-  config <- if (!base::is.null(config_path) && base::file.exists(config_path)) {
+  raw_config <- if (!base::is.null(config_path) && base::file.exists(config_path)) {
     jsonlite::read_json(config_path)
   } else {
     base::list()
   }
+  config <- validate_config(raw_config)
+  generate_profile(df, vars, freq_col, output_dir,
+                   config = config, out_filename = "data_profile_post.json")
   result <- generate_data(df, vars, freq_col, output_dir, config, data_label)
   generate_gt_matrix(base::rbind(result$res_main, result$res_2way),
                      vars, freq_col, output_dir, config, data_label)
