@@ -48,12 +48,12 @@ flowchart LR
 |---|---|---|
 | 構築系 | `flat-file-mysql-overview`, `flat-file-mysql-ddl-generation`, `flat-file-mysql-load-validation` | DBを作る |
 | 探索系 | `mysql-er-diagram`, `mysql-table-cardinality`, `mysql-entity-matrix`, `mysql-create-query-support` | 構造・分布・ID所在を確認し、望むQueryを作る |
-| 分析系 | `questionnaire-batch-analysis`, `vcd-categorical-analysis` | 抽出結果を分析・レポート化する |
+| 分析系 | `questionnaire-batch-analysis`, `vcd-categorical-analysis`, `vcd-categorical-reporting`, `vcd-bayesian-evidence-analysis` | 抽出結果を分析・レポート化する |
 | 保守系 | `security-vulnerability-check` | スクリプトとSQL支援の安全性を確認する |
 
 ## 管理スキル一覧
 
-`.agent/skills` と `.cursor/skills` の両方に同一の10スキルを配置しています。
+`.agent/skills` と `.cursor/skills` の両方に同一の12スキルを配置しています。
 
 | スキル名 | 概要 |
 |---|---|
@@ -66,6 +66,8 @@ flowchart LR
 | `mysql-create-query-support` | 自然文の分析目的から本 SQL・検証 SQL・query note を作成する支援 |
 | `questionnaire-batch-analysis` | 設問設定 CSV で複数設問を一括処理し、HTML レポートと `summary.csv` を生成 |
 | `vcd-categorical-analysis` | 名義カテゴリ（最大 3-way）のクロス表・残差・vcd 可視化・対数線形モデル |
+| `vcd-categorical-reporting` | `vcd-categorical-analysis` の出力を読み、判断ファーストのAI評価レポートを作成 |
+| `vcd-bayesian-evidence-analysis` | 大標本でP値と実質的意義が乖離する場合に、効果量・BIC近似・BF視点で評価 |
 | `security-vulnerability-check` | ソースコードの脆弱性チェック（SQLi / OS コマンド / パストラバーサル等） |
 
 ## テスト
@@ -98,4 +100,4 @@ Rscript tests/test_vcd_categorical_smoke.R
 |------|----------|
 | スクリプト・プロンプト | `.cursor` → `.agent` へ内容完全一致でコピー |
 | SKILL.md（flat-file-mysql-* 3本, mysql-table-cardinality） | `.cursor` を正本として編集後、パス置換と description 補記で `.agent` 用を派生 |
-| その他スキル（questionnaire-batch-analysis, security-vulnerability-check, vcd-categorical-analysis, mysql-er-diagram, mysql-entity-matrix） | `.cursor/skills` と `.agent/skills` の両方を同時更新し、内容一致を維持 |
+| その他スキル（questionnaire-batch-analysis, security-vulnerability-check, vcd-categorical-analysis, vcd-categorical-reporting, vcd-bayesian-evidence-analysis, mysql-er-diagram, mysql-entity-matrix, mysql-create-query-support） | `.cursor/skills` と `.agent/skills` の両方を同時更新し、内容一致を維持 |
