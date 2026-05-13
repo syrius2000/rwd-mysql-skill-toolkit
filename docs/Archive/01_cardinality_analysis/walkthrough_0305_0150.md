@@ -35,8 +35,8 @@ author: AI Agent (Gemini 2.0 Pro)
 
 ## 出力ファイル (プロジェクト内)
 
-- [カラム別濃度数 (CSV)](file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/skill_output/mysql_table_cardinality/VACCINE_CH_t02_outpatient_columns_cardinality.csv)
-- [分析レポート (JSON)](file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/skill_output/mysql_table_cardinality/VACCINE_CH_t02_outpatient_report.json)
+- [カラム別濃度数 (CSV)](file:///Users/myamaguchi/Programing/rwd-mysql-skill-toolkit/skill_output/mysql_table_cardinality/VACCINE_CH_t02_outpatient_columns_cardinality.csv)
+- [分析レポート (JSON)](file:///Users/myamaguchi/Programing/rwd-mysql-skill-toolkit/skill_output/mysql_table_cardinality/VACCINE_CH_t02_outpatient_report.json)
 
 > [!TIP]
 > 今後はデフォルトで `./skill_output` が使用されます。以前の `/tmp` のファイルは削除して問題ありません。
