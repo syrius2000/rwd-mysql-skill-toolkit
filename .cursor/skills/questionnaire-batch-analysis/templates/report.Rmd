@@ -224,7 +224,7 @@ if (nd == 2L) {
   df_val <- an$Df[2]
   p_value <- an$`Pr(>Chi)`[2]
 
-  tab_m <- stats::margin.table(tab, c(1L, 2L))
+  tab_m <- base::margin.table(tab, c(1L, 2L))
   ast_m <- suppressWarnings(vcd::assocstats(tab_m))
   cramer_v_marginal <- unname(ast_m$cramer)
   effect_name <- "cramers_v"
@@ -252,7 +252,7 @@ if (nd == 2L) {
     }
     cramer_v_strata_mean <- mean(strata_vs, na.rm = TRUE)
     cramer_v_strata_max <- max(strata_vs, na.rm = TRUE)
-    im <- which.max(stats::replace(strata_vs, is.na(strata_vs), -Inf))
+    im <- which.max(base::replace(strata_vs, is.na(strata_vs), -Inf))
     if (length(im) == 1L && is.finite(strata_vs[im])) {
       cramer_v_strata_max_level <- names(strata_vs)[im]
     }
@@ -428,7 +428,7 @@ if (render_mosaic) {
   if (nd == 2L) {
     vcd::assoc(tab, residuals_type = "Pearson", shade = TRUE, main = "Association (Pearson)")
   } else {
-    vcd::assoc(margin.table(tab, c(1L, 2L)), residuals_type = "Pearson", shade = TRUE,
+    vcd::assoc(base::margin.table(tab, c(1L, 2L)), residuals_type = "Pearson", shade = TRUE,
                main = "Association (first two margins)")
   }
 } else {
