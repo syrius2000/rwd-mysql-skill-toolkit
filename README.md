@@ -6,7 +6,7 @@
 
 ```
 .
-├── .agent/skills/          # Antigravity 用スキル
+├── .agent/skills/          # Antigravity, Codex など汎用スキル
 ├── .cursor/skills/         # Cursor 用スキル（正本）
 ├── docs/
 │   ├── Artifacts/          # 生成ドキュメント

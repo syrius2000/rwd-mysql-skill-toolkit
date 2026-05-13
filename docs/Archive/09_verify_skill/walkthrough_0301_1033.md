@@ -19,11 +19,11 @@ docs/
 
 ### 2. 移動したファイルの詳細
 
-#### [Archive] (file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/docs/Archive)
+#### [Archive] (file:///Users/myamaguchi/Programing/rwd-mysql-skill-toolkit/docs/Archive)
 過去の統計解析スキルの実装記録、MySQL 移行計画、旧ウォークスルーなど計 15 ファイルを移動しました。
 - *今回の整理計画書 (`implementation_plan_0301_1028.md`) も最終的にここにアーカイブしました。*
 
-#### [Reference] (file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/docs/Reference)
+#### [Reference] (file:///Users/myamaguchi/Programing/rwd-mysql-skill-toolkit/docs/Reference)
 開発効率や正確性を維持するために今後も繰り返し参照すべき情報を格納しました。
 - `Artifact_010_git_push_rebase_procedure_0301_1030.md`: Git rebase 手順
 - `Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md`: スキル同期ルール

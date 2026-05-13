@@ -10,7 +10,7 @@ vcd-categorical-analysis
 
 ## 追加・改定する機能
 
-file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/skill_out/questionnaire/q09_analysis/q03_all_3way/report.html
+file:///Users/myamaguchi/Programing/rwd-mysql-skill-toolkit/skill_out/questionnaire/q09_analysis/q03_all_3way/report.html
 
 このレポートは、vcd-categorical-analysis スキルで生成されたものですが、ggplot2で作成した図のレジェンドが日本語未対応です。
 linux、macOS、Windows で日本語が正しく表示されるように、ggplot2のテーマ設定を修正してください。

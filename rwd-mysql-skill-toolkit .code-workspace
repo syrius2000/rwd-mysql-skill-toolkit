@@ -2,6 +2,18 @@
   "folders": [
     {
       "path": "."
+    },
+    {
+      "path": "OSX_IDE_Skill_management"
+    },
+    {
+      "path": "OSX_IDE_Skill_management_Gemini"
+    },
+    {
+      "path": "OSX_IDE_Skill_management_RAW"
+    },
+    {
+      "path": "OSX_IDE_Skill_management_VSCODE"
     }
   ],
   "settings": {
