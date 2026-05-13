@@ -49,3 +49,20 @@ def test_sql_readme_defines_drafts_and_validated_policy():
     assert "main_query.sql" in readme
     assert "validation_query.sql" in readme
     assert "query_note.md" in readme
+
+
+def test_readme_describes_integrated_db_analysis_goal():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "統合DB構築・分析スキル" in readme
+    assert "構築系" in readme
+    assert "探索系" in readme
+    assert "分析系" in readme
+    assert "mysql-create-query-support" in readme
+
+
+def test_agents_mentions_read_only_reference_dirs_and_sql_policy():
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    assert "参照専用" in agents
+    assert "OSX_IDE_Skill_management_Gemini" in agents
+    assert "sql/" in agents
+    assert "mysql-create-query-support" in agents
