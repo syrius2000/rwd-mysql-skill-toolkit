@@ -2,6 +2,18 @@
 
 このリポジトリは、ローカル CSV やフラットファイルから RDBMS を構築し、MySQL/MariaDB 上で探索・Query作成・分析用データセット抽出を行い、R/R Markdown による分析へつなぐための **統合DB構築・分析スキル** を管理します。
 
+## このリポジトリのゴール
+
+このリポジトリは、単に CSV を MySQL に投入するためだけの道具ではありません。阪大講座内や小規模プロジェクトの手元データから RDBMS を作り、構造を確認し、必要な Query を作り、分析可能なデータセットへ整える経験を若手へ引き継ぐための Skill 群です。
+
+会社の大規模で整備済みの DB だけを使ってきた人でも、以下の流れを自分で辿れることを目標にします。
+
+1. CSV / flat files から DB を作る
+2. ER 図、dictionary、cardinality、entity matrix で DB を探索する
+3. 自然文の分析目的を SQL に落とす
+4. 本 SQL と検証 SQL を保存し、再利用可能な資産にする
+5. R / R Markdown の分析・レポートへ渡す
+
 ## リポジトリ構造
 
 ```
@@ -31,6 +43,25 @@
 Rscript tests/test_questionnaire_batch_smoke.R
 open tests/skill_out_smoke/q01_gender_dept/report.html
 ```
+
+## Query 作成支援
+
+`mysql-create-query-support` は、若手が「こういう患者群を抽出したい」「このイベントを数えたい」と自然文で相談したときに、SQL作成を段階的に支援する Skill です。
+
+この Skill は、いきなり完成 SQL を作りません。まず分析目的を、対象、イベント、曝露、アウトカム、属性、期間、除外条件、データセットの粒度に分解します。そのうえで、利用可能な ER 図、dictionary CSV、cardinality 結果、entity matrix 結果を参照し、必要なテーブル・カラム・JOIN キーを特定します。
+
+既存成果物がない場合は、`SHOW TABLES`、`DESCRIBE <table>`、`INFORMATION_SCHEMA.COLUMNS` などで Table Schema を確認してから SQL を設計します。スキーマ確認なしに本 SQL は作りません。
+
+標準成果物は repo root の `sql/` 配下に置きます。
+
+```text
+sql/drafts/<topic>/
+  main_query.sql
+  validation_query.sql
+  query_note.md
+```
+
+検証済みになった SQL は、ユーザー確認後に `sql/validated/<topic>/` へ移します。
 
 ## ワークフロー
 
@@ -89,6 +120,8 @@ Rscript tests/test_vcd_categorical_smoke.R
 - **正本**: `.cursor/skills` ディレクトリ
 - **同期先**: `.agent/skills`（Antigravity 用）
 - シンボリックリンクは使用しない
+- 実装時は `.agent` と `.cursor` の両方を同時更新し、内容一致を保つ
+- SQL成果物は Skill 配下に置かず、repo root の `sql/` に置く
 
 詳細な同期ルール（対象ファイル一覧、置換ルール、コマンド例）は以下を参照：
 
