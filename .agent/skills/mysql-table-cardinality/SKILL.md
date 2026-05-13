@@ -79,3 +79,8 @@ python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d 
 ## 参照
 
 - `scripts/get_cardinality_cli.py`
+
+## 次のステップ: Query 作成支援
+
+DB構造、テーブル分布、ID所在を確認した後、分析目的に応じた SQL を作る場合は `mysql-create-query-support` を使う。
+この支援では、自然文の問いを粒度・JOIN・期間・検証観点に分解し、`sql/drafts/<topic>/main_query.sql`、`validation_query.sql`、`query_note.md` を作成する。

@@ -32,3 +32,8 @@ python3 .agent/skills/mysql-entity-matrix/scripts/generate_matrix_sql.py -d <Dat
 
 > [!NOTE]
 > Review `references/output_format_example.md` to see exactly what pattern A SQL format the script writes out.
+
+## 次のステップ: Query 作成支援
+
+DB構造、テーブル分布、ID所在を確認した後、分析目的に応じた SQL を作る場合は `mysql-create-query-support` を使う。
+この支援では、自然文の問いを粒度・JOIN・期間・検証観点に分解し、`sql/drafts/<topic>/main_query.sql`、`validation_query.sql`、`query_note.md` を作成する。
