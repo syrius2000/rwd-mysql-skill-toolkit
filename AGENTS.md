@@ -32,3 +32,19 @@
 .agent
 .cursor
 両方に同一内容のskillを配置すること。
+
+## 統合方針
+
+- このリポジトリを、統合DB構築・分析スキルの本体として扱う。
+- 以下のディレクトリは参照専用。読み取りは可、変更は禁止。
+  - `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_VSCODE/`
+  - `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_RAW/`
+  - `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_Gemini/`
+- 参照ディレクトリが進んでいる場合のみ、このリポジトリへ差分を取り込む。
+
+## Query 作成支援
+
+- 若手向けに、自然文の分析目的から SQL を作る `mysql-create-query-support` を探索系に置く。
+- SQL成果物は Skill 配下ではなく repo root の `sql/` に保存する。
+- 標準成果物は `main_query.sql`, `validation_query.sql`, `query_note.md` とする。
+- 検証前は `sql/drafts/`、検証後は `sql/validated/` に置く。
