@@ -66,3 +66,19 @@ def test_agents_mentions_read_only_reference_dirs_and_sql_policy():
     assert "OSX_IDE_Skill_management_Gemini" in agents
     assert "sql/" in agents
     assert "mysql-create-query-support" in agents
+
+
+def test_existing_db_skills_link_to_query_support():
+    skill_paths = [
+        ".agent/skills/flat-file-mysql-overview/SKILL.md",
+        ".agent/skills/mysql-er-diagram/SKILL.md",
+        ".agent/skills/mysql-table-cardinality/SKILL.md",
+        ".agent/skills/mysql-entity-matrix/SKILL.md",
+        ".cursor/skills/flat-file-mysql-overview/SKILL.md",
+        ".cursor/skills/mysql-er-diagram/SKILL.md",
+        ".cursor/skills/mysql-table-cardinality/SKILL.md",
+        ".cursor/skills/mysql-entity-matrix/SKILL.md",
+    ]
+    for rel in skill_paths:
+        content = (ROOT / rel).read_text(encoding="utf-8")
+        assert "mysql-create-query-support" in content, rel
