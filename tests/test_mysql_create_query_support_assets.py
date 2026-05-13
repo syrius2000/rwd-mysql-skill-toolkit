@@ -82,3 +82,42 @@ def test_existing_db_skills_link_to_query_support():
     for rel in skill_paths:
         content = (ROOT / rel).read_text(encoding="utf-8")
         assert "mysql-create-query-support" in content, rel
+
+
+def test_reference_analysis_skills_are_mirrored_and_neutralized():
+    optional_skills = [
+        "vcd-categorical-reporting",
+        "vcd-bayesian-evidence-analysis",
+    ]
+    for skill in optional_skills:
+        agent_dir = ROOT / ".agent/skills" / skill
+        cursor_dir = ROOT / ".cursor/skills" / skill
+        assert agent_dir.exists(), f"missing {agent_dir}"
+        assert cursor_dir.exists(), f"missing {cursor_dir}"
+        assert (agent_dir / "SKILL.md").exists(), f"missing {agent_dir / 'SKILL.md'}"
+        assert (cursor_dir / "SKILL.md").exists(), f"missing {cursor_dir / 'SKILL.md'}"
+        assert (agent_dir / "SKILL.md").read_text(encoding="utf-8") == (
+            cursor_dir / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+    bayesian = (
+        ROOT / ".agent/skills/vcd-bayesian-evidence-analysis/SKILL.md"
+    ).read_text(encoding="utf-8")
+    assert "run_shell_command" not in bayesian
+    assert "write_file" not in bayesian
+    assert "sql/validated/" in bayesian
+    assert (
+        ROOT / ".agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R"
+    ).exists()
+    assert (
+        ROOT / ".agent/skills/vcd-bayesian-evidence-analysis/templates/dashboard.Rmd"
+    ).exists()
+    assert (
+        ROOT / ".agent/skills/vcd-categorical-reporting/references/interface.md"
+    ).exists()
+
+
+def test_readme_lists_brought_forward_analysis_skills():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "vcd-categorical-reporting" in readme
+    assert "vcd-bayesian-evidence-analysis" in readme

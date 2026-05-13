@@ -1,0 +1,422 @@
+---
+title: "多次元エビデンス分析ダッシュボード"
+date: "`r format(Sys.time(), '%Y年%m月%d日 %H:%M', tz='Asia/Tokyo')`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+    self_contained: true
+    mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+params:
+  output_dir: "./skill_out/vcd_bayesian"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+suppressPackageStartupMessages({
+  if (!base::requireNamespace("pacman", quietly = TRUE)) {
+    utils::install.packages("pacman", repos = "https://cloud.r-project.org")
+  }
+  pacman::p_load(jsonlite, DT, dplyr, htmltools, knitr, rmarkdown)
+})
+
+# output_dir の解決（knit_root_dir = getwd() 前提）
+output_dir <- params$output_dir
+json_path <- file.path(output_dir, "evidence_results.json")
+summ_path <- file.path(output_dir, "executive_summary.md")
+
+if (!file.exists(json_path)) {
+  stop(paste("evidence_results.json が見つかりません:", json_path))
+}
+
+res <- fromJSON(json_path)
+dims <- res$dimensions
+n_total <- res$n_total
+bf_str <- res$bf_independence
+log_n <- res$log_n
+threshold <- res$threshold
+threshold_k <- res$threshold_k %||% 1
+full_data <- as.data.frame(res$full_data)
+
+cramers_v <- res$cramers_v
+cramers_v_ci_low <- res$cramers_v_ci_low
+cramers_v_ci_high <- res$cramers_v_ci_high
+large_sample_mode <- isTRUE(res$large_sample_mode)
+top_k <- as.integer(res$top_k %||% 10L)
+top_k_data <- if (!is.null(res$top_k_data)) {
+  as.data.frame(res$top_k_data)
+} else {
+  head(full_data, top_k)
+}
+
+# 数値型を保証
+num_cols <- c("Freq", "Expected", "Residual", "Evidence_Score")
+for (col in num_cols) {
+  if (col %in% names(full_data)) {
+    full_data[[col]] <- as.numeric(full_data[[col]])
+  }
+}
+
+n_positive <- sum(full_data$Evidence_Score > 0, na.rm = TRUE)
+n_cells <- nrow(full_data)
+
+# AI サマリーの読み込み（存在しない場合はプレースホルダー）
+if (file.exists(summ_path)) {
+  summary_text <- paste(readLines(summ_path, encoding = "UTF-8"), collapse = "\n")
+} else {
+  summary_text <- paste0(
+    "### AI エグゼクティブ・サマリー（未生成）\n\n",
+    "> **Pass 2 未実行**: `executive_summary.md` が見つかりません。\n>\n",
+    "> SKILL.md の指示に従い、`", json_path, "` を入力として AI 考察を生成し、\n",
+    "> `", summ_path, "` として保存してください。\n\n",
+    "**暫定情報**:\n\n",
+    "- 分析変数: ", paste(dims, collapse = " × "), "\n",
+    "- 総度数: N = ", format(n_total, big.mark = ","), "\n",
+    "- BF10 = ", bf_str, "\n",
+    "- 閾値 k×log(N) = ", round(as.numeric(threshold), 4), " (k = ", threshold_k, ")\n",
+    "- エビデンス・セル数: ", n_positive, " / ", n_cells, "\n"
+  )
+}
+```
+
+```{css, echo=FALSE}
+body {
+  font-family: "Helvetica Neue", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 14px;
+  color: #333;
+  background: #f0f2f5;
+  margin: 0;
+  padding: 20px;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header-banner {
+  background: linear-gradient(135deg, #1a3a5c 0%, #2d6a9f 100%);
+  color: white;
+  padding: 24px 32px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.header-banner h2 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.header-banner .meta-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  flex: 1 1 180px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.stat-card .value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1a3a5c;
+}
+
+.stat-card .label {
+  font-size: 12px;
+  color: #666;
+  margin-top: 6px;
+}
+
+.stat-card.bf-card .value { color: #c0392b; }
+.stat-card.evidence-card .value { color: #27ae60; }
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1a3a5c;
+  border-left: 5px solid #2d6a9f;
+  padding-left: 12px;
+  margin: 8px 0 16px 0;
+}
+
+.ai-summary-box {
+  background: #fff;
+  border: 1px solid #d0dce8;
+  border-radius: 8px;
+  padding: 24px 32px;
+  line-height: 1.8;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.ai-summary-box h3, .ai-summary-box h4 { color: #1a3a5c; margin-top: 24px; }
+
+.formula-box {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+
+.evidence-note {
+  background: #d4edda;
+  border: 1px solid #b5d5bc;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #155724;
+}
+
+.dt-section {
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.dataTables_wrapper { font-size: 13px; }
+```
+
+<div class="dashboard-container">
+
+```{r header-banner, results='asis'}
+dataset_nm <- if (!is.null(res$dataset_name)) res$dataset_name else "Dataset"
+cat(paste0(
+  '<div class="header-banner">',
+  '<h2>\U1F4CA 多次元エビデンス分析ダッシュボード</h2>',
+  '<div class="meta-info">',
+  '<span>📁 <b>データ:</b> ', dataset_nm, '</span>',
+  '<span>📊 <b>変数:</b> ', paste(dims, collapse = " \u00d7 "), '</span>',
+  '<span>🔢 <b>総度数:</b> N = ', format(n_total, big.mark = ","), '</span>',
+  '<span>\u23f1 <b>作成:</b> ', format(Sys.time(), "%Y-%m-%d %H:%M", tz="Asia/Tokyo"), '</span>',
+  '</div></div>'
+))
+```
+
+```{r stats-cards, results='asis'}
+pct_evidence <- round(n_positive / n_cells * 100, 1)
+cv_display <- if (!is.null(cramers_v) && length(cramers_v) && !is.na(cramers_v)) {
+  sprintf("%.4f", as.numeric(cramers_v[1]))
+} else {
+  "N/A"
+}
+
+cat(paste0(
+  '<div class="stats-grid">',
+  '<div class="stat-card bf-card"><div class="value">', bf_str, "</div>",
+  '<div class="label">BF<sub>10</sub>（独立仮説への反証）</div></div>',
+  '<div class="stat-card"><div class="value">', sprintf("%.4f", as.numeric(threshold)), "</div>",
+  '<div class="label">\u95cc\u5024 (k \u00d7 log(N)), k=', threshold_k, '</div></div>',
+  '<div class="stat-card evidence-card"><div class="value">', n_positive, " / ", n_cells, "</div>",
+  '<div class="label">\u30a8\u30d3\u30c7\u30f3\u30b9\u30fb\u30bb\u30eb\u6570</div></div>',
+  '<div class="stat-card evidence-card"><div class="value">', sprintf("%.1f", pct_evidence), "%</div>",
+  '<div class="label">\u30a8\u30d3\u30c7\u30f3\u30b9\u7387</div></div>',
+  '<div class="stat-card" style="border-color: #8e44ad;"><div class="value" style="color: #8e44ad;">', cv_display, "</div>",
+  '<div class="label">Cram&eacute;r\'s V（効果量）</div></div>',
+  "</div>"
+))
+
+if (large_sample_mode) {
+  cat(paste0(
+    '<div class="evidence-note" style="background:#ffeaa7;border-color:#fdcb6e;color:#856404;margin-top:12px;">',
+    "\u26a0\ufe0f <b>大規模データモード</b>: N &gt; ", res$large_n_threshold,
+    "\u3002\u52b9\u679c\u91cf\uff08Cram&eacute;r's V\uff09\u3092\u512a\u5148\u3057\u3066\u89e3\u91c8\u3057\u3066\u304f\u3060\u3055\u3044\u3002</div>"
+  ))
+}
+```
+
+<div class="section-title">&#129504; AI エグゼクティブ・サマリー（Pass 2 出力）</div>
+
+```{r ai-summary, results='asis'}
+cat('<div class="ai-summary-box">\n')
+cat(knitr::knit(text = summary_text, quiet = TRUE))
+cat("\n</div>\n")
+```
+
+```{r top-k-heading, results='asis'}
+cat(paste0('<div class="section-title">\U1F3C6 Top-', top_k, " エビデンス・セル</div>\n"))
+```
+
+<div class="dt-section">
+```{r top-k-table}
+tk <- top_k_data
+names(tk)[names(tk) == "Freq"] <- "度数"
+names(tk)[names(tk) == "Expected"] <- "期待値"
+names(tk)[names(tk) == "Residual"] <- "標準残差"
+names(tk)[names(tk) == "Evidence_Score"] <- "エビデンス・スコア"
+
+for (v in dims) {
+  if (v %in% names(tk)) {
+    tk[[v]] <- factor(tk[[v]], levels = sort(unique(as.character(tk[[v]]))))
+  }
+}
+
+datatable(
+  tk,
+  filter = "none",
+  rownames = FALSE,
+  caption = htmltools::tags$caption(
+    style = "caption-side: top; text-align: left; font-size: 13px; color: #555;",
+    paste0("Evidence Score 上位 ", top_k, " セル（閾値 k=", threshold_k, "）")
+  ),
+  options = list(pageLength = top_k, dom = "t", scrollX = TRUE)
+) |>
+  formatRound(c("期待値", "標準残差", "エビデンス・スコア"), digits = 4) |>
+  formatStyle(
+    "エビデンス・スコア",
+    backgroundColor = styleInterval(0, c("#fff3cd", "#d4edda")),
+    fontWeight = "bold"
+  ) |>
+  formatStyle(
+    "標準残差",
+    color = styleInterval(0, c("#e74c3c", "#2980b9"))
+  )
+```
+</div>
+
+<div class="section-title">&#128200; Evidence Score の定義</div>
+
+<div class="formula-box">
+$$\text{Evidence Score} = r_{ijk}^2 - k \cdot \log(N)$$
+<ul style="margin:6px 0 0 0; font-size:13px;">
+  <li>$r_{ijk}$: Poisson GLM（独立モデル）による標準化ピアソン残差</li>
+  <li>$k \cdot \log(N)$: 多段階閾値（本レポート: $k =$ <strong>`r threshold_k`</strong>, $\log(N) =$ <strong>`r round(log_n, 4)`</strong>）</li>
+  <li><span style="color:#27ae60;font-weight:bold;">正値</span>: 実質的エビデンス（ノイズを超える真の関連）</li>
+  <li><span style="color:#e67e22;font-weight:bold;">負値</span>: ノイズレベル（独立モデルで説明可能）</li>
+</ul>
+</div>
+
+```{r evidence-note, results='asis'}
+cat(paste0(
+  '<div class="evidence-note">\u2705 <b>', n_positive, " \u30bb\u30eb / ", n_cells, " \u30bb\u30eb\uff08",
+  sprintf("%.1f", pct_evidence), "%\uff09</b> \u304c\u30a8\u30d3\u30c7\u30f3\u30b9\u30fb\u30b9\u30b3\u30a2\u6b63\u5024\uff08threshold = ",
+  sprintf("%.4f", as.numeric(threshold)), " \u8d85\u904e\uff09\u3002",
+  "\u3053\u308c\u3089\u306e\u30bb\u30eb\u306f\u5927\u6a19\u672c\uff08N = ", format(n_total, big.mark = ","),
+  "\uff09\u306b\u304a\u3044\u3066\u3082\u7d71\u8a08\u30ce\u30a4\u30ba\u3092\u8d85\u3042\u308b<b>\u5b9f\u8cea\u7684\u306a\u95a2\u9023</b>\u3092\u6301\u3061\u307e\u3059\u3002</div>"
+))
+```
+
+<details id="all-cells-detail">
+<summary class="section-title" style="cursor:pointer;">&#128203; 全セル・エビデンス・テーブル（クリックで展開）</summary>
+
+<div class="dt-section" style="margin-top:12px;">
+```{r dt-table}
+cat_vars <- dims
+dt_data <- full_data
+names(dt_data)[names(dt_data) == "Freq"] <- "度数"
+names(dt_data)[names(dt_data) == "Expected"] <- "期待値"
+names(dt_data)[names(dt_data) == "Residual"] <- "標準残差"
+names(dt_data)[names(dt_data) == "Evidence_Score"] <- "エビデンス・スコア"
+
+for (v in cat_vars) {
+  if (v %in% names(dt_data)) {
+    dt_data[[v]] <- factor(dt_data[[v]], levels = sort(unique(as.character(dt_data[[v]]))))
+  }
+}
+
+datatable(
+  dt_data,
+  filter = "top",
+  rownames = FALSE,
+  caption = htmltools::tags$caption(
+    style = "caption-side: top; text-align: left; font-size: 13px; color: #555;",
+    paste0(
+      "全 ", n_cells, " セル | N = ", format(n_total, big.mark = ","),
+      " | BF10 = ", bf_str,
+      " | threshold = ", round(threshold, 4)
+    )
+  ),
+  options = list(
+    pageLength = 20,
+    scrollX = TRUE,
+    order = list(list(ncol(dt_data) - 1, "desc")),
+    language = list(url = "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ja.json")
+  )
+) |>
+  formatRound(c("期待値", "標準残差", "エビデンス・スコア"), digits = 4) |>
+  formatStyle(
+    "エビデンス・スコア",
+    backgroundColor = styleInterval(0, c("#fff3cd", "#d4edda")),
+    fontWeight = "bold"
+  ) |>
+  formatStyle(
+    "標準残差",
+    color = styleInterval(0, c("#e74c3c", "#2980b9"))
+  )
+```
+</div>
+</details>
+
+<details>
+<summary class="section-title" style="cursor:pointer;">&#128218; 統計指標の用語解説（クリックで展開）</summary>
+<div class="ai-summary-box" style="margin-top:12px;">
+
+<h4>■ Evidence Score = r² − log(N)</h4>
+<p>各セルが「独立モデルからどれだけ逸脱しているか」を測る指標です。</p>
+<ul>
+<li><span style="color:#2980b9;font-weight:bold;">正値</span>: 真の関連（統計ノイズを超える逸脱）</li>
+<li><span style="color:#e74c3c;font-weight:bold;">負値</span>: ノイズ範囲（偶然で説明可能）</li>
+</ul>
+
+<h4>■ ベイズファクター（BF<sub>10</sub>）</h4>
+<p>「変数間に関連がある」仮説 vs「独立」仮説の証拠比です。</p>
+<ul>
+<li>BF &gt; 100: 決定的エビデンス</li>
+<li>BF &gt; 10: 強いエビデンス</li>
+<li>BF &gt; 3: 中程度のエビデンス</li>
+</ul>
+
+<h4>■ Cramér's V（0〜1）</h4>
+<p>変数間の関連の「強さ」を示す効果量です。サンプルサイズに依存しません。</p>
+<ul>
+<li>0.1未満: 弱い関連</li>
+<li>0.3前後: 中程度の関連</li>
+<li>0.5以上: 強い関連（Cohen, 1988 基準）</li>
+</ul>
+
+<h4>■ 標準化ピアソン残差（r）</h4>
+<p>各セルの観測値と期待値のずれの方向と大きさを示します。</p>
+<ul>
+<li><span style="color:#2980b9;">正(+)</span>: 期待より多い（過剰）</li>
+<li><span style="color:#e74c3c;">負(−)</span>: 期待より少ない（過少）</li>
+</ul>
+
+</div>
+</details>
+
+</div> <!-- End dashboard-container -->
+
+```{r footer, results='asis'}
+cat(paste0(
+  '<hr style="margin-top:40px; border-color:#dee2e6;">',
+  '<p style="font-size:11px; color:#999; text-align:right;">',
+  "Generated by <strong>vcd-bayesian-evidence-analysis v1.0</strong> &nbsp;|&nbsp; ",
+  "Evidence Score = r&#178; &minus; log(N) &nbsp;|&nbsp; ",
+  format(Sys.time(), "%Y-%m-%d %H:%M JST", tz = "Asia/Tokyo"),
+  "</p>"
+))
+```
