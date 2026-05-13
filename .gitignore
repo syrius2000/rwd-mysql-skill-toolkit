@@ -26,6 +26,7 @@ htmlcov/
 Thumbs.db
 
 # IDE / local
+.worktrees/
 chrome_profile_notebooklm/
 *.local
 .env
