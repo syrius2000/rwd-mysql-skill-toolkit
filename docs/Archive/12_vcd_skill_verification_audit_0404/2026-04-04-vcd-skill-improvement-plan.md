@@ -1,3 +1,5 @@
+archived_from: docs/superpowers/plans/2026-04-04-vcd-skill-improvement.md
+
 # VCD カテゴリカル分析スキル改善 実装計画
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -8,7 +10,7 @@
 
 **Tech Stack:** R 4.4.x, gt, DT, htmlwidgets, jsonlite, vcd, ggplot2
 
-**Spec:** [2026-04-04-vcd-skill-improvement-design.md](../specs/2026-04-04-vcd-skill-improvement-design.md)
+**Spec:** [2026-04-04-vcd-skill-improvement-design.md](../../superpowers/specs/2026-04-04-vcd-skill-improvement-design.md)
 
 ---
 

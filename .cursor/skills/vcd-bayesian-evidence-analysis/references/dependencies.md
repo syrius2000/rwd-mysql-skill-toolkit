@@ -15,7 +15,7 @@
 | **必須** | `knitr` | `dashboard.Rmd` のチャンク・サマリー knit |
 | **必須** | `rmarkdown` | `dashboard.Rmd` の HTML レンダリング |
 | **必須** | `pacman` | パッケージの自動インストールとロード管理 |
-| **必須** | `effectsize` | Cramér's V（効果量）の算出と信頼区間 |
+| **必須** | `effectsize` | Cramér's V / Fei（効果量）の算出と信頼区間 |
 
 ## インストール方法
 
@@ -27,3 +27,7 @@ pacman::p_load(dplyr, tidyr, jsonlite, DT, htmlwidgets, htmltools, effectsize)
 # ダッシュボード（Pass 3）の setup チャンク
 pacman::p_load(jsonlite, DT, dplyr, htmltools, knitr, rmarkdown)
 ```
+
+## 補足
+
+- ARM（support/confidence/lift）は `analysis.R` 内で重み付き集計を自前計算するため、追加パッケージは不要です。

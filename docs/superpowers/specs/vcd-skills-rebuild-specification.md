@@ -11,7 +11,7 @@ author: Cursor Agent (Claude)
 | **再構築の正本（契約）** | 各スキル `references/interface.md` | フィールド名・ファイル規約はここと一致させる |
 | **再構築手順・REQ 樹** | **本書** | Skill ディレクトリを空から再生成する際のチェックリスト |
 | **背景・設計意図** | [2026-04-04-vcd-skill-improvement-design.md](./2026-04-04-vcd-skill-improvement-design.md) | 歴史・判断理由 |
-| **タスク分解** | [../plans/2026-04-04-vcd-skill-improvement.md](../plans/2026-04-04-vcd-skill-improvement.md) | 実装順序の参考 |
+| **タスク分解** | [../../Archive/12_vcd_skill_verification_audit_0404/2026-04-04-vcd-skill-improvement-plan.md](../../Archive/12_vcd_skill_verification_audit_0404/2026-04-04-vcd-skill-improvement-plan.md) | 実装順序の参考（アーカイブ） |
 
 **interface_version（現行）: `2.1`**（`summary_*.json` および `interface.md` 先頭と一致すること）
 
@@ -310,4 +310,4 @@ vcd-categorical-reporting/
 ## 9. 関連リンク
 
 - 設計（背景）: [2026-04-04-vcd-skill-improvement-design.md](./2026-04-04-vcd-skill-improvement-design.md)
-- 実装計画: [../plans/2026-04-04-vcd-skill-improvement.md](../plans/2026-04-04-vcd-skill-improvement.md)
+- 実装計画: [../../Archive/12_vcd_skill_verification_audit_0404/2026-04-04-vcd-skill-improvement-plan.md](../../Archive/12_vcd_skill_verification_audit_0404/2026-04-04-vcd-skill-improvement-plan.md)

@@ -33,7 +33,7 @@ author: AI Agent (Gemini 2.0 Pro)
 
 #### 2. 今後も参照すべき情報（`docs/Reference` へ移動）
 Git操作手順や開発ルールなどの汎用的な情報。
-- `Artifact_010_git_push_rebase_procedure_0301_1030.md` (Git rebase 手順)
+- [git_push_rebase_procedure_0301_1030.md](../../Reference/git_push_rebase_procedure_0301_1030.md) (Git rebase 手順、旧 Artifact_010)
 - `Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md` (スキル同期ルール)
 - `doc-coauthoring_SKILL_backup_0215_1430.md` (スキルバックアップ)
 

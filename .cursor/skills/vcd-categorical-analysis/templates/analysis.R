@@ -6,6 +6,22 @@
 if (!base::requireNamespace("pacman", quietly = TRUE)) utils::install.packages("pacman", repos = "https://cloud.r-project.org")
 pacman::p_load(vcd, gt, DT, htmlwidgets, ggplot2, jsonlite)
 
+# run_scope.R の読み込み
+find_agent_repo <- function() {
+  d <- base::normalizePath(base::getwd(), winslash = "/", mustWork = FALSE)
+  for (i in base::seq_len(20L)) {
+    p <- base::file.path(d, ".agent", "shared", "run_scope.R")
+    if (base::file.exists(p)) {
+      return(d)
+    }
+    parent <- base::dirname(d)
+    if (parent == d) break
+    d <- parent
+  }
+  base::getwd()
+}
+base::source(base::file.path(find_agent_repo(), ".agent", "shared", "run_scope.R"))
+
 args <- base::commandArgs(trailingOnly = TRUE)
 mode <- if ("--profile" %in% args) "profile" else "render"
 
@@ -21,11 +37,76 @@ get_arg_val <- function(arg_name, default = NULL) {
 }
 
 config_path <- get_arg_val("--config")
-data_path <- get_arg_val("--data")
-vars_arg <- get_arg_val("--vars", "Hair,Eye,Sex")
-freq_col <- get_arg_val("--freq", "Freq")
-data_label <- get_arg_val("--label", "data")
-output_dir <- get_arg_val("--out", "./skill_out/vcd_categorical/")
+
+# デフォルト値の設定
+data_path <- NULL
+vars_arg <- "Hair,Eye,Sex"
+freq_col <- "Freq"
+data_label <- "data"
+output_dir <- "./skill_out/vcd_categorical/"
+run_id_raw <- get_arg_val("--run-id")
+
+# JSON 設定の読み込み (Pass 0 連携用)
+if (!base::is.null(config_path) && base::file.exists(config_path)) {
+  base::message("[INFO] 設定ファイルを読み込み中: ", config_path)
+  config_data <- jsonlite::fromJSON(config_path)
+
+  # マッピング: JSONキー -> スクリプト内部変数/引数名
+  if (!base::is.null(config_data$input)) data_path <- config_data$input
+  if (!base::is.null(config_data$vars)) vars_arg <- base::paste(config_data$vars, collapse = ",")
+  if (!base::is.null(config_data$freq)) freq_col <- config_data$freq
+  if (!base::is.null(config_data$output_dir)) output_dir <- config_data$output_dir
+  if (!base::is.null(config_data$run_id)) run_id_raw <- config_data$run_id
+
+  # vcd-categorical 特有の引数
+  if (!base::is.null(config_data$row_var)) row_var_json <- config_data$row_var
+  if (!base::is.null(config_data$col_var)) col_var_json <- config_data$col_var
+  if (!base::is.null(config_data$layer_var)) layer_var_json <- config_data$layer_var
+}
+
+# CLI 引数による上書き（CLI 優先）
+data_path <- get_arg_val("--data", data_path)
+vars_arg <- get_arg_val("--vars", vars_arg)
+freq_col <- get_arg_val("--freq", freq_col)
+data_label <- get_arg_val("--label", data_label)
+output_dir <- get_arg_val("--out", output_dir)
+run_id_raw <- get_arg_val("--run-id", run_id_raw)
+
+sanitize_run_slug <- function(x) {
+  if (base::is.null(x) || !base::nzchar(base::trimws(base::as.character(x)[1]))) {
+    return(NULL)
+  }
+  x <- base::trimws(base::as.character(x)[1])
+  if (base::tolower(x) == "auto") {
+    return(base::format(base::Sys.time(), "%Y%m%d_%H%M%S", tz = "Asia/Tokyo"))
+  }
+  x <- base::gsub("[/\\\\]", "_", x)
+  x <- base::gsub("^\\.+|\\.+$", "", x)
+  if (!base::nzchar(x)) {
+    base::stop("無効な --run-id です")
+  }
+  x
+}
+out_root_for_meta <- base::sub("/+$", "", output_dir)
+run_slug <- sanitize_run_slug(run_id_raw)
+if (!base::is.null(run_slug)) {
+  output_dir <- base::file.path(out_root_for_meta, "runs", run_slug)
+  base::message("[INFO] --run-id により出力先: ", output_dir)
+}
+
+# ディレクトリ作成
+if (!base::dir.exists(output_dir)) {
+  base::dir.create(output_dir, recursive = TRUE)
+}
+
+# run_meta.json の書き出し
+write_run_meta(
+  out_root = out_root_for_meta,
+  run_output_dir = output_dir,
+  skill = "vcd-categorical-analysis",
+  run_id = if (!base::is.null(run_slug)) run_slug else if (!base::is.null(run_id_raw)) run_id_raw else "manual",
+  input_data_path = data_path
+)
 
 vars <- base::trimws(base::unlist(base::strsplit(vars_arg, ",")))
 
@@ -512,6 +593,24 @@ generate_plots <- function(tab, vars, output_dir, config, data_label) {
 }
 
 # ============================================================
+# generate_categorical_results_json (for Pass 3 Dashboard)
+# ============================================================
+generate_categorical_results_json <- function(df, vars, freq_col, output_dir, res_combined, data_label) {
+  # dashboard.Rmd が期待する構造
+  output <- list(
+    interface_version = "1.0",
+    dataset_name = data_label,
+    dimensions = vars,
+    n_total = sum(df[[freq_col]], na.rm = TRUE),
+    cramers_v = tryCatch(vcd::assocstats(xtabs(as.formula(paste(freq_col, "~", paste(vars[1:2], collapse = " + "))), data = df))$cramer, error = function(e) NA),
+    full_data = res_combined
+  )
+
+  jsonlite::write_json(output, file.path(output_dir, "categorical_results.json"), auto_unbox = TRUE, pretty = TRUE)
+  base::message("[JSON] categorical_results.json written for dashboard integration")
+}
+
+# ============================================================
 # Main dispatcher
 # ============================================================
 base::dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -535,26 +634,12 @@ if (mode == "profile") {
 
   # Generate data, tables, plots (generate_data applies aggregation internally)
   res <- generate_data(df, vars, freq_col, output_dir, config, data_label)
-  
-  if (!base::requireNamespace("effectsize", quietly = TRUE)) utils::install.packages("effectsize", repos = "https://cloud.r-project.org")
-  
-  n_tot <- sum(res$df[[freq_col]], na.rm = TRUE)
-  cv_val <- tryCatch(effectsize::cramers_v(res$tab, ci=NULL)$Cramers_v, error = function(e) NA_real_)
-  
-  cat_results <- list(
-    dataset_name = data_label,
-    dimensions = vars,
-    n_total = n_tot,
-    cramers_v = as.numeric(cv_val),
-    full_data = res$res_combined
-  )
-  jsonlite::write_json(cat_results, base::file.path(output_dir, "categorical_results.json"), auto_unbox = TRUE, pretty = TRUE)
-  base::message("[JSON] categorical_results.json written to ", output_dir)
+  generate_gt_matrix(res$res_combined, vars, freq_col, output_dir, config, data_label)
+  generate_dt_table(res$res_combined, vars, output_dir, config, data_label)
+  generate_plots(res$tab, vars, output_dir, config, data_label)
 
-  # HTML/Plot generation is now delegated to Dashboard 2.0 (Pass 3)
-  # generate_gt_matrix(res$res_combined, vars, freq_col, output_dir, config, data_label)
-  # generate_dt_table(res$res_combined, vars, output_dir, config, data_label)
-  # generate_plots(res$tab, vars, output_dir, config, data_label)
+  # 追加: ダッシュボード連携用 JSON
+  generate_categorical_results_json(df_agg, vars, freq_col, output_dir, res$res_combined, data_label)
 
   base::message("[DONE] All outputs generated for: ", data_label)
 }

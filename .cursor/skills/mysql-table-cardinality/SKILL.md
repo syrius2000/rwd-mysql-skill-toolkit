@@ -14,7 +14,7 @@ metadata:
 - 実行 cwd は **プロジェクトルート**。
 - 出力先は `./skill_out/mysql_table_cardinality`（`-o` 未指定時の既定）。
 - エージェントが本 Skill に従い、MCP または `scripts/get_cardinality_cli.py` を呼び出す。
-- **Cursor** では `.cursor/skills/mysql-table-cardinality/`、**Antigravity** では `.agent/skills/mysql-table-cardinality/` を参照。同一内容を両方に配置する（MUST）。
+- 正本は `.agent/skills/mysql-table-cardinality/`。変更後は `./scripts/sync-cursor-skills.sh` で `.cursor/skills/` に同期する。Cursor はミラー、Antigravity は正本を参照する。
 
 ## 動作の流れ
 

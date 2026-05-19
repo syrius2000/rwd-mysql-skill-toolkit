@@ -19,6 +19,10 @@
 ## Artifacts & ドキュメント
 
 - Skill の成果物・指示書は各 Skill の指示に従う（一般的には `./skill_out` 配下など）。
+- **ルートの Markdown**: 本ファイル（エージェントルール）と `README.md`（人向け概要）のみ。それ以外は `docs/` 配下（索引は [docs/README.md](docs/README.md)）。
+- **計画成果物**: `./docs/Artifacts/`（Cursor `plan-artifacts` の命名・先頭メタ行に従う）。
+- **現行設計・計画**: `./docs/superpowers/`。未着手改善は `./docs/superpowers/backlog/`。
+- **過去記録**: `./docs/Archive/`。
 
 ## コーディング
 
@@ -30,11 +34,26 @@
 
 ## スキル管理
 
-- **正本**: `.agent/skills/`（開発・Antigravity 実行）
-- **Cursor**: `.cursor/skills/` は正本へのミラー。二重編集しない。
-- **同期**: `.agent` を編集したら `rsync -a --delete .agent/skills/ .cursor/skills/` で反映する。
-- **VCD 系**: `vcd-categorical-analysis` は3ステップ必須（集計 → `executive_summary.md` → `dashboard.Rmd` 既定）。`vcd-categorical-reporting` は非推奨。
-- **複雑分析**: `vcd-bayesian-evidence-analysis` 等も、実行フェーズでは Step 1→2→3 を途中停止せず完遂する。
+### `.agent/` 構成
+
+```text
+.agent/
+├── skills/<skill-name>/   # 正本（SKILL.md, references/, templates/, …）
+└── shared/                # R ユーティリティ（スキルではない・Cursor へ同期しない）
+```
+
+- **正本**: `.agent/skills/<skill-name>/`（開発・Antigravity/CURSOR 実行）。契約・手順は各 `SKILL.md` を優先する。
+- **CURSOR ミラー**: `.cursor/skills/<skill-name>/` は **同名ディレクトリ**のコピーのみ。**編集しない**。
+- **同期**（リポジトリルートで実行。スキル変更後・コミット前）:
+  - `./scripts/sync-cursor-skills.sh`
+  - または `rsync -a --delete .agent/skills/ .cursor/skills/`
+- **検証**: `diff -rq .agent/skills .cursor/skills`（出力なしで一致）
+- **件数**: `SKILL.md` 付き **13スキル**。件数変更時は本節と `README.md` を更新する。
+- **R ユーティリティ**: `.agent/shared/`（`run_scope.R`, `inspect_data.R`）。`.cursor` へはコピーしない。
+- **Reference.md**（任意）: `.agent/skills/<name>/Reference.md` のみ編集。`rsync` でミラーへ反映。
+- **契約の正本**: `references/interface.md`（変更時は `interface_version` を整合させる）。
+- **VCD 系**: `vcd-pass0-consultation` は分析前の検分。`vcd-categorical-analysis` は **3ステップ必須**（Step1 内で R `--profile` → `render_config.json` → `--render`、Step2 `executive_summary.md`、Step3 `dashboard.Rmd` 既定）。`vcd-categorical-reporting` は非推奨。
+- **複雑分析**: `vcd-bayesian-evidence-analysis` も実行フェーズでは Pass 1→2→3 を途中停止せず完遂する。
 
 ## 統合方針
 

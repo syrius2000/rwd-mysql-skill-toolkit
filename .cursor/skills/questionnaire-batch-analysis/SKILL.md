@@ -1,107 +1,63 @@
 ---
 name: questionnaire-batch-analysis
-description: 複数設問のアンケート結果を CSV 設定ファイルで自動走査し、名義カテゴリと序数リッカートを一括でクロス集計・独立性検定・残差可視化するための R / Rmd テンプレートを生成する。question_config.csv と summary.csv 仕様を固定し、初心者にも分かる ggplot2 のモデル乖離（Pearson 残差）可視化を含む。出力は ./skill_out/questionnaire/。
+description: 設問設定CSV（question config）を用いて、アンケートの複数カテゴリカル設問を一括でクロス集計・カイ二乗検定し、`summary.csv` と設問別 `report.html` を生成するRバッチ実行スキル。`nominal_2way` / `likert_2way` / `nominal_3way` を扱う。
 license: MIT
 metadata:
-  author: questionnaire-batch-analysis-skill
-  version: "1.0"
+  version: "1.1"
 ---
 
-複数設問の分析を `question_config.csv` で制御し、設問ごとの HTML レポートと全体集約 `summary.csv` を生成する。エージェントは R を実行せず、実行可能テンプレートを作成する。
+**IRON LAW**: `--question-config` の必須列が欠けている、または `var1/var2/var3` が入力データに存在しない状態では実行しない。まず設定不整合を修正してから再実行する。
 
-## スコープ
+設問設定 CSV に基づき、複数設問を同一ルールで処理して `summary.csv` と設問別レポートを出力する。
 
-| 項目 | 内容 |
-| ---- | ---- |
-| 対象 | 名義カテゴリ + 序数リッカート |
-| 次元 | 2-way / 3-way |
-| 入力 | survey 本体 CSV + question_config.csv |
-| 出力 | 設問別 HTML + 図表 + 集約 summary.csv |
-| 中核可視化 | ggplot2 による Pearson 残差（モデル乖離）。セル数が少ない場合は dotplot、多い場合は heatmap に自動切り替え。mosaic/assoc は水準数・ラベル長が小さい場合のみ描画（auto 省略あり） |
-| 対象外 | 連続値解析、4-way 以上、Excel 直接読込 |
+## 実行前の推奨ステップ: Pass 0 (Interactive Consultation)
 
-## ディレクトリ
+分析を始める前に **`vcd-pass0-consultation`** スキルを使用して、データの検分と `analysis_config.json` の生成を行うことを強く推奨します。これにより、入力パスや出力先が一貫して管理されます。
 
-- `templates/report.Rmd`: 設問単位の分析テンプレート
-- `templates/batch_runner.R`: 設問CSVを順次処理して集約を作成
-- `examples/question_config_example.csv`: 設定CSVの実例
-- `references/survey_prep.md`: 入力CSV準備の要点
-- `references/interpretation.md`: レポートの読み方
+## 実行チェックリスト
 
-## question_config.csv 仕様
+- [ ] **入力確認（必須）**: `--data`（非集計CSV）と `--question-config`（設問設定CSV）が存在する
+- [ ] **共通設定確認**: `vcd-pass0-consultation` で生成した `analysis_config.json` がある場合は `--config` で渡す
+- [ ] **設定確認（必須）**: `references/config-schema.md` の必須列を満たす
+- [ ] **確認ゲート**: `--out` が既存ディレクトリの場合、上書きしてよいかユーザー確認
+- [ ] **確認ゲート**: 設問数が多い（目安: 50件超）場合、実行時間増大を案内して継続確認
+- [ ] **実行**: `templates/batch_runner.R` を実行
+- [ ] **完了判定**: `summary.csv` と `{output_slug}/report.html` が生成されている
 
-必須列:
-
-- `survey_id`
-- `question_id`
-- `analysis_type` (`nominal_2way`, `nominal_3way`, `likert_2way`, `likert_3way`)
-- `var1`
-- `var2`
-- `output_slug`
-
-任意列:
-
-- `var3`
-- `question_label`
-- `subset_expr`
-- `na_policy` (`drop`, `explicit_level`)
-- `ordered_levels` (`|` 区切り)
-- `reference_note`
-
-## summary.csv 仕様
-
-必須列:
-
-- `run_id`
-- `survey_id`
-- `question_id`
-- `analysis_type`
-- `variables`
-- `subset_expr_applied`
-- `na_policy`
-- `n_total`
-- `n_used`
-- `n_missing`
-- `model_name`
-- `statistic_name`
-- `statistic_value`
-- `df`
-- `p_value`
-- `effect_name`
-- `effect_value`
-- `cramer_v_marginal` — 2-way: 全体の Cramér V。3-way: var1×var2 の周辺表の V（`effect_value` と同値）
-- `cramer_v_df_star` — `min(r-1,c-1)`（周辺 2-way 表に基づく）
-- `cramer_v_effect_label` — 英語ラベル（`negligible` / `small` / `medium` / `large`）。閾値は 0.1,0.3,0.5 を `sqrt(df*)` で割った値、境界は **≥** で上の帯
-- `cramer_v_strata_json` — 3-way のみ。層別 V・各層の df*・ラベルを JSON（2-way は空文字）
-- `cramer_v_strata_mean` / `cramer_v_strata_max` / `cramer_v_strata_max_level` — 3-way の層別 V の要約（2-way は NA / 空）
-- `marginal_strata_signal` — `none` または `review_stratified`（`|V_marginal - mean(V_strata)| ≥ 0.05` のとき）
-- `marginal_strata_note` — 上記の理由コードまたは閾値内の注記
-- `max_abs_pearson_res`
-- `max_residual_cell`
-- `mosaic_rendered`
-- `assoc_rendered`
-- `skip_reason`
-- `residual_plot_path`
-- `mosaic_plot_path`
-- `assoc_plot_path`
-- `report_path`
-- `status`
-- `error_message`
-- `executed_at`
-
-## 実行例
+## 実行コマンド
 
 ```bash
 Rscript .agent/skills/questionnaire-batch-analysis/templates/batch_runner.R \
-  --data ./data/survey.csv \
-  --config .agent/skills/questionnaire-batch-analysis/examples/question_config_example.csv \
-  --out ./skill_out/questionnaire
+  --config analysis_config.json \
+  --question-config question_config.csv \
+  --run-id run_001
 ```
 
-## 注意
+- **`--config`**: `vcd-pass0-consultation` が出力した JSON 設定ファイル。
+- **`--question-config`**: 設問ごとの分析ルールを定義した CSV ファイル（従来の `--config`）。
+- **`--run-id`**: 実行識別子。指定すると成果物が隔離される。
 
-- `report.Rmd` は層別 Cramér V の JSON 出力に **`jsonlite`** を使う（`pacman::p_load` 既定で読み込み）。
-- `analysis_type` が `likert_*` の場合、`ordered_levels` をできるだけ指定する。
-- 3-way は分かりにくくなりやすいので、残差図で乖離上位セルを確認する。
-- mosaic/assoc は `plot_mode=auto`（既定）でセル数 > 16 (2-way) / > 36 (3-way) またはラベル長 > 24 文字の場合に自動省略される。`always` で強制描画も可。
-- `.agent` と `.cursor` で同一内容を維持する。
+※ `--config` を使用する場合、JSON 内の `input` が `--data` に、`question_config` が `--question-config` に自動的に割り当てられます。
+
+- **`--run-id`**: 既定値 `run` のときは従来どおり `--out` 直下に出力。`run_001` や `auto`（JSTタイムスタンプ）など **`run` 以外**を指定すると、成果物は `--out/runs/<id>/` に隔離され、`summary.csv` の上書き衝突を避けられます。
+
+## 出力
+
+- `--out`（既定: `./skill_out/questionnaire/`）配下（`--run-id` が `run` 以外のときは `runs/<id>/` サブフォルダ）
+  - `summary.csv`（`run_id` 列は **`--run-id` 解決後**の値。`auto` ならタイムスタンプ、`runs/<id>/` の `<id>` と一致）
+  - `{output_slug}/report.html`
+  - `{output_slug}/figures/residual_plot.png`
+
+## リソース（必要時のみ読む）
+
+- `examples/question_config_example.csv`: 設問設定CSVの具体例
+- `references/config-schema.md`: 設問設定CSVの必須列・最小例・よくある失敗
+- `references/survey_prep.md`: 入力CSV準備の要点
+- `references/interpretation.md`: 結果の読み方
+- `references/workflow.md`: 実行フローと確認ゲート
+
+## アンチパターン
+
+- 必須列未確認のまま実行する
+- `subset_expr` エラーを無視したまま結果を解釈する
+- `status=error` 行を確認せずに `summary.csv` をそのまま採用する

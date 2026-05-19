@@ -347,3 +347,15 @@ rm -rf OSX_IDE_Skill_management_Gemini OSX_IDE_Skill_management_RAW OSX_IDE_Skil
 **Which approach?**
 
 **最初の一手:** Phase 0 Task 0（`git clone` + diff）のみ実行してインベントリ MD を提示 → 承認後 Phase 1 へ。
+
+---
+
+## 本リポジトリ内 docs / .agent 整理（2026-05-19 実施）
+
+- [x] `docs/Artifacts/classification_docs_agent_001_0519_1200.md` 分類表
+- [x] `.agent/shared/` 正本化（`skills/shared` 廃止）
+- [x] `scripts/sync-cursor-skills.sh` 追加・`AGENTS.md` / `README.md` 更新
+- [x] `.agent/skills` → `.cursor/skills` rsync 整合（13 スキル同名）
+- [x] `docs/superpowers` 索引更新、2026-04-04 plan を Archive/12 へ
+- [x] `docs/Archive/13_integrated_db_analysis/` 作成、VCD 設計重複 MD 削除
+- [x] Archive 内リンク修復（Artifact_010/001 等）

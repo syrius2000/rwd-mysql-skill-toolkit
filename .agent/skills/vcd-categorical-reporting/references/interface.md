@@ -4,9 +4,10 @@ interface_version: "2.1"
 
 ## 出力ディレクトリ
 
-`./skill_out/vcd_categorical/`
+`./skill_out/vcd_categorical/`（分析側で `--run-id` 指定時は `runs/<id>/` サブディレクトリ）
 
 ## Pass 1 出力: data_profile.json
+## Pass 2 出力: data_profile_post.json
 
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
@@ -16,7 +17,7 @@ interface_version: "2.1"
 | total_cells_2way_marginal | int | 2-way 周辺表のセル数 |
 | n_nonzero_cells | int | Freq > 0 のセル数 |
 | sparsity_ratio | float | n_nonzero_cells / total_cells |
-| warning | string or null | ゼロセルがある場合の警告メッセージ（なければ null） |
+| warning | string | ゼロセル等の警告メッセージ（無ければ null） |
 
 ## Pass 2 入力: render_config.json
 
@@ -28,12 +29,14 @@ interface_version: "2.1"
 | gt_matrix_vars | array(int) | [1, 2] | マトリックスの行・列に使う変数インデックス |
 | plot_mode | string | "auto" | "auto" / "always" / "residual_only" |
 
+※ R側は未知のキーを無視し、不正な型は既定値にフォールバックする（`validate_config`）。
+
 ## Pass 2 出力ファイル規約
 
 | ファイル名パターン | 形式 | 生成元 | 消費先 |
 | :--- | :--- | :--- | :--- |
 | `data_profile.json` | JSON | analysis (Pass 1) | reporting |
-| `data_profile_post.json` | JSON | analysis (Pass 2) | reporting（集約後のプロファイル） |
+| `data_profile_post.json` | JSON | analysis (Pass 2) | reporting |
 | `summary_{data}.json` | JSON | analysis (Pass 2) | reporting |
 | `residuals_{data}.csv` | CSV | analysis (Pass 2) | reporting |
 | `residuals_{data}_significant.csv` | CSV | analysis (Pass 2) | reporting |
@@ -42,6 +45,7 @@ interface_version: "2.1"
 | `dt_residuals_{data}.html` | DT HTML | analysis (Pass 2) | reporting |
 | `mosaic_{data}.png` | PNG | analysis (Pass 2) | reporting |
 | `assoc_{data}.png` | PNG | analysis (Pass 2) | reporting |
+| `cotab_{data}.png` | PNG | analysis (Pass 2) | reporting |
 
 ## summary_*.json スキーマ
 

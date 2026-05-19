@@ -1,7 +1,7 @@
+# Git push 失敗時の手順（ローカルとリモートが分岐した場合）
+
 created: 2026-03-01 10:30 (JST)
 author: AI Agent (LLM Model)
-
-# Git push 失敗時の手順（ローカルとリモートが分岐した場合）
 
 ## 原因
 

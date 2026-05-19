@@ -25,9 +25,8 @@ docs/
 
 #### [Reference] (file:///Users/myamaguchi/Programing/rwd-mysql-skill-toolkit/docs/Reference)
 開発効率や正確性を維持するために今後も繰り返し参照すべき情報を格納しました。
-- `Artifact_010_git_push_rebase_procedure_0301_1030.md`: Git rebase 手順
-- `Artifact_012_cursor_agent_skills_sync_rule_0301_1200.md`: スキル同期ルール
-- `doc-coauthoring_SKILL_backup_0215_1430.md`: スキルバックアップ
+- [git_push_rebase_procedure_0301_1030.md](../../Reference/git_push_rebase_procedure_0301_1030.md): Git rebase 手順（旧 Artifact_010）
+- スキル同期ルール: [AGENTS.md](../../../AGENTS.md)「スキル管理」（旧 Artifact_012 は AGENTS に統合）
 
 ## 検証結果
 - [x] `docs/Reference` ディレクトリの正常作成

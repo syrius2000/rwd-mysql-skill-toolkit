@@ -1,31 +1,61 @@
-# GLM / 対数線形と適合度
+# GLM / GNM モデル適合度の参照ガイド
 
-## 2-way（例）
+## 1. Poisson GLM による独立性検定
 
-セル度数 `count` と因子 `A`, `B` があるとき:
+カテゴリカルデータのクロス表分析では、対数線形モデル（Poisson GLM）を用いて変数間の独立性を検定する。
+
+### モデル構造
+
+| モデル | 式 | 意味 |
+| :--- | :--- | :--- |
+| **主効果モデル（Main）** | `Freq ~ A + B [+ C]` | 変数間の独立を仮定 |
+| **2-way 交互作用モデル** | `Freq ~ (A + B [+ C])^2` | ペア間の交互作用を含む |
+| **飽和モデル** | `Freq ~ A * B [* C]` | すべての交互作用を含む（完全適合） |
+
+### anova によるモデル比較
 
 ```r
-m_ind <- glm(count ~ A + B, family = poisson)
-m_sat <- glm(count ~ A * B, family = poisson)
-anova(m_ind, m_sat, test = "Chisq")
+stats::anova(fit_main, fit_2way, fit_sat, test = "Chisq")
 ```
 
-## 3-way 階層（固定スニペット）
+- `Pr(>Chi)` の 2 行目: 主効果 vs 2-way の改善有意性
+- p < 0.05 → 2-way 交互作用が統計的に有意
 
-`count` はセル度数、`A`, `B`, `C` は因子（`as.data.frame(table)` 由来の `Freq` を `count` にリネームしてもよい）。
+## 2. Pearson 残差の解釈
 
+$$e_{ij} = \frac{O_{ij} - E_{ij}}{\sqrt{E_{ij}}}$$
+
+- $O_{ij}$: 観測度数
+- $E_{ij}$: モデルによる期待度数
+
+| 絶対値 | 解釈 |
+| :--- | :--- |
+| `< 1.96` | 有意でない（ランダム誤差の範囲） |
+| `≥ 1.96` | 5% 水準で有意（偏りあり） |
+| `≥ 2.58` | 1% 水準で有意（顕著な偏り） |
+| `≥ 3.29` | 0.1% 水準で有意（極めて特異） |
+
+## 3. Cramér's V（連関係数）
+
+$$V = \sqrt{\frac{\chi^2}{n \cdot \min(r-1, c-1)}}$$
+
+- `0` ≦ V ≦ `1`
+- V > 0.3: 中程度以上の連関
+- 計算: `vcd::assocstats(tab)$cramer`
+
+3-way の場合は周辺表（2変数のみのクロス表）で算出：
 ```r
-m0 <- glm(count ~ A + B + C, family = poisson)
-m1 <- glm(count ~ (A + B + C)^2, family = poisson)
-m2 <- glm(count ~ A * B * C, family = poisson)
-anova(m0, m1, m2, test = "Chisq")
+vcd::assocstats(margin.table(tab, c(1, 2)))$cramer
 ```
 
-## 適合度の確認
+## 4. モデル選択の指針
 
-- モデルオブジェクトの **deviance / Pearson 残差**、`plot(residuals(fit, type = "pearson"))` 等。
-- **vcd** の mosaic/assoc で見た「セル乖離」と、GLM の当てはまりを**併記して解釈**する。
+1. **主効果モデルで p < 0.05** → 2-way 交互作用が存在する
+2. **残差の絶対値 ≥ 1.96 のセル比率が高い** → 構造的な関連性
+3. **Cramér's V が高い層** → その層にフォーカスする
 
-## gnm（オプション）
+## 5. GNM（一般化非線形モデル）について
 
-対称性・準対称性・非線形項などは **`gnm`** パッケージのドキュメントを参照。本スキルの既定テンプレは **標準 GLM** に留める。
+`gnm` パッケージは、行列スコア・RC 連関モデルなど高度な対数線形モデルに対応する。
+序数変数が含まれる場合や、より精密な交互作用パターンの分析に使用できる。
+詳細は `references/ordinal-likert-advanced.md` を参照。

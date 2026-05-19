@@ -1,5 +1,9 @@
+# スキル改善バックログ
 
-# 改善するスキル
+created: 2026-05-19 (JST)
+移動元: リポジトリルート `Skill_impove.md`
+
+## 改善するスキル
 security-vulnerability-check
 vcd-categorical-analysis
 

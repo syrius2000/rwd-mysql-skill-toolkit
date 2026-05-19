@@ -1,28 +1,52 @@
-# 序数・リッカート（高度）
+# 序数・リッカート変数の高度な分析ガイド
 
-メインスキルは **名義カテゴリの頻度・クロス表**が中心。順序を統計的にフル活用する場合は以下を検討し、出力は `./skill_out/vcd_categorical/ordinal/` 等へ。
+> **スコープ外注記**: 本スキル（`vcd-categorical-analysis`）の主対象は**名義カテゴリカル変数**の独立性分析です。
+> 序数変数・リッカート尺度を扱う場合は、本ドキュメントを参照の上、必要に応じて `gnm` パッケージや専用手法を検討してください。
 
-## R の因子
+## 1. 名義 vs 序数の違い
+
+| 特性 | 名義（Nominal） | 序数（Ordinal） |
+| :--- | :--- | :--- |
+| 順序関係 | なし | あり（例: 「やや同意」<「同意」） |
+| 適切なモデル | Poisson GLM（対数線形モデル） | 順序ロジスティック、線形スコアモデル |
+| 検定統計量 | Pearson χ²、Cramér's V | Spearman ρ、Kendall τ、連関係数 |
+
+## 2. リッカート尺度のクロス表分析
+
+5段階・7段階のリッカート尺度をカテゴリカル変数として扱う場合：
+
+### 2-way の場合
 
 ```r
-x <- factor(resp, levels = c("低", "中", "高"), ordered = TRUE)
+# 線形スコアを割り当てた連関検定
+vcd::assocstats(tab)           # χ²、Cramér's V
+cor.test(as.numeric(df$A), as.numeric(df$B), method = "spearman")
 ```
 
-レベル順が**解釈の前提**になるため、必ず明示する。
+### GNM による行列連関モデル（RC モデル）
 
-## 手法の目安
+```r
+library(gnm)
+# RC(1) モデル: 行・列に潜在スコアを推定
+fit_rc <- gnm(Freq ~ Mult(1, A, B), family = poisson, data = df)
+```
 
-| 目的 | 例 |
-|------|-----|
-| 単調な関連（2 変数とも順序） | Spearman 相関 |
-| 潜在連続を仮定 | polychoric（`psych`, `polycor`） |
-| 従属が序数 | `ordinal::clm`, `MASS::polr` 等 |
-| 名義の関連 | χ²、Cramer's V、GK tau（非対称に注意） |
+## 3. 本スキルの適用限界
 
-## vcd との関係
+本スキル (`vcd-categorical-analysis`) での対応範囲：
 
-リッカートを **`ordered` factor** にしても、**セル頻度のモザイク・対数線形**としては有効。ただし順序をモデルで直接扱うなら **序数回帰・polychoric** を別枠で検討。
+| 条件 | 対応 |
+| :--- | :--- |
+| 名義×名義 (2-way / 3-way) | ✓ 完全対応 |
+| 序数×名義（序数を名義として扱う） | △ 分析可能だが情報損失あり |
+| 純粋な序数×序数 | ✗ 非推奨（GNM 等を使用すること） |
+| 4-way 以上 | ✗ スコープ外 |
 
-## 参考リンク
+## 4. 参考パッケージ
 
-- [Measuring associations between non-numeric variables（R-bloggers）](https://www.r-bloggers.com/2012/02/measuring-associations-between-non-numeric-variables/) … Goodman & Kruskal tau。**長文コードの転載は避け**、公式文献と `?` ヘルプを優先。
+| パッケージ | 用途 |
+| :--- | :--- |
+| `gnm` | 一般化非線形モデル、RC 連関モデル |
+| `ordinal` | 累積ロジットモデル、比例オッズモデル |
+| `polycor` | 多列相関係数（polyserial, polychoric） |
+| `vcdExtra` | vcd の拡張ユーティリティ |

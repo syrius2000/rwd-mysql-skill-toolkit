@@ -1,10 +1,10 @@
-# VCD 分析ワークフロー（2パス方式）
+# ワークフロー（2パス方式）
 
-## シーケンス図
+このスキルはデータ特性に応じた最適な可視化を行うため、以下の2パス方式を採用しています。
 
 ```mermaid
 sequenceDiagram
-    participant AI as AI Agent
+    participant AI as AI Agent (Reporting)
     participant R as analysis.R
     participant Out as skill_out/
 
@@ -30,11 +30,13 @@ sequenceDiagram
     AI->>Out: vcd_analysis_report.md 作成
 ```
 
-## render_config.json の判断ガイドライン
+## `render_config.json` の判断ガイド
 
-| データ特性 | 判断ポイント | 推奨設定 |
-| :--- | :--- | :--- |
-| 合計セル数 > 200 | ビジーになりやすい | `collapse_below_n: 5` で低頻度セルを集約 |
-| 水準数 > 8 | ラベルが潰れやすい | `max_levels_per_var: 8` で上位のみ表示 |
-| 3-way で層数 > 5 | gt マトリックスが多すぎ | `strata_to_render` で2-3層に絞る |
-| 疎密度(sparsity) < 0.5 | ゼロセルが多い | モデル収束に注意、注釈を追加 |
+AI は `data_profile.json` を読んだ後、以下の目安で `config` を構成します。
+
+| 条件 | 対策 |
+| :--- | :--- |
+| `total_cells` > 200 | `collapse_below_n` または `max_levels_per_var` で水準を集約 |
+| 水準数が多すぎる（>15等） | `max_levels_per_var: 10` などを設定 |
+| 3-way の層が多い（>5等） | `strata_to_render` に特に重要な1〜3層のみを指定 |
+| 疎密度（`sparsity_ratio`）が低い | セル数が多くても0が多いなら集約を強める |

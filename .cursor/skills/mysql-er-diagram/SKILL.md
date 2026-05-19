@@ -54,7 +54,7 @@ metadata:
 
 ## Cursor / Antigravity の違い
 
-- 本スキルは `.cursor/skills/mysql-er-diagram/` と `.agent/skills/mysql-er-diagram/` の両方に同一内容で配置する。実行コマンドのパスのみ、Cursor では `.cursor/.../generate_er.py`、Antigravity では `.agent/.../generate_er.py` を使う。
+- 正本は `.agent/skills/mysql-er-diagram/`。変更後は `./scripts/sync-cursor-skills.sh` で `.cursor/skills/` に同期する。実行コマンドのパスは、Cursor では `.cursor/skills/mysql-er-diagram/scripts/generate_er.py`、Antigravity では `.agent/skills/mysql-er-diagram/scripts/generate_er.py` を使う。
 
 ## 次のステップ: Query 作成支援
 

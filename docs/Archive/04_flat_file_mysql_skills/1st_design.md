@@ -1,3 +1,5 @@
+> **配置**: リポジトリルートから移動（2026-05-19）。現行の実装・運用は `.agent/skills/flat-file-mysql-*` および [README.md](../../../README.md) を参照。
+
 ## Context
 
 CP932 の CSV フラットファイルを MySQL 8.0 へ投入する前に、DDL 作成・重複除去・エンコーディング検証・件数比較を手作業で行う現状を改善する。プロジェクトの技術スタックは Python / SQL。MySQL 8.4（Mac）、MariaDB（QNAP）などの DB 環境を想定。

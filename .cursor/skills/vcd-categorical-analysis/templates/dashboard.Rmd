@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(vcd, ggplot2, jsonlite, knitr, DT, htmltools)
 
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
 # フォント設定
 detect_jp_font <- function() {
   os <- Sys.info()[["sysname"]]
@@ -36,9 +38,27 @@ detect_jp_font <- function() {
 }
 jp_font <- detect_jp_font()
 
-# JSON読み込み
-json_path <- file.path(params$output_dir, "categorical_results.json")
-summ_path <- file.path(params$output_dir, "executive_summary.md")
+find_agent_repo <- function() {
+  d <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  for (i in seq_len(25L)) {
+    if (file.exists(file.path(d, ".agent", "shared", "run_scope.R"))) {
+      return(d)
+    }
+    parent <- dirname(d)
+    if (parent == d) {
+      break
+    }
+    d <- parent
+  }
+  getwd()
+}
+source(file.path(find_agent_repo(), ".agent", "shared", "run_scope.R"))
+
+rs <- resolve_pass3_run_dir(params$output_dir, "categorical_results.json")
+output_dir <- rs$run_dir
+run_meta <- rs$run_meta
+json_path <- file.path(output_dir, "categorical_results.json")
+summ_path <- file.path(output_dir, "executive_summary.md")
 
 if (file.exists(json_path)) {
   res <- jsonlite::fromJSON(json_path)
@@ -48,7 +68,7 @@ if (file.exists(json_path)) {
   cramers_v <- res$cramers_v
   full_data <- as.data.frame(res$full_data)
 } else {
-  stop("categorical_results.json が見つかりません。Pass 1 を実行してください。")
+  stop("categorical_results.json が見つかりません。Pass 1 を実行し、run 出力ディレクトリ（run_*）を指定してください。")
 }
 
 # データ整形
@@ -179,6 +199,12 @@ body {
 <div class="dashboard-container">
 
 ```{r header-banner, results='asis'}
+run_line <- if (!is.null(run_meta) && !is.null(run_meta$run_id)) {
+  paste0('<span><b>run_id:</b> ', run_meta$run_id, '</span>',
+    '<span><b>run_output_dir:</b> ', run_meta$run_output_dir %||% output_dir, '</span>')
+} else {
+  paste0('<span><b>run_output_dir:</b> ', output_dir, '</span>')
+}
 cat(paste0(
   '<div class="header-banner">',
   '<h2>\U1F4CA カテゴリカル分析ダッシュボード</h2>',
@@ -187,6 +213,7 @@ cat(paste0(
   '<span>📊 <b>変数:</b> ', paste(dims, collapse = " \u00d7 "), '</span>',
   '<span>🔢 <b>総度数:</b> N = ', format(n_total, big.mark = ","), '</span>',
   '<span>\u23f1 <b>作成:</b> ', format(Sys.time(), "%Y-%m-%d %H:%M", tz="Asia/Tokyo"), '</span>',
+  run_line,
   '</div></div>'
 ))
 ```

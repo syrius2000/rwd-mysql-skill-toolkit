@@ -2,31 +2,13 @@
 
 ## Read order for beginners
 
-1. Check `report.html` summary values (`p_value`, `effect_value`).
-2. Open `residual_plot.png` — this is always generated and is the primary visual. Find bars outside `+-1.96`.
-   - **dotplot** (small tables, ≤25 cells): Y-axis shows cell labels, X-axis shows residuals. Look for points beyond ±1.96 dashed lines.
-   - **heatmap** (large 2-way tables, >25 cells): Rows = var1, Columns = var2, color = residual. Red = positive (over-representation), blue = negative (under-representation). Cell values printed.
-   - **facet_heatmap** (large 3-way tables): Same as heatmap but faceted by the 3rd variable.
-   - Check `residual_plot_mode` column in `summary.csv` to confirm which format was used.
-3. If `mosaic_rendered` / `assoc_rendered` are TRUE in `summary.csv`, confirm patterns in `mosaic_plot.png` and `assoc_plot.png`. When these are FALSE (auto-skipped due to high dimensionality or long labels), rely on the residual plot and table.
-4. Use `summary.csv` to compare across many questions.
-
-## Residual plot meaning
-
-- Positive residual: observed count is larger than model expectation.
-- Negative residual: observed count is smaller than model expectation.
-- Large absolute residual means stronger model mismatch for that cell.
+1. Check `summary.csv` for `p_value`, `effect_value`, `max_abs_pearson_res`, and `status`.
+2. Open each question's `report.html`.
+3. Review `residual_plot.png` when it exists. Positive residuals mean observed counts are larger than model expectation. Negative residuals mean observed counts are smaller than model expectation.
+4. Use `summary.csv` to compare patterns across questions.
 
 ## Practical tips
 
 - If `p_value` is small but `effect_value` is tiny, practical impact may be weak.
 - In 3-way analyses, review subgroup patterns before making conclusions.
 - Always report top residual cells with plain language labels.
-
-## Cramer's V and `summary.csv`
-
-- **`cramer_v_marginal` / `cramer_v_effect_label`**: Effect size for the **first two** config variables. For 3-way, this is the **collapsed** var1×var2 table (marginal over var3), not the saturated 3-way model.
-- **`cramer_v_strata_*`**: For 3-way only. Strata follow **`vcd::assocstats`**: dimensions **after the first two** define strata (your `var3`). JSON holds per-stratum `V`, `df_star`, and `label`.
-- **`marginal_strata_signal`**: If `review_stratified`, `|V_marginal - mean(V_strata)| ≥ 0.05` — **prefer stratified** tables/plots when describing var1×var2. This is a **heuristic**, not a formal Simpson's paradox test. V measures **strength**, not **direction**. The mean of stratum V is **unweighted** across strata.
-
-Read the **Decision summary** section in each `report.html` for the same numbers and caveats in English.

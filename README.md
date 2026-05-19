@@ -17,13 +17,18 @@
 ## リポジトリ構造
 
 ```
-.
-├── .agent/skills/          # Antigravity, Codex など汎用スキル
-├── .cursor/skills/         # Cursor 用スキル（.agent のミラー）
+├── .agent/
+│   ├── skills/             # スキル正本（13スキル）
+│   └── shared/             # R ユーティリティ（run_scope.R 等）
+├── .cursor/skills/         # .agent/skills のミラー（scripts/sync-cursor-skills.sh）
+├── scripts/
+│   └── sync-cursor-skills.sh
 ├── docs/
-│   ├── Artifacts/          # 生成ドキュメント
-│   ├── Reference/          # 参照ドキュメント（同期ルール等）
-│   ├── Archive/            # アーカイブ
+│   ├── README.md           # ドキュメント索引（配置ルール）
+│   ├── Artifacts/          # 計画・実装の成果物（plan-artifacts 命名）
+│   ├── superpowers/        # 現行の設計・計画・バックログ
+│   ├── Reference/          # 手順書・運用メモ
+│   ├── Archive/            # 完了した調査・旧計画
 ├── skill_out/              # スキル実行の生成物
 ├── sql/                    # Query作成支援で作成したSQL資産
 ├── AnotherPJ/              # 補助プロジェクト
@@ -79,26 +84,27 @@ flowchart LR
 |---|---|---|
 | 構築系 | `flat-file-mysql-overview`, `flat-file-mysql-ddl-generation`, `flat-file-mysql-load-validation` | DBを作る |
 | 探索系 | `mysql-er-diagram`, `mysql-table-cardinality`, `mysql-entity-matrix`, `mysql-create-query-support` | 構造・分布・ID所在を確認し、望むQueryを作る |
-| 分析系 | `questionnaire-batch-analysis`, `vcd-categorical-analysis`, `vcd-categorical-reporting`, `vcd-bayesian-evidence-analysis` | 抽出結果を分析・レポート化する |
+| 分析系 | `vcd-pass0-consultation`, `questionnaire-batch-analysis`, `vcd-categorical-analysis`, `vcd-bayesian-evidence-analysis` | データ検分・抽出結果の分析・レポート化（`vcd-categorical-reporting` は非推奨） |
 | 保守系 | `security-vulnerability-check` | スクリプトとSQL支援の安全性を確認する |
 
 ## 管理スキル一覧
 
-`.agent/skills` と `.cursor/skills` の両方に同一の12スキルを配置しています（正本は `.agent/skills`）。
+`.agent/skills` が正本です。`.cursor/skills` は `./scripts/sync-cursor-skills.sh`（内部で `rsync --delete`）でミラーします（**13スキル**）。R ユーティリティは `.agent/shared/`（スキルではない）。
 
 | スキル名 | 概要 |
 |---|---|
 | `flat-file-mysql-overview` | CP932 CSV → MySQL 投入の全体像（Step 1→2→3） |
-| `flat-file-mysql-ddl-generation` | CP932 CSV から DDL 用サンプル SQL と簡易レポート生成（Step 1） |
-| `flat-file-mysql-load-validation` | SQL 作成支援・DB 実行・件数比較（Step 2〜3） |
+| `flat-file-mysql-ddl-generation` | CP932 CSV から DDL 用サンプル SQL とレコード数・重複数レポート（Step 1） |
+| `flat-file-mysql-load-validation` | 完成版 SQL 作成支援・DB 実行・件数比較（Step 2〜3） |
 | `mysql-er-diagram` | DB メタから辞書 CSV / Draw.io XML / PlantUML の ER 図生成 |
-| `mysql-table-cardinality` | 総行数・カーディナリティ等を CSV/JSON 出力 |
-| `mysql-entity-matrix` | 特定 ID の存在フラグ `[0,1]` マトリックス生成 |
-| `mysql-create-query-support` | 自然文の分析目的から本 SQL・検証 SQL・query note を作成する支援 |
-| `questionnaire-batch-analysis` | 設問設定 CSV で複数設問を一括処理し、HTML レポートと `summary.csv` を生成 |
-| `vcd-categorical-analysis` | 名義カテゴリ（3-way）の3ステップ分析（集計 → AI考察 → dashboard/report HTML） |
-| `vcd-categorical-reporting` | **非推奨**（analysis に統合。参照テンプレのみ） |
-| `vcd-bayesian-evidence-analysis` | 大標本時の効果量・BIC/BF 視点の評価 |
+| `mysql-table-cardinality` | 総行数・カラム濃度数（cardinality）を CSV/JSON 出力 |
+| `mysql-entity-matrix` | 特定 ID の全テーブル存在フラグ `[1,0]` マトリックス SQL 生成 |
+| `mysql-create-query-support` | 自然文の分析目的から探索 SQL・本 SQL・検証 SQL・query note（`sql/` 配下） |
+| `vcd-pass0-consultation` | カテゴリ分析前のデータ検分・次元選定（bayesian / questionnaire 前段） |
+| `questionnaire-batch-analysis` | 設問設定 CSV で `nominal_2way` / `likert_2way` / `nominal_3way` を一括処理、`summary.csv` と設問別 HTML |
+| `vcd-categorical-analysis` | 2-way/3-way 名義カテゴリ。**3ステップ**（R 2パス集計 → `executive_summary.md` → `dashboard.Rmd`） |
+| `vcd-categorical-reporting` | **非推奨**（analysis Step 2 に統合。参照テンプレのみ） |
+| `vcd-bayesian-evidence-analysis` | 大標本 2-way/3-way。**3-Pass**（`evidence_results.json` → `executive_summary.md` → `dashboard.html`） |
 | `security-vulnerability-check` | ソースコードの脆弱性チェック（SQLi / OS コマンド / パストラバーサル等） |
 
 ## テスト
@@ -118,16 +124,22 @@ Rscript tests/test_vcd_categorical_smoke.R
 ## 同期ルール
 
 - **正本**: `.agent/skills` ディレクトリ
-- **同期先**: `.cursor/skills`（`rsync -a --delete .agent/skills/ .cursor/skills/`）
+- **同期先**: `.cursor/skills`（`./scripts/sync-cursor-skills.sh`）
 - SQL成果物は Skill 配下に置かず、repo root の `sql/` に置く
 
-詳細な同期ルール（対象ファイル一覧、置換ルール、コマンド例）は以下を参照：
+## ドキュメント
 
-- [AGENTS.md](AGENTS.md)
+| ファイル | 役割 |
+|----------|------|
+| [README.md](README.md) | 本ファイル（人向けの入口） |
+| [AGENTS.md](AGENTS.md) | Cursor / Antigravity 等のエージェント向けルール（**編集時は機能を壊さない**） |
+| [docs/README.md](docs/README.md) | `docs/` 配下の索引・新規文書の置き場 |
+
+詳細な同期ルール（正本パス、rsync コマンド）は [AGENTS.md](AGENTS.md) を参照。
 
 ### 同期対象の概要
 
 | 種別 | 同期方法 |
 |------|----------|
-| 全スキル | `.agent/skills` を編集後、`rsync -a --delete .agent/skills/ .cursor/skills/` |
+| 全スキル | `.agent/skills` を編集後、`./scripts/sync-cursor-skills.sh` |
 | flat-file-mysql-* の SKILL.md | `.agent` パス（`.agent/skills/...`）で記載 |

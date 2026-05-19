@@ -13,7 +13,7 @@ author: AI Agent (Gemini 2.0 Pro)
 graph TD
     subgraph Repo [rwd-mysql-skill-toolkit]
         README[readme.md]
-        Design1[1st_design.md]
+        Design1[docs/Archive/.../1st_design.md]
 
         subgraph OpenSpec [openspec/changes/flat-file-to-mysql-ddl-creator]
             Prop[proposal.md]
@@ -61,14 +61,14 @@ graph TD
 ### 3.2. Reference Assets (AnotherPJ)
 `AnotherPJ` のコードは、必要なロジックの大部分を既に実装しており、高い再利用性があります。
 
-*   **`make_sample_sql_files.py`**:
-    *   **エンコーディング判定**: `chardet` 的なロジックに加え、`lines_for_sql` 生成部分で MySQL 用の文字セットマッピング（`cp932` -> `cp932`, `utf-8` -> `utf8mb4`）まで考慮されています。
-    *   **品質チェック**: TRIM の必要性や NULL 表現の揺らぎ検知など、今回求められる「バリデーションレポート」の基礎となる機能が含まれています。
-    *   **DDL 生成**: `LOAD DATA INFILE` の構文生成ロジックがあり、そのまま活用可能です。
+* **`make_sample_sql_files.py`**:
+  * **エンコーディング判定**: `chardet` 的なロジックに加え、`lines_for_sql` 生成部分で MySQL 用の文字セットマッピング（`cp932` -> `cp932`, `utf-8` -> `utf8mb4`）まで考慮されています。
+  * **品質チェック**: TRIM の必要性や NULL 表現の揺らぎ検知など、今回求められる「バリデーションレポート」の基礎となる機能が含まれています。
+  * **DDL 生成**: `LOAD DATA INFILE` の構文生成ロジックがあり、そのまま活用可能です。
 
-*   **`SQLImportAndDedupe.prompt.md`**:
-    *   Import (Staging) -> Dedupe -> Production の流れが確立されています。
-    *   `design.md` の要件にある「DB名指定」を変数化（`{{database_name}}`）するだけで、Skill C のコアとして使用できます。
+* **`SQLImportAndDedupe.prompt.md`**:
+  * Import (Staging) -> Dedupe -> Production の流れが確立されています。
+  * `design.md` の要件にある「DB名指定」を変数化（`{{database_name}}`）するだけで、Skill C のコアとして使用できます。
 
 ## 4. Logic Flow (Target Architecture)
 実装されるシステム（Skill + CLI）のデータフローは以下のようになります。
@@ -118,10 +118,10 @@ sequenceDiagram
 リポジトリの状態は非常に良好です。「洗う」作業により、既存定義と参考コードが高いレベルで整合していることが確認できました。不明瞭な点はほぼ解消されています。
 
 **推奨される次のアクション:**
-1.  **実装フェーズへの移行**: 調査は完了したため、`openspec` のプロセスに従い実装を開始する準備が整いました。
-2.  **`flat-file-to-mysql-ddl-creator` の実装**:
-    *   Step 1: Python CLI ツールの実装（`AnotherPJ` ロジックの移植・拡張）。
-    *   Step 2: Skill MD ファイルの作成。
-    *   Step 3: `validation.md` に基づいたテスト実施。
+1. **実装フェーズへの移行**: 調査は完了したため、`openspec` のプロセスに従い実装を開始する準備が整いました。
+2. **`flat-file-to-mysql-ddl-creator` の実装**:
+    * Step 1: Python CLI ツールの実装（`AnotherPJ` ロジックの移植・拡張）。
+    * Step 2: Skill MD ファイルの作成。
+    * Step 3: `validation.md` に基づいたテスト実施。
 
 以上報告いたします。

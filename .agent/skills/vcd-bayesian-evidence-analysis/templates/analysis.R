@@ -1,16 +1,8 @@
 #!/usr/bin/env Rscript
 # =============================================================================
 # vcd-bayesian-evidence-analysis: analysis.R
-# Pass 1: Poisson GLM + BIC近似ベイズファクター + Evidence Score 算出
+# Pass 1: Poisson GLM + EBIC近似ベイズファクター + Evidence Score 算出
 # =============================================================================
-# Evidence Score = r^2 - k*log(N)
-#   r    : 標準化ピアソン残差 (Poisson GLM 独立モデルより)
-#   k*log(N): BIC ペナルティ項（多段階閾値）
-#   正値  : 実質的エビデンス（統計ノイズを超える真の関連）
-#   負値  : ノイズレベル（独立モデルで説明可能）
-# =============================================================================
-
-`%||%` <- function(x, y) if (is.null(x)) y else x
 
 suppressPackageStartupMessages({
   if (!base::requireNamespace("pacman", quietly = TRUE)) {
@@ -19,24 +11,48 @@ suppressPackageStartupMessages({
   pacman::p_load(dplyr, tidyr, jsonlite, DT, htmlwidgets, htmltools, effectsize)
 })
 
-# -----------------------------------------------------------------------------
-# CLI 引数パース
-# -----------------------------------------------------------------------------
-args <- commandArgs(trailingOnly = TRUE)
+script_file_arg <- grep("^--file=", commandArgs(), value = TRUE)[1]
+script_dir <- dirname(sub("^--file=", "", script_file_arg))
+source(file.path(script_dir, "pass1_compute.R"))
+
+find_agent_repo <- function() {
+  d <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  for (i in seq_len(25L)) {
+    if (file.exists(file.path(d, ".agent", "shared", "run_scope.R"))) {
+      return(d)
+    }
+    parent <- dirname(d)
+    if (parent == d) {
+      break
+    }
+    d <- parent
+  }
+  getwd()
+}
+source(file.path(find_agent_repo(), ".agent", "shared", "run_scope.R"))
 
 parse_args <- function(args) {
   result <- list(
-    input              = NULL,
-    output_dir         = "./skill_out/vcd_bayesian",
-    dataset_name       = "dataset",
-    vars               = NULL,
-    freq               = "Freq",
-    top_k              = 10L,
-    threshold_k        = 1,
-    large_n_threshold  = 1000,
-    show_help          = FALSE,
-    show_help_stats    = FALSE
+    input = NULL,
+    output_dir = "./skill_out/vcd_bayesian",
+    run_id = NULL,
+    dataset_name = "dataset",
+    vars = NULL,
+    freq = "Freq",
+    top_k = 10L,
+    threshold_k = 1,
+    large_n_threshold = 1000,
+    ebic_gamma = 0.5,
+    ebic_p = NA_real_,
+    level2_factor = 2,
+    level3_factor = 3,
+    arm_top_rules = 20L,
+    arm_min_support = 0.01,
+    arm_min_confidence = 0.10,
+    show_help = FALSE,
+    show_help_stats = FALSE
   )
+
   i <- 1L
   while (i <= length(args)) {
     switch(args[i],
@@ -48,15 +64,27 @@ parse_args <- function(args) {
         i <- i + 1L
         result$output_dir <- args[i]
       },
+      "--run-id" = {
+        i <- i + 1L
+        if (i > length(args) || startsWith(args[i], "--")) {
+          result$run_id <- NA_character_
+        } else {
+          result$run_id <- args[i]
+        }
+      },
       "--dataset_name" = {
         i <- i + 1L
         result$dataset_name <- args[i]
       },
+      "--config" = {
+        i <- i + 1L
+        result$config_path <- args[i]
+      },
       "--vars" = {
         i <- i + 1L
-        # カンマ区切りを分解し、前後の空白を除去
-        raw_vars <- strsplit(args[i], ",")[[1]]
-        result$vars <- trimws(raw_vars)
+        parsed_vars <- strsplit(args[i], ",")[[1]]
+        parsed_vars <- trimws(parsed_vars)
+        result$vars <- parsed_vars[nzchar(parsed_vars)]
       },
       "--freq" = {
         i <- i + 1L
@@ -74,6 +102,34 @@ parse_args <- function(args) {
         i <- i + 1L
         result$large_n_threshold <- as.numeric(args[i])
       },
+      "--ebic_gamma" = {
+        i <- i + 1L
+        result$ebic_gamma <- as.numeric(args[i])
+      },
+      "--ebic_p" = {
+        i <- i + 1L
+        result$ebic_p <- as.numeric(args[i])
+      },
+      "--level2_factor" = {
+        i <- i + 1L
+        result$level2_factor <- as.numeric(args[i])
+      },
+      "--level3_factor" = {
+        i <- i + 1L
+        result$level3_factor <- as.numeric(args[i])
+      },
+      "--arm_top_rules" = {
+        i <- i + 1L
+        result$arm_top_rules <- as.integer(args[i])
+      },
+      "--arm_min_support" = {
+        i <- i + 1L
+        result$arm_min_support <- as.numeric(args[i])
+      },
+      "--arm_min_confidence" = {
+        i <- i + 1L
+        result$arm_min_confidence <- as.numeric(args[i])
+      },
       "--help" = {
         result$show_help <- TRUE
       },
@@ -83,189 +139,207 @@ parse_args <- function(args) {
     )
     i <- i + 1L
   }
+
+  # --run-id と --run_id の別名対応（正準化）
+  if (is.null(result$run_id)) {
+    rid_arg <- grep("^--run_id=", commandArgs(), value = TRUE)
+    if (length(rid_arg) > 0) {
+      result$run_id <- sub("^--run_id=", "", rid_arg[1])
+    }
+  }
+
   result
 }
 
-cfg <- parse_args(args)
+cfg <- parse_args(commandArgs(trailingOnly = TRUE))
 
-# --help
+# JSON 設定の読み込み (Pass 0 連携用)
+if (!is.null(cfg$config_path)) {
+  if (file.exists(cfg$config_path)) {
+    if (!requireNamespace("jsonlite", quietly = TRUE)) {
+      message("[WARN] jsonlite がインストールされていないため --config を無視します。")
+    } else {
+      config_data <- jsonlite::fromJSON(cfg$config_path)
+      message("[INFO] 設定を読み込み中: ", cfg$config_path)
+      # config_data の値を cfg に反映（JSON 優先）
+      for (key in names(config_data)) {
+        cfg[[key]] <- config_data[[key]]
+      }
+    }
+  } else {
+    message("[WARN] 設定ファイルが見つかりません: ", cfg$config_path)
+  }
+}
+
+if (!is.null(cfg$run_id)) {
+  rid0 <- as.character(cfg$run_id)[1L]
+  if (is.na(rid0) || !nzchar(rid0)) {
+    stop("[ERROR] 無効な --run-id: 空の値は指定できません。", call. = FALSE)
+  }
+}
+
 if (isTRUE(cfg$show_help)) {
   cat("
 Usage: Rscript analysis.R [OPTIONS]
 
 Options:
-  --input <file>            入力CSVファイル（省略時: HairEyeColor）
-  --output_dir <dir>        出力ディレクトリ（既定: ./skill_out/vcd_bayesian）
-  --dataset_name <name>     データセット名（既定: dataset）
-  --vars <v1,v2,...>        分析変数（カンマ区切り、省略時: 全変数）
-  --freq <col>              度数列名（既定: Freq）
-  --top_k <N>               Top-K 表示件数（既定: 10）
-  --threshold_k <k>         多段階閾値係数 Score > k*log(N)（既定: 1）
-  --large_n_threshold <N>   大規模データモード閾値（既定: 1000）
-  --help                    このヘルプを表示
-  --help_stats              統計指標ガイドを表示
+  --input <file>              入力CSVファイル（省略時: HairEyeColor）
+  --output_dir <dir>          出力ディレクトリ（既定: ./skill_out/vcd_bayesian）
+  --run-id <slug>|auto        任意。指定時は <dir>/run_<slug先頭16文字>/ に隔離（auto=JST時刻）
+  --dataset_name <name>       データセット名（既定: dataset）
+  --vars <v1,v2,...>          分析変数（カンマ区切り、省略時: 全変数）
+  --freq <col>                度数列名（既定: Freq）
+  --top_k <N>                 Top-K 表示件数（既定: 10）
+  --threshold_k <k>           Evidence閾値係数（既定: 1）
+  --large_n_threshold <N>     大規模データモード閾値（既定: 1000）
+  --ebic_gamma <g>            EBIC追加ペナルティ係数γ（既定: 0.5）
+  --ebic_p <p>                EBICの候補パラメータ数（省略時: 飽和モデル係数数）
+  --level2_factor <x>         Level2倍率（既定: 2）
+  --level3_factor <x>         Level3倍率（既定: 3）
+  --arm_top_rules <N>         ARM上位ルール件数（既定: 20）
+  --arm_min_support <x>       ARM最小support（既定: 0.01）
+  --arm_min_confidence <x>    ARM最小confidence（既定: 0.10）
+  --help                      このヘルプを表示
+  --help_stats                統計指標ガイドを表示
 ")
   quit(status = 0L)
 }
 
-# --help_stats
 if (isTRUE(cfg$show_help_stats)) {
   cat("
 =================================================================
  統計指標ガイド（vcd-bayesian-evidence-analysis）
 =================================================================
 
- ■ Evidence Score = r² − log(N)
-   各セルが「独立モデルからどれだけ逸脱しているか」を測る指標。
-   正値 → 真の関連（ノイズを超える逸脱）
-   負値 → ノイズ範囲（偶然で説明可能）
+ ■ Evidence Score = r² − k·log(N)
+   正値: 実質的エビデンス  /  負値: ノイズ範囲
 
- ■ ベイズファクター（BF10）
-   「変数間に関連がある」vs「独立」仮説の証拠比。
+ ■ ベイズファクター（BF10, EBIC近似）
+   logBF10 ≈ 0.5 * (EBIC_indep - EBIC_satur)
    BF > 100: 決定的  BF > 10: 強い  BF > 3: 中程度
 
- ■ Cramér's V（0〜1）
-   変数間の関連の「強さ」。サンプルサイズに依存しない。
-   0.1未満: 弱い  0.3前後: 中程度  0.5以上: 強い
-   ※ Cohen (1988) 基準
+ ■ 効果量
+   - 多次元クロス表: Cramér's V
+   - 1次元適合度: Fei
 
- ■ 標準化ピアソン残差（r）
-   正(+): 期待より多い（過剰）  負(−): 期待より少ない（過少）
+ ■ Dual-Filter
+   効果量がSmall未満なら「統計的には強くても実務的には弱い」警告
 
- ■ 大規模データモード（N > 1,000）
-   P値が飽和しやすい大標本では、効果量（Cramér's V）を
-   優先して解釈します。Evidence Score の閾値も調整可能です。
+ ■ ARM（行データのみ）
+   support / confidence / lift を算出。Freq列がある場合は重みとして扱う。
 =================================================================
 ")
   quit(status = 0L)
 }
 
-# -----------------------------------------------------------------------------
-# データ読み込み
-# -----------------------------------------------------------------------------
+# run_id の解決と出力隔離はデータ読み込み後に行う
+
 load_data <- function(cfg) {
   if (is.null(cfg$input)) {
-    # デフォルト: HairEyeColor (3D 組み込みデータセット)
     message("[INFO] --input 未指定。HairEyeColor データセットを使用します。")
-    df <- as.data.frame(HairEyeColor)
-    # 列名: Hair, Eye, Sex, Freq
-    return(df)
+    return(as.data.frame(HairEyeColor))
   }
-
   if (!file.exists(cfg$input)) {
     stop(paste("[ERROR] 入力ファイルが見つかりません:", cfg$input))
   }
-  df <- read.csv(cfg$input, stringsAsFactors = FALSE, fileEncoding = "UTF-8")
-  message(paste("[INFO] データ読み込み完了:", nrow(df), "行,", ncol(df), "列"))
-  df
+  read.csv(cfg$input, stringsAsFactors = FALSE, fileEncoding = "UTF-8")
 }
 
-df_raw <- load_data(cfg)
+df_input <- load_data(cfg)
+message(paste("[INFO] データ読み込み完了:", nrow(df_input), "行,", ncol(df_input), "列"))
 
-# -----------------------------------------------------------------------------
-# 変数選択と度数列の確認
-# -----------------------------------------------------------------------------
+# run_id の解決と出力ディレクトリの準備
+rid <- if (is.null(cfg$run_id)) {
+  resolve_run_id(builtin_df = df_input)
+} else {
+  list(run_id = sanitize_run_slug(cfg$run_id), method = "manual")
+}
+out_root <- cfg$output_dir
+if (!dir.exists(out_root)) {
+  dir.create(out_root, recursive = TRUE)
+}
+artifact_dir <- run_output_dir_from_root(out_root, rid$run_id)
+if (!dir.exists(artifact_dir)) {
+  dir.create(artifact_dir, recursive = TRUE)
+}
+message(paste("[INFO] run_id:", rid$run_id, "(", rid$method %||% rid$source %||% "resolved", ")"))
+message(paste("[INFO] 出力ディレクトリ:", artifact_dir))
+
+# run_meta.json の書き出し
+input_path_log <- if (is.null(cfg$input)) "builtin:HairEyeColor" else cfg$input
+write_run_meta(out_root, artifact_dir, "vcd-bayesian-evidence-analysis", rid$run_id, input_path_log)
+
 freq_col <- cfg$freq
+freq_exists <- freq_col %in% names(df_input)
 
-# 度数列が存在しない場合: 非集計データとして行数をカウント
-if (!(freq_col %in% names(df_raw))) {
-  message(paste("[INFO]", freq_col, "列が見つかりません。行数を度数として集計します。"))
-  cat_vars <- if (!is.null(cfg$vars)) cfg$vars else names(df_raw)
-  df_raw <- df_raw %>%
-    group_by(across(all_of(cat_vars))) %>%
-    summarise(Freq = n(), .groups = "drop")
-  freq_col <- "Freq"
-}
-
-# カテゴリカル変数の決定
 if (!is.null(cfg$vars)) {
   cat_vars <- cfg$vars
 } else {
-  cat_vars <- setdiff(names(df_raw), freq_col)
+  cat_vars <- if (freq_exists) setdiff(names(df_input), freq_col) else names(df_input)
 }
 
+if (length(cat_vars) < 1L) {
+  stop("[ERROR] 分析変数が見つかりません。--vars または入力列を確認してください。")
+}
 message(paste("[INFO] 分析変数:", paste(cat_vars, collapse = ", ")))
-message(paste("[INFO] 度数列:", freq_col))
 
-# 文字列型に統一
+arm_df <- df_input
+arm_weight_col <- if (freq_exists) freq_col else ".arm_weight"
+if (!freq_exists) {
+  arm_df[[arm_weight_col]] <- 1
+}
+
+if (!freq_exists) {
+  message(paste("[INFO]", freq_col, "列が見つかりません。行数を度数として集計します。"))
+  df_raw <- df_input %>%
+    group_by(across(all_of(cat_vars))) %>%
+    summarise(Freq = n(), .groups = "drop")
+  freq_col <- "Freq"
+} else {
+  df_raw <- df_input
+}
+
 df_raw[cat_vars] <- lapply(df_raw[cat_vars], as.character)
 df_raw[[freq_col]] <- as.numeric(df_raw[[freq_col]])
-
-# NA除去
 df <- df_raw %>% filter(!is.na(.data[[freq_col]]), .data[[freq_col]] >= 0)
 
-# -----------------------------------------------------------------------------
-# Poisson GLM: 独立モデル（交互作用なし）と飽和モデル
-# -----------------------------------------------------------------------------
 n_total <- sum(df[[freq_col]])
 log_n <- log(n_total)
-
 message(paste("[INFO] 総度数 N =", n_total, "/ log(N) =", round(log_n, 4)))
 
-# 独立モデル: Freq ~ var1 + var2 + ... (主効果のみ)
-formula_indep <- as.formula(
-  paste(freq_col, "~", paste(cat_vars, collapse = " + "))
-)
-
-# 飽和モデル: Freq ~ var1 * var2 * ... (全交互作用)
-formula_satur <- as.formula(
-  paste(freq_col, "~", paste(cat_vars, collapse = " * "))
-)
+formula_indep <- as.formula(paste(freq_col, "~", paste(cat_vars, collapse = " + ")))
+formula_satur <- as.formula(paste(freq_col, "~", paste(cat_vars, collapse = " * ")))
 
 message("[INFO] Poisson GLM 独立モデルを適合中...")
 glm_indep <- glm(formula_indep, data = df, family = poisson(link = "log"))
-
 message("[INFO] Poisson GLM 飽和モデルを適合中...")
 glm_satur <- glm(formula_satur, data = df, family = poisson(link = "log"))
 
-# -----------------------------------------------------------------------------
-# BIC近似によるベイズファクター計算
-# -----------------------------------------------------------------------------
-# BIC = -2 * logLik + df * log(N)
 bic_indep <- BIC(glm_indep)
 bic_satur <- BIC(glm_satur)
+delta_bic <- bic_indep - bic_satur
+log_bf_bic <- 0.5 * delta_bic
+bf_bic <- exp(log_bf_bic)
 
-delta_bic <- bic_indep - bic_satur # 正 → 独立モデルが悪い → 関連あり
-log_bf <- 0.5 * delta_bic # log BF10 ≈ -0.5 * ΔBIC (符号注意)
+k_indep <- attr(stats::logLik(glm_indep), "df")
+k_satur <- attr(stats::logLik(glm_satur), "df")
+p_total <- if (is.na(cfg$ebic_p)) k_satur else cfg$ebic_p
+
+ebic_indep <- compute_ebic(glm_indep, n_total, p_total, cfg$ebic_gamma)
+ebic_satur <- compute_ebic(glm_satur, n_total, p_total, cfg$ebic_gamma)
+delta_ebic <- ebic_indep - ebic_satur
+log_bf <- 0.5 * delta_ebic
 bf_val <- exp(log_bf)
 
-bf_str <- if (is.infinite(bf_val)) {
-  "Inf"
-} else if (bf_val > 10000 || bf_val < 0.001) {
-  formatC(bf_val, format = "e", digits = 4)
-} else {
-  as.character(round(bf_val, 4))
-}
+bf_str <- if (is.infinite(bf_val)) "Inf" else as.character(round(bf_val, 4))
+bf_bic_str <- if (is.infinite(bf_bic)) "Inf" else as.character(round(bf_bic, 4))
 
-message(paste("[INFO] BIC(独立) =", round(bic_indep, 2)))
-message(paste("[INFO] BIC(飽和) =", round(bic_satur, 2)))
-message(paste("[INFO] ΔBIC =", round(delta_bic, 2), "/ log BF =", round(log_bf, 4)))
-message(paste("[INFO] BF10 =", bf_str))
-
-# Jeffreys スケール解釈
-interpret_bf <- function(bf) {
-  if (is.infinite(bf) || bf > 100) {
-    return("決定的エビデンス (decisive)")
-  }
-  if (bf > 30) {
-    return("非常に強いエビデンス (very strong)")
-  }
-  if (bf > 10) {
-    return("強いエビデンス (strong)")
-  }
-  if (bf > 3) {
-    return("中程度のエビデンス (moderate)")
-  }
-  if (bf > 1) {
-    return("弱いエビデンス (anecdotal)")
-  }
-  return("関連なし / 独立仮説を支持")
-}
+message(paste("[INFO] EBIC(独立) =", round(ebic_indep, 2)))
+message(paste("[INFO] EBIC(飽和) =", round(ebic_satur, 2)))
+message(paste("[INFO] ΔEBIC =", round(delta_ebic, 2), "/ log BF(EBIC) =", round(log_bf, 4)))
+message(paste("[INFO] BF10(EBIC) =", bf_str, "| BF10(BIC) =", bf_bic_str))
 message(paste("[INFO] BF解釈:", interpret_bf(bf_val)))
 
-# -----------------------------------------------------------------------------
-# Cramér's V（効果量）算出
-# -----------------------------------------------------------------------------
 ct <- xtabs(as.formula(paste(freq_col, "~", paste(cat_vars, collapse = " + "))), data = df)
 cv_result <- tryCatch(
   {
@@ -292,111 +366,238 @@ if (!is.null(cv_result)) {
   } else {
     as.numeric(cv_result[[1L]])
   }
-  cramers_v_ci_low <- as.numeric(cv_result$CI_low)
-  cramers_v_ci_high <- as.numeric(cv_result$CI_high)
-  message(paste(
-    "[INFO] Cramér's V =", round(cramers_v_val, 4),
-    " [", round(cramers_v_ci_low, 4), ",", round(cramers_v_ci_high, 4), "]"
-  ))
+  cramers_v_ci_low <- safe_num(cv_result$CI_low)
+  cramers_v_ci_high <- safe_num(cv_result$CI_high)
 }
 
-# -----------------------------------------------------------------------------
-# 大規模データモード判定
-# -----------------------------------------------------------------------------
+fei_val <- NA_real_
+fei_ci_low <- NA_real_
+fei_ci_high <- NA_real_
+if (length(cat_vars) == 1L) {
+  counts <- df[[freq_col]]
+  fei_result <- tryCatch(
+    effectsize::fei(counts, ci = 0.95),
+    error = function(e) {
+      message(paste("[WARN] Fei 算出失敗:", e$message))
+      NULL
+    }
+  )
+  if (!is.null(fei_result)) {
+    fei_val <- safe_num(fei_result$Fei)
+    fei_ci_low <- safe_num(fei_result$CI_low)
+    fei_ci_high <- safe_num(fei_result$CI_high)
+  }
+}
+
 large_sample_mode <- n_total > cfg$large_n_threshold
 if (large_sample_mode) {
   message(paste("[INFO] 大規模データモード: N =", n_total, ">", cfg$large_n_threshold))
-  message("[INFO] → 効果量（Cramér's V）を優先して解釈します。")
+  message("[INFO] → 効果量を優先して解釈します。")
 }
 
-# -----------------------------------------------------------------------------
-# Evidence Score 算出
-# -----------------------------------------------------------------------------
-threshold <- cfg$threshold_k * log_n
+threshold_l1 <- cfg$threshold_k * log_n
+threshold_l2 <- cfg$level2_factor * threshold_l1
+threshold_l3 <- cfg$level3_factor * threshold_l1
 
-# 標準化ピアソン残差: (観測 - 期待) / sqrt(期待)
 df$Expected <- fitted(glm_indep)
 df$Residual <- residuals(glm_indep, type = "pearson")
-df$Evidence_Score <- df$Residual^2 - threshold
+df$Evidence_Score <- df$Residual^2 - threshold_l1
+df$Intensity_Level <- ifelse(
+  df$Evidence_Score > threshold_l3, 3L,
+  ifelse(df$Evidence_Score > threshold_l2, 2L,
+    ifelse(df$Evidence_Score > threshold_l1, 1L, 0L)
+  )
+)
 
 n_positive <- sum(df$Evidence_Score > 0)
 n_total_cells <- nrow(df)
-message(paste("[INFO] Evidence Score 正値セル数:", n_positive, "/", n_total_cells))
-message(paste(
-  "[INFO] threshold (k * log_n) =", round(threshold, 4),
-  " (k =", cfg$threshold_k, ")"
-))
 
-# -----------------------------------------------------------------------------
-# 出力ディレクトリ作成
-# -----------------------------------------------------------------------------
+full_data <- df %>%
+  select(all_of(c(cat_vars, freq_col, "Expected", "Residual", "Evidence_Score", "Intensity_Level"))) %>%
+  arrange(desc(Evidence_Score)) %>%
+  mutate(across(where(is.numeric), ~ round(., 4)))
+names(full_data)[names(full_data) == freq_col] <- "Freq"
+names(full_data)[names(full_data) == "Intensity_Level"] <- "Intensity_Level"
+
+abs_res <- abs(df$Residual)
+abs_score <- abs(df$Evidence_Score)
+viz_thresholds <- list(
+  residual_abs_p90 = safe_round(stats::quantile(abs_res, 0.90, na.rm = TRUE), 4),
+  residual_abs_p95 = safe_round(stats::quantile(abs_res, 0.95, na.rm = TRUE), 4),
+  residual_abs_p99 = safe_round(stats::quantile(abs_res, 0.99, na.rm = TRUE), 4),
+  score_abs_p90 = safe_round(stats::quantile(abs_score, 0.90, na.rm = TRUE), 4),
+  score_abs_p95 = safe_round(stats::quantile(abs_score, 0.95, na.rm = TRUE), 4),
+  score_abs_p99 = safe_round(stats::quantile(abs_score, 0.99, na.rm = TRUE), 4)
+)
+
+effect_metric <- if (length(cat_vars) == 1L) "fei" else "cramers_v"
+effect_value <- if (effect_metric == "fei") fei_val else cramers_v_val
+small_threshold <- 0.1
+practical_low <- is.finite(effect_value) && !is.na(effect_value) && effect_value < small_threshold
+
+arm_reason <- "入力要件を満たさないためスキップ"
+arm_result <- list(eligible = FALSE, reason = arm_reason, top_rules = data.frame())
+if (length(cat_vars) >= 2L) {
+  if (freq_exists) {
+    unique_combo_n <- nrow(dplyr::distinct(arm_df, across(all_of(cat_vars))))
+    aggregated_like <- unique_combo_n == nrow(arm_df)
+    if (aggregated_like) {
+      arm_reason <- "Freq付き集計表と判定したためARMスキップ"
+    } else {
+      arm_result <- compute_arm_rules(
+        arm_df, arm_weight_col, cat_vars,
+        cfg$arm_top_rules, cfg$arm_min_support, cfg$arm_min_confidence
+      )
+      arm_reason <- arm_result$reason
+    }
+  } else {
+    arm_result <- compute_arm_rules(
+      arm_df, arm_weight_col, cat_vars,
+      cfg$arm_top_rules, cfg$arm_min_support, cfg$arm_min_confidence
+    )
+    arm_reason <- arm_result$reason
+  }
+}
+
 if (!dir.exists(cfg$output_dir)) {
   dir.create(cfg$output_dir, recursive = TRUE)
   message(paste("[INFO] 出力ディレクトリ作成:", cfg$output_dir))
 }
 
-# -----------------------------------------------------------------------------
-# evidence_results.json 出力
-# -----------------------------------------------------------------------------
-# full_data: 全セルデータ（Evidence Score 降順）
-full_data <- df %>%
-  select(all_of(c(cat_vars, freq_col, "Expected", "Residual", "Evidence_Score"))) %>%
-  arrange(desc(Evidence_Score)) %>%
-  mutate(
-    across(where(is.numeric), ~ round(., 4))
-  )
+warnings <- list()
+if (large_sample_mode && isTRUE(practical_low)) {
+  msg <- paste0("実用的有意性の欠如: 効果量 ", effect_metric, " = ", round(effect_value, 3), " (< 0.1)。統計的に有意であっても、この偏りは実務上の意味が薄い可能性があります。")
+  message(paste("[WARN]", msg))
+  warnings$practical_significance <- msg
+}
 
-# 列名を統一（度数列を Freq に）
-names(full_data)[names(full_data) == freq_col] <- "Freq"
-
-result_list <- list(
-  dataset_name       = cfg$dataset_name,
-  dimensions         = cat_vars,
-  n_total            = n_total,
-  bf_independence    = bf_str,
-  log_n              = round(log_n, 4),
-  threshold          = round(threshold, 4),
-  threshold_k        = cfg$threshold_k,
-  bic_indep          = round(bic_indep, 4),
-  bic_satur          = round(bic_satur, 4),
-  delta_bic          = round(delta_bic, 4),
-  cramers_v          = round(cramers_v_val, 4),
-  cramers_v_ci_low   = round(cramers_v_ci_low, 4),
-  cramers_v_ci_high  = round(cramers_v_ci_high, 4),
-  large_sample_mode  = large_sample_mode,
-  large_n_threshold  = cfg$large_n_threshold,
-  n_cells            = n_total_cells,
-  n_evidence_cells   = n_positive,
-  top_k              = cfg$top_k,
-  top_k_data         = head(full_data, cfg$top_k),
-  full_data          = full_data
+core <- list(
+  dimensions = cat_vars,
+  n_total = n_total,
+  log_n = safe_round(log_n, 4),
+  top_k = cfg$top_k,
+  n_cells = n_total_cells,
+  n_evidence_cells = n_positive,
+  large_sample_mode = large_sample_mode,
+  large_n_threshold = cfg$large_n_threshold,
+  top_k_data = head(full_data, cfg$top_k),
+  full_data = full_data
 )
 
-json_path <- file.path(cfg$output_dir, "evidence_results.json")
+model_selection <- list(
+  method = "EBIC",
+  ebic_gamma = cfg$ebic_gamma,
+  ebic_p = p_total,
+  ebic_indep = safe_round(ebic_indep, 4),
+  ebic_satur = safe_round(ebic_satur, 4),
+  delta_ebic = safe_round(delta_ebic, 4),
+  log_bf10 = safe_round(log_bf, 4),
+  bf10 = bf_str,
+  bic_indep = safe_round(bic_indep, 4),
+  bic_satur = safe_round(bic_satur, 4),
+  delta_bic = safe_round(delta_bic, 4),
+  bf10_bic = bf_bic_str
+)
+
+effects <- list(
+  primary = effect_metric,
+  cramers_v = safe_round(cramers_v_val, 4),
+  cramers_v_ci_low = safe_round(cramers_v_ci_low, 4),
+  cramers_v_ci_high = safe_round(cramers_v_ci_high, 4),
+  fei = safe_round(fei_val, 4),
+  fei_ci_low = safe_round(fei_ci_low, 4),
+  fei_ci_high = safe_round(fei_ci_high, 4),
+  effect_small_threshold = small_threshold
+)
+
+threshold_l1_out <- safe_round(threshold_l1, 4)
+threshold_l2_out <- safe_round(threshold_l1_out * cfg$level2_factor, 4)
+threshold_l3_out <- safe_round(threshold_l1_out * cfg$level3_factor, 4)
+
+thresholds <- list(
+  method = "BIC Approximation (M0 vs M1)",
+  comparison = "M0 (Additive Main Effects) vs M1 (Single-cell Specific Effect)",
+  penalty_per_cell = "log(N) (1 degree of freedom)",
+  threshold_k = cfg$threshold_k,
+  level1 = threshold_l1_out,
+  level2 = threshold_l2_out,
+  level3 = threshold_l3_out,
+  level2_factor = cfg$level2_factor,
+  level3_factor = cfg$level3_factor
+)
+
+warnings <- list(
+  practical_significance_low = practical_low,
+  practical_significance_message = if (large_sample_mode && isTRUE(practical_low)) {
+    paste0("実用的有意性の欠如: 効果量 ", effect_metric, " = ", round(effect_value, 3), " (< 0.1)。統計的に有意であっても、この偏りは実務上の意味が薄い可能性があります。")
+  } else {
+    NULL
+  }
+)
+
+extensions <- list(
+  viz_thresholds = viz_thresholds,
+  arm = list(
+    eligible = arm_result$eligible,
+    reason = arm_reason,
+    min_support = cfg$arm_min_support,
+    min_confidence = cfg$arm_min_confidence,
+    top_rules = arm_result$top_rules
+  )
+)
+
+result_list <- list(
+  core = core,
+  model_selection = model_selection,
+  effects = effects,
+  thresholds = thresholds,
+  warnings = warnings,
+  extensions = extensions,
+  # backward compatibility
+  dimensions = core$dimensions,
+  n_total = core$n_total,
+  bf_independence = model_selection$bf10,
+  log_n = core$log_n,
+  threshold = thresholds$level1,
+  threshold_k = thresholds$threshold_k,
+  bic_indep = model_selection$bic_indep,
+  bic_satur = model_selection$bic_satur,
+  delta_bic = model_selection$delta_bic,
+  cramers_v = effects$cramers_v,
+  cramers_v_ci_low = effects$cramers_v_ci_low,
+  cramers_v_ci_high = effects$cramers_v_ci_high,
+  large_sample_mode = core$large_sample_mode,
+  large_n_threshold = core$large_n_threshold,
+  n_cells = core$n_cells,
+  n_evidence_cells = core$n_evidence_cells,
+  top_k = core$top_k,
+  top_k_data = core$top_k_data,
+  full_data = core$full_data
+)
+
+result_list$run_id <- rid$run_id
+
+# 隔離ディレクトリ artifact_dir に保存
+json_path <- file.path(artifact_dir, "evidence_results.json")
 write_json(result_list, json_path, pretty = TRUE, auto_unbox = TRUE)
 message(paste("[INFO] JSON出力:", json_path))
 
-# -----------------------------------------------------------------------------
-# DT テーブル（列フィルタ付きHTMLウィジェット）
-# -----------------------------------------------------------------------------
-# 日本語ラベルへ変換
 dt_data <- full_data
-names(dt_data)[names(dt_data) == "Freq"] <- "\u5ea6\u6570"
-names(dt_data)[names(dt_data) == "Expected"] <- "\u671f\u5f85\u5024"
-names(dt_data)[names(dt_data) == "Residual"] <- "\u6a19\u6e96\u6b8b\u5dee"
-names(dt_data)[names(dt_data) == "Evidence_Score"] <- "\u30a8\u30d3\u30c7\u30f3\u30b9\u30fb\u30b9\u30b3\u30a2"
-
-# Evidence Score の正負で行の色分け（列名は Unicode 変数で参照）
-es_col_name <- "\u30a8\u30d3\u30c7\u30f3\u30b9\u30fb\u30b9\u30b3\u30a2"
-
+names(dt_data)[names(dt_data) == "Freq"] <- "度数"
+names(dt_data)[names(dt_data) == "Expected"] <- "期待値"
+names(dt_data)[names(dt_data) == "Residual"] <- "標準残差"
+names(dt_data)[names(dt_data) == "Evidence_Score"] <- "エビデンス・スコア"
+names(dt_data)[names(dt_data) == "Intensity_Level"] <- "強度レベル"
 for (v in cat_vars) {
   if (v %in% names(dt_data)) {
     dt_data[[v]] <- factor(dt_data[[v]], levels = sort(unique(as.character(dt_data[[v]]))))
   }
 }
 
-cv_caption <- if (!is.na(cramers_v_val)) {
-  paste0(" | Cram\u00e9r's V = ", round(cramers_v_val, 4))
+primary_effect_caption <- if (!is.na(effects$cramers_v)) {
+  paste0(" | Cramér's V = ", effects$cramers_v)
+} else if (!is.na(effects$fei)) {
+  paste0(" | Fei = ", effects$fei)
 } else {
   ""
 }
@@ -408,96 +609,72 @@ dt_widget <- datatable(
   caption = htmltools::tags$caption(
     style = "caption-side: top; text-align: left; font-size: 14px; font-weight: bold;",
     paste0(
-      "\u591a\u6b21\u5143\u30a8\u30d3\u30c7\u30f3\u30b9\u5206\u6790: ",
-      paste(cat_vars, collapse = " \u00d7 "),
+      "多次元エビデンス分析: ", paste(cat_vars, collapse = " × "),
       " (N = ", format(n_total, big.mark = ","), ")",
-      " | BF10 = ", bf_str,
-      " | threshold = ", round(threshold, 2),
-      cv_caption
+      " | BF10(EBIC) = ", bf_str,
+      " | Level1 = ", safe_round(threshold_l1, 2),
+      primary_effect_caption
     )
   ),
   options = list(
     pageLength = 20,
     scrollX = TRUE,
-    language = list(
-      url = "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ja.json"
-    )
+    language = list(url = "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ja.json")
   )
-) %>%
+) |>
   formatStyle(
-    es_col_name,
-    backgroundColor = styleInterval(0, c("#fff3cd", "#d4edda")),
+    "エビデンス・スコア",
+    backgroundColor = styleInterval(
+      c(threshold_l1, threshold_l2, threshold_l3),
+      c("#fff3cd", "#ffe0b2", "#ffd180", "#d4edda")
+    ),
     fontWeight = "bold"
-  ) %>%
+  ) |>
   formatStyle(
-    "\u6a19\u6e96\u6b8b\u5dee",
+    "標準残差",
     color = styleInterval(0, c("#e74c3c", "#2980b9"))
-  ) %>%
-  formatRound(
-    c("\u671f\u5f85\u5024", "\u6a19\u6e96\u6b8b\u5dee", es_col_name),
-    digits = 4
-  )
+  ) |>
+  formatStyle(
+    "強度レベル",
+    backgroundColor = styleEqual(c(0, 1, 2, 3), c("#f8f9fa", "#fff3cd", "#ffe0b2", "#d4edda"))
+  ) |>
+  formatRound(c("期待値", "標準残差", "エビデンス・スコア"), digits = 4)
 
-dt_path <- file.path(cfg$output_dir, "dt_table.html")
+dt_path <- file.path(artifact_dir, "dt_table.html")
 saveWidget(dt_widget, dt_path, selfcontained = TRUE, libdir = NULL)
 message(paste("[INFO] DTテーブル出力:", dt_path))
 
-# -----------------------------------------------------------------------------
-# サマリーをコンソールに表示
-# -----------------------------------------------------------------------------
-cat("\n")
-cat("=================================================================\n")
+cat("\n=================================================================\n")
 cat(" vcd-bayesian-evidence-analysis: Pass 1 完了\n")
 cat("=================================================================\n")
-cat(paste0(" 分析変数    : ", paste(cat_vars, collapse = " × "), "\n"))
-cat(paste0(" 総度数 N    : ", format(n_total, big.mark = ","), "\n"))
-cat(paste0(" セル数      : ", n_total_cells, "\n"))
-cat(paste0(
-  " threshold   : ", round(threshold, 4), " (k=", cfg$threshold_k,
-  " × log(N)=", round(log_n, 4), ")\n"
-))
-cat(paste0(" BF10        : ", bf_str, "  (", interpret_bf(bf_val), ")\n"))
+cat(paste0(" 分析変数           : ", paste(cat_vars, collapse = " × "), "\n"))
+cat(paste0(" 総度数 N           : ", format(n_total, big.mark = ","), "\n"))
+cat(paste0(" セル数             : ", n_total_cells, "\n"))
+cat(paste0(" threshold(Level1)  : ", safe_round(threshold_l1, 4), " (k=", cfg$threshold_k, ")\n"))
+cat(paste0(" BF10 (EBIC主計算)  : ", bf_str, "  (", interpret_bf(bf_val), ")\n"))
+cat(paste0(" BF10 (BIC補助)     : ", bf_bic_str, "\n"))
 if (!is.na(cramers_v_val)) {
   cat(paste0(
-    " Cramér's V  : ", round(cramers_v_val, 4),
-    " [", round(cramers_v_ci_low, 4), ", ", round(cramers_v_ci_high, 4), "]\n"
+    " Cramér's V         : ", safe_round(cramers_v_val, 4),
+    " [", safe_round(cramers_v_ci_low, 4), ", ", safe_round(cramers_v_ci_high, 4), "]\n"
+  ))
+}
+if (!is.na(fei_val)) {
+  cat(paste0(
+    " Fei                : ", safe_round(fei_val, 4),
+    " [", safe_round(fei_ci_low, 4), ", ", safe_round(fei_ci_high, 4), "]\n"
   ))
 }
 if (large_sample_mode) {
   cat(" ** 大規模データモード: 効果量を優先して解釈してください **\n")
 }
+cat(paste0(" 実務的有意性フラグ : ", if (practical_low) "LOW" else "OK", "\n"))
+cat(paste0(" ARM                : ", if (arm_result$eligible) "enabled" else "skipped", " (", arm_reason, ")\n"))
 cat(paste0(
-  " 正値セル    : ", n_positive, " / ", n_total_cells,
+  " 正値セル           : ", n_positive, " / ", n_total_cells,
   " (", round(n_positive / n_total_cells * 100, 1), "%)\n"
 ))
-cat("\n")
-
-BLUE <- "\033[34m"
-RED <- "\033[31m"
-RESET <- "\033[0m"
-
-topk_data <- head(full_data, cfg$top_k)
-cat(paste0(" [Top-", cfg$top_k, " Evidence Score セル]\n"))
-for (i in seq_len(nrow(topk_data))) {
-  cell_label <- paste(
-    sapply(cat_vars, function(v) paste0(v, "=", topk_data[[v]][i])),
-    collapse = ", "
-  )
-  r_val <- topk_data$Residual[i]
-  color <- if (r_val >= 0) BLUE else RED
-  direction <- if (r_val >= 0) "(+)" else "(-)"
-  cat(paste0(
-    "  ", i, ". ", color, cell_label,
-    "  Score=", round(topk_data$Evidence_Score[i], 2),
-    "  r=", round(r_val, 4),
-    " ", direction, RESET, "\n"
-  ))
-}
-cat("\n")
-cat(" [出力ファイル]\n")
+cat("\n [出力ファイル]\n")
 cat(paste0("  - ", json_path, "\n"))
 cat(paste0("  - ", dt_path, "\n"))
-cat("=================================================================\n")
-cat(" 次のステップ: Pass 2 (AI考察) → SKILL.md の指示に従い\n")
-cat("               executive_summary.md を生成してください。\n")
 cat("=================================================================\n")

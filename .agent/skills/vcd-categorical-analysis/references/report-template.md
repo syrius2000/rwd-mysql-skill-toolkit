@@ -1,15 +1,60 @@
-# report.Rmd の構成（抜粋）
+# レポートテンプレート（analysis スキル向け）
 
-正本は **`templates/report.Rmd`**。ここではチャンクの意図のみ。
+> このファイルは `vcd-categorical-analysis` の出力成果物に関するテンプレート参照です。
+> AI による判断ファーストレポートの構成テンプレートは `vcd-categorical-reporting/references/report-template.md` を参照してください。
 
-1. **YAML** … `output: html_document`（既定）。`params`: `data_path`, `builtin_dataset`, `vars`, `output_dir`, `residual_table_pkg`。
-2. **setup** … `dir.create(output_dir)`、`pacman::p_load` または `library()`、パッケージ未導入時はエラーで止まる想定。
-3. **validate** … `vars` の長さ 1〜3、重複なし、列存在、**全 NA 列は `stop`**。非因子列は **`factor()` に変換**（警告付き）。
-4. **data** … `data_path` が空なら組み込みデータ（既定 `Titanic`）、あれば `read.csv` 等。
-5. **table** … `xtabs` でクロス表。
-6. **chisq** … `chisq.test`。期待度数が小さい場合の注意は本文 1 行＋ `r-snippets.md`。
-7. **plot** … `mosaic` / `assoc` を PNG で `output_dir` へ。
-8. **residual table** … `gt` または `kableExtra`（`residual_table_pkg`）。
-9. **glm** … 2-way は `A*B`、3-way は `m0/m1/m2` + `anova`（`glm-gnm-goodness.md` と同じ階層）。
+## analysis.R 出力ファイル一覧
 
-PDF を出す場合は **`kableExtra`** と TeX 環境を用意し、`output: pdf_document` を検討。
+Pass 2 実行後に `./skill_out/vcd_categorical/` に生成されるファイル：
+
+| ファイル | 内容 | 形式 |
+| :--- | :--- | :--- |
+| `data_profile_post.json` | 集約後のデータプロファイル | JSON |
+| `summary_{label}.json` | モデル比較・残差統計サマリー | JSON |
+| `residuals_{label}.csv` | 全セルの Pearson 残差（全モデル） | CSV |
+| `residuals_{label}_significant.csv` | 有意セル上位20件（絶対値降順） | CSV |
+| `matrix_marginal_{label}.html` | 周辺2変数の残差マトリックス（gt） | HTML |
+| `matrix_{label}_{layer}.html` | 各層の残差マトリックス（gt、3-way 時） | HTML |
+| `dt_residuals_{label}.html` | インタラクティブ残差テーブル（DT） | HTML |
+| `mosaic_{label}.png` | モザイクプロット | PNG |
+| `assoc_{label}.png` | アソシエーションプロット（2-way のみ） | PNG |
+| `cotab_{label}.png` | 条件付きモザイクプロット（3-way のみ） | PNG |
+
+## `summary_*.json` の主要フィールド
+
+```json
+{
+  "interface_version": "2.1",
+  "deviance_main": 数値,
+  "df_main": 整数,
+  "deviance_2way": 数値,
+  "df_2way": 整数,
+  "p_value_main_vs_2way": 数値,
+  "cramers_v_marginal": 数値,
+  "top_residuals_main": [{"cell": "A:B:C", "res": 数値}],
+  "strata_summary": {
+    "max_abs_res_per_stratum": {"層名": 数値},
+    "cramers_v_per_stratum": {"層名": 数値},
+    "n_significant_cells_5pct": 整数,
+    "n_significant_cells_1pct": 整数
+  }
+}
+```
+
+## `residuals_*.csv` のカラム定義
+
+| カラム | 型 | 説明 |
+| :--- | :--- | :--- |
+| `vars[1]` | factor | 変数1の水準 |
+| `vars[2]` | factor | 変数2の水準 |
+| `vars[3]` | factor | 変数3の水準（3-way 時のみ） |
+| `Freq` | numeric | 観測度数 |
+| `pearson_res` | numeric | Pearson 残差 |
+| `abs_pearson_res` | numeric | Pearson 残差の絶対値 |
+| `model_type` | character | `"Main Effects (A+B[+C])"` または `"2-way ((A+B[+C])^2)"` |
+| `cell_label` | character | 水準を `:` で連結したセル識別子 |
+
+## レガシー `report.Rmd` について
+
+`templates/report.Rmd` は v1.x の一気通貫テンプレートです。
+新規分析には使用せず、`analysis.R` の2パス方式を推奨します。

@@ -2,13 +2,13 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 設計 Artifact_001 に基づき、辞書フル再生成・Draw.io スタイル固定・.cursor/.agent 両方への同一配置を行う。
+**Goal:** 設計 Artifact_001 に基づき、辞書フル再生成・Draw.io スタイル固定・`.agent/skills` 正本と `scripts/sync-cursor-skills.sh` によるミラーを行う。
 
-**Architecture:** スクリプトは既存の .agent 側を改修したうえで .cursor にコピー。SKILL.md は両ディレクトリで同一本文とし、実行コマンドのパスのみ各ディレクトリ向けに書き分ける。
+**Architecture:** スクリプトは `.agent/skills/mysql-er-diagram/` を改修し、同期スクリプトで `.cursor/skills/` に反映する。
 
 **Tech Stack:** Python 3（標準ライブラリのみ）, CSV, xml.etree.ElementTree, MySQL INFORMATION_SCHEMA
 
-**参照:** [docs/Artifacts/Artifact_001_mysql-er-diagram-improvement-design.md](../Artifacts/Artifact_001_mysql-er-diagram-improvement-design.md)
+**参照:** [Artifact_001_mysql-er-diagram-improvement-design.md](Artifact_001_mysql-er-diagram-improvement-design.md)
 
 ---
 

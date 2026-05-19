@@ -3,17 +3,17 @@
 ## Required shape
 
 - One row per respondent.
-- Columns referenced by `var1`, `var2`, `var3` must exist in source CSV.
+- Columns referenced by `var1`, `var2`, and `var3` must exist in the source CSV.
 - UTF-8 encoding is recommended.
 
 ## Missing values
 
-- `na_policy=drop`: rows with NA in analysis vars are removed.
-- `na_policy=explicit_level`: NA/empty are converted to `Missing`.
+- `na_policy=drop`: rows with missing values in analysis variables are removed.
+- `na_policy=explicit_level`: missing or empty values are converted to `Missing`.
 
 ## Likert columns
 
-For `likert_2way` or `likert_3way`, specify `ordered_levels` with `|` separator.
+For `likert_2way` or `likert_3way`, specify `ordered_levels` with `|` separators.
 
 Example:
 
@@ -21,7 +21,7 @@ Example:
 
 ## Subset expression
 
-`subset_expr` is evaluated by R `subset()`. Keep it simple.
+`subset_expr` is evaluated in R. Keep it simple.
 
 Examples:
 
