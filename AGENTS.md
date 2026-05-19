@@ -36,29 +36,36 @@
 
 ### `.agent/` 構成
 
+`.agent/skills/<skill-name>/` が唯一のスキル正本です。旧ミラー（`.cursor/skills/`）は廃止済みなので、復活させないでください。
+
 ```text
 .agent/
-├── skills/<skill-name>/   # 正本（SKILL.md, references/, templates/, …）
-└── shared/                # R ユーティリティ（スキルではない・Cursor へ同期しない）
+├── skills/<skill-name>/   # 正本（SKILL.md, references/, templates/, ...）
+└── shared/                # R ユーティリティ（スキルではない）
 ```
 
-- **正本**: `.agent/skills/<skill-name>/`（開発・Antigravity/CURSOR 実行）。契約・手順は各 `SKILL.md` を優先する。
-- **CURSOR ミラー**: `.cursor/skills/<skill-name>/` は **同名ディレクトリ**のコピーのみ。**編集しない**。
-- **同期**（リポジトリルートで実行。スキル変更後・コミット前）:
-  - `./scripts/sync-cursor-skills.sh`
-  - または `rsync -a --delete .agent/skills/ .cursor/skills/`
-- **検証**: `diff -rq .agent/skills .cursor/skills`（出力なしで一致）
-- **件数**: `SKILL.md` 付き **13スキル**。件数変更時は本節と `README.md` を更新する。
-- **R ユーティリティ**: `.agent/shared/`（`run_scope.R`, `inspect_data.R`）。`.cursor` へはコピーしない。
-- **Reference.md**（任意）: `.agent/skills/<name>/Reference.md` のみ編集。`rsync` でミラーへ反映。
+- **正本**: `.agent/skills/<skill-name>/`
+- **編集対象**: `SKILL.md`, `Reference.md`, `references/`, `templates/`, `scripts/`, `tests/`
+- **R ユーティリティ**: `.agent/shared/`（`run_scope.R`, `inspect_data.R`）
+- **Reference.md**: `.agent/skills/<name>/Reference.md` のみ編集
 - **契約の正本**: `references/interface.md`（変更時は `interface_version` を整合させる）。
 - **VCD 系**: `vcd-pass0-consultation` は分析前の検分。`vcd-categorical-analysis` は **3ステップ必須**（Step1 内で R `--profile` → `render_config.json` → `--render`、Step2 `executive_summary.md`、Step3 `dashboard.Rmd` 既定）。`vcd-categorical-reporting` は非推奨。
 - **複雑分析**: `vcd-bayesian-evidence-analysis` も実行フェーズでは Pass 1→2→3 を途中停止せず完遂する。
 
+### agentic-evidence-analysis との同名 Skill 同期
+
+- **正本**: 本リポジトリの `.agent/skills/`。
+- **サテライト**: `/Users/myamaguchi/Programing/agentic-evidence-analysis/.agent/skills/`。
+- **対象**: `questionnaire-batch-analysis`, `vcd-bayesian-evidence-analysis`, `vcd-categorical-analysis`, `vcd-categorical-reporting`, `vcd-pass0-consultation` の5スキルのみ。
+- **同期**: `./scripts/sync-agentic-evidence-skills.sh`。
+- **検証**: `./scripts/sync-agentic-evidence-skills.sh --check`（出力なしの `diff -qr` 成功後に OK 表示）。
+- MySQL 系スキルと `security-vulnerability-check` は agentic 側へ同期しない。
+- 同名スキルに差分が出た場合は、差分を評価して本リポジトリ側へ取り込んでから同期する。agentic 側を正本として直接編集しない。
+
 ## 統合方針
 
 - このリポジトリを、統合DB構築・分析スキルの本体として扱う（GitHub: `rwd-mysql-skill-toolkit`）。
-- サテライトリポ（`_Gemini` / `_RAW` / `_VSCODE`）は参照専用。読み取りは可、本体への無断変更は禁止。
+- サテライトリポ（`OSX_IDE_Skill_management_Gemini` / `OSX_IDE_Skill_management_RAW` / `OSX_IDE_Skill_management_VSCODE`）は参照専用。読み取りは可、本体への無断変更は禁止。
 
 ## Query 作成支援
 

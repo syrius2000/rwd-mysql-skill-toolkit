@@ -15,7 +15,7 @@ metadata:
 | :--- | :--- |
 | **次元** | **3-way まで**。4-way 以上は対象外（分割・集約を提案）。 |
 | **出力先** | `./skill_out/vcd_categorical/`（`--run-id` 指定時は `runs/<id>/`） |
-| **正本** | `.agent/skills/`。Cursor は `.cursor/skills/` にミラー |
+| **正本** | `.agent/skills/vcd-categorical-analysis/` です。旧ミラーは廃止済みのため参照しません。 |
 
 ## 必須ワークフロー（実行フェーズ）
 
@@ -129,6 +129,7 @@ Rscript -e "rmarkdown::render(
 | `templates/report.Rmd` | 代替 Rmd |
 | `references/interface.md` | JSON/CSV 契約 |
 | `references/workflow.md` | 3ステップ + 2パス図 |
+| `references/ai-narrative-workflow.md` | AI による考察文生成、残差・効果量・層別差の説明順序、過剰主張を避ける表現ルール |
 | `tests/verify_skill.sh` | 検証スクリプト |
 
 ## 関連スキル

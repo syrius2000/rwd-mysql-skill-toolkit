@@ -11,8 +11,8 @@
 
 ## 2. 共通指標へのポインタ
 
-- [カイ二乗検定とピアソン残差](../../docs/Reference/Stats_Categorical.md#1-ピアソン残差-pearson-residuals)
-- [Cramér's V による関連の強さ（効果量）](../../docs/Reference/Stats_Categorical.md#2-cramérs-v-クラメールのv)
+- [カイ二乗検定とピアソン残差](../../../docs/Reference/evidence-analysis/stats_categorical.md#1-ピアソン残差-pearson-residuals)
+- [Cramér's V による関連の強さ（効果量）](../../../docs/Reference/evidence-analysis/stats_categorical.md#2-cramérs-v-クラメールのv)
 
 ## 3. 分析上の注意
 - **多重性の問題**: 大量の設問を同時に検定する場合、偶然有意になる設問が含まれる可能性があります。P値の絶対値だけでなく、効果量（V値）や実務的な文脈を重視して解釈してください。

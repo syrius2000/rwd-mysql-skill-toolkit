@@ -19,9 +19,9 @@ $$\text{Evidence Score}_i = r_{i}^2 - k \cdot \log(N)$$
 
 以下の基本概念については、中央統計リファレンスを参照してください。
 
-- [ピアソン残差の定義と数式](../../docs/Reference/Stats_Categorical.md#1-ピアソン残差-pearson-residuals)
-- [Cramér's V による効果量（関連の強さ）判定](../../docs/Reference/Stats_Categorical.md#2-cramérs-v-クラメールのv)
-- [ベイズ因子の解釈基準 (Jeffreys Scale)](../../docs/Reference/Stats_Bayesian.md#1-ベイズ因子-bayes-factor-bf10)
+- [ピアソン残差の定義と数式](../../../docs/Reference/evidence-analysis/stats_categorical.md#1-ピアソン残差-pearson-residuals)
+- [Cramér's V による効果量（関連の強さ）判定](../../../docs/Reference/evidence-analysis/stats_categorical.md#2-cramérs-v-クラメールのv)
+- [ベイズ因子の解釈基準 (Jeffreys Scale)](../../../docs/Reference/evidence-analysis/stats_bayesian.md#1-ベイズ因子-bayes-factor-bf10)
 
 ## 3. 分析の妥当性
 

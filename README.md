@@ -18,11 +18,10 @@
 
 ```
 ├── .agent/
-│   ├── skills/             # スキル正本（13スキル）
+│   ├── skills/             # スキル正本
 │   └── shared/             # R ユーティリティ（run_scope.R 等）
-├── .cursor/skills/         # .agent/skills のミラー（scripts/sync-cursor-skills.sh）
 ├── scripts/
-│   └── sync-cursor-skills.sh
+│   └── sync-agentic-evidence-skills.sh
 ├── docs/
 │   ├── README.md           # ドキュメント索引（配置ルール）
 │   ├── Artifacts/          # 計画・実装の成果物（plan-artifacts 命名）
@@ -39,7 +38,7 @@
 ## 使い方（最短）
 
 - **スキル定義**: 各スキル配下の `SKILL.md`
-- **実行用テンプレ**: `templates/`（R / Rmd / Python 等）
+- **実行用テンプレ**: 各スキル配下の `templates/`（R / Rmd / Python 等）
 - **出力先**: 原則 `./skill_out/` 配下（スキルごとにサブディレクトリ）
 
 例: `questionnaire-batch-analysis`（テストデータ）
@@ -68,6 +67,29 @@ sql/drafts/<topic>/
 
 検証済みになった SQL は、ユーザー確認後に `sql/validated/<topic>/` へ移します。
 
+## カテゴリ分析・エビデンス（VCD）
+
+大標本（N > 5,000）では P 値だけでは実務判断できない。Pass 0 検分のあと、各分析スキルの 3ステップ（R 計算 → AI 考察 → ダッシュボード）で完結する。
+
+| 指標 | 目安 | 意味 |
+|------|------|------|
+| Evidence Score | r² − k·log(N) > 0 | セル単位の信号 |
+| Bayes Factor BF₁₀ | > 100（目安） | 関連モデルの優位 |
+| Cramér's V | > 0.1（Cohen 目安） | 実務的関連の強さ |
+
+### 数理・統計 Reference
+
+| テーマ | 入口 | 推奨用途 |
+|---|---|---|
+| カテゴリカル分析の基礎 | `docs/Reference/evidence-analysis/stats_categorical.md` | 期待度数、Pearson residual、Cramér's V / Fei、大標本での P 値飽和を確認する |
+| ベイズ的エビデンス | `docs/Reference/evidence-analysis/stats_bayesian.md` | BF10、Evidence Score、EBIC/BIC ペナルティの意味を確認する |
+| 実務的な深掘り | `docs/Reference/evidence-analysis/advanced_analysis.md` | 効果量、セル単位エビデンス、層別の優先順位を決める |
+| AI 考察文 | `.agent/skills/vcd-categorical-analysis/references/ai-narrative-workflow.md` | 残差、効果量、層別差を過剰主張せず説明する |
+
+- 例データ: `examples/titanic.csv`, `examples/ucb_admissions.csv`
+- `vcd-categorical-analysis`: **3ステップ**（R 2パス → `executive_summary.md` → `dashboard.Rmd`）
+- `vcd-categorical-reporting`: **非推奨**（Step 2 に統合）
+
 ## ワークフロー
 
 ```mermaid
@@ -89,7 +111,9 @@ flowchart LR
 
 ## 管理スキル一覧
 
-`.agent/skills` が正本です。`.cursor/skills` は `./scripts/sync-cursor-skills.sh`（内部で `rsync --delete`）でミラーします（**13スキル**）。R ユーティリティは `.agent/shared/`（スキルではない）。
+`.agent/skills` が唯一の正本です。旧ミラー（`.cursor/skills`）は廃止しました。新規作成・修正・レビュー・検証は `.agent/skills/<skill-name>/` のみを対象にします。
+
+`agentic-evidence-analysis` に同名で存在する VCD/Questionnaire 系5スキルは、本リポジトリを正本として同期します。同期は `./scripts/sync-agentic-evidence-skills.sh`、一致確認は `./scripts/sync-agentic-evidence-skills.sh --check` を使います。MySQL 系スキルは agentic 側へ同期しません。
 
 | スキル名 | 概要 |
 |---|---|
@@ -109,22 +133,24 @@ flowchart LR
 
 ## テスト
 
-R ベースの smoke テストが中心です（`tests/test_*.R`）。例:
+R ベースの smoke テストと Python pytest があります（`tests/test_*.R`, `tests/test_*.py`）。例:
 
 ```bash
 Rscript tests/test_questionnaire_batch_smoke.R
 Rscript tests/test_vcd_categorical_smoke.R
+pytest tests/test_mysql_create_query_support_assets.py
 ```
 
 ## 生成物（例）
 
-- `questionnaire-batch-analysis`: `tests/skill_out_smoke/`（テスト実行時）
-- `vcd-categorical-analysis`: `skill_out/vcd_categorical/`
+- `questionnaire-batch-analysis`: `tests/skill_out_smoke/`（テスト実行時に生成）
+- `vcd-categorical-analysis`: `skill_out/vcd_categorical_test/`（テスト実行例）
 
 ## 同期ルール
 
 - **正本**: `.agent/skills` ディレクトリ
-- **同期先**: `.cursor/skills`（`./scripts/sync-cursor-skills.sh`）
+- **廃止**: `.cursor/skills` は旧規格のため管理対象外
+- **サテライト同期**: VCD/Questionnaire 系5スキルのみ `agentic-evidence-analysis/.agent/skills` へ同期
 - SQL成果物は Skill 配下に置かず、repo root の `sql/` に置く
 
 ## ドキュメント
@@ -132,14 +158,14 @@ Rscript tests/test_vcd_categorical_smoke.R
 | ファイル | 役割 |
 |----------|------|
 | [README.md](README.md) | 本ファイル（人向けの入口） |
-| [AGENTS.md](AGENTS.md) | Cursor / Antigravity 等のエージェント向けルール（**編集時は機能を壊さない**） |
+| [AGENTS.md](AGENTS.md) | Codex / Antigravity 等のエージェント向けルール（**編集時は機能を壊さない**） |
 | [docs/README.md](docs/README.md) | `docs/` 配下の索引・新規文書の置き場 |
 
-詳細な同期ルール（正本パス、rsync コマンド）は [AGENTS.md](AGENTS.md) を参照。
+詳細な同期ルール（正本パス、サテライト同期）は [AGENTS.md](AGENTS.md) を参照。
 
 ### 同期対象の概要
 
 | 種別 | 同期方法 |
 |------|----------|
-| 全スキル | `.agent/skills` を編集後、`./scripts/sync-cursor-skills.sh` |
+| VCD/Questionnaire 系5スキル | `./scripts/sync-agentic-evidence-skills.sh` |
 | flat-file-mysql-* の SKILL.md | `.agent` パス（`.agent/skills/...`）で記載 |

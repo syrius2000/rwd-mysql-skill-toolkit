@@ -13,6 +13,7 @@
 | [Artifacts/](Artifacts/) | 計画・実装・TODO の成果物（命名は Cursor `plan-artifacts` ルール）。旧 `Artifact_*` は Archive に移行済み | 人 / エージェント |
 | [Archive/](Archive/) | 完了した調査・ウォークスルー・旧計画 | 参照用 |
 | [Reference/](Reference/) | 手順書・運用メモ（例: git push） | 人 |
+| [Reference/evidence-analysis/](Reference/evidence-analysis/) | VCD / ベイズエビデンスの統計リファレンス（大標本・効果量） | 人 / エージェント |
 | [../sql/README.md](../sql/README.md) | Query 資産の置き場ルール | 人 / エージェント |
 
 ## superpowers（現行）

@@ -1,6 +1,6 @@
 ---
 name: mysql-table-cardinality
-description: 指定 MySQL DB・テーブルからカラム一覧・総行数・カラムごとの濃度数（cardinality）を取得し、./skill_out/mysql_table_cardinality に CSV/JSON を出力する。MCP 利用可時は execute_sql、不可時は CLI。DB 名・テーブル名必須。全テーブルは -t '*'。濃度数・cardinality を確認したいとき、テーブル統計を取得したいときに使う。Cursor および Antigravity で利用可能。
+description: 指定 MySQL DB・テーブルからカラム一覧・総行数・カラムごとの濃度数（cardinality）を取得し、./skill_out/mysql_table_cardinality に CSV/JSON を出力する。MCP 利用可時は execute_sql、不可時は CLI。DB 名・テーブル名必須。全テーブルは -t '*'。濃度数・cardinality を確認したいとき、テーブル統計を取得したいときに使う。.agent で利用可能。
 license: MIT
 metadata:
   author: mysql-table-cardinality-skill
@@ -14,7 +14,7 @@ metadata:
 - 実行 cwd は **プロジェクトルート**。
 - 出力先は `./skill_out/mysql_table_cardinality`（`-o` 未指定時の既定）。
 - エージェントが本 Skill に従い、MCP または `scripts/get_cardinality_cli.py` を呼び出す。
-- 正本は `.agent/skills/mysql-table-cardinality/`。変更後は `./scripts/sync-cursor-skills.sh` で `.cursor/skills/` に同期する。Cursor はミラー、Antigravity は正本を参照する。
+- 正本は `.agent/skills/mysql-table-cardinality/` です。旧ミラーは廃止済みのため参照しません。
 
 ## 動作の流れ
 
@@ -60,8 +60,7 @@ metadata:
    - 識別子はバッククォートでエスケープ（` 内の ` は `` に二重化）
    - 取得結果を CSV/JSON 形式で `./skill_out/mysql_table_cardinality/` に出力する
 3. **MCP 利用不可**: CLI を呼び出す
-   - Cursor: `python3 .cursor/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill_out/mysql_table_cardinality`
-   - Antigravity: `python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill_out/mysql_table_cardinality`
+   - `.agent`: `python3 .agent/skills/mysql-table-cardinality/scripts/get_cardinality_cli.py -d <db> -t <table> -o ./skill_out/mysql_table_cardinality`
    - 全テーブル: `-t '*'`
 
 ## コマンド例

@@ -36,10 +36,10 @@ _DRAWIO_EDGE_STROKE_WIDTH = "1"
 
 
 def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
-    """`.cursor` と `.agent` が同時に見つかる上位を repo root として推定する。"""
+    """`.agent` が見つかる上位を repo root として推定する。"""
     current = start.resolve()
     for _ in range(max_levels):
-        if (current / ".cursor").is_dir() and (current / ".agent").is_dir():
+        if (current / ".agent").is_dir():
             return current
         if current.parent == current:
             break
@@ -86,7 +86,7 @@ def _find_env_file() -> str | None:
     """プロジェクトルートの .env ファイルを探索する.
 
     探索順序:
-      1. repo root（`.cursor` と `.agent` が同時に見つかる上位）の `.env`
+      1. repo root（`.agent` が見つかる上位）の `.env`
       2. カレントワーキングディレクトリ
       3. スクリプト自身の祖先ディレクトリを辿り最初に見つかった .env
     """

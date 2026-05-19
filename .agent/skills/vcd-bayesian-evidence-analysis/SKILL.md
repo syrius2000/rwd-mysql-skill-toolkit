@@ -10,6 +10,8 @@ metadata:
 
 大標本における「P値の罠」を克服し、ベイズファクター（BF）・Evidence Score・効果量（Cramér's V / Fei）を併用して「統計的有意性」と「実質的意義」を峻別するAI連携型分析パイプライン。
 
+`mysql-create-query-support` などで検証済みになった抽出 SQL は、repo root の `sql/validated/` 配下を正本として参照する。分析用 CSV は、その SQL の粒度・除外条件・検証結果と対応するものを使う。
+
 ## 統計的背景
 
 本スキルの **推論本体**は、(1) セル度数に対する **独立 Poisson GLM** の標準化ピアソン残差から作る **Evidence Score**、(2) **独立 Poisson 対 飽和 Poisson** の EBIC に基づく **$\mathrm{BF}_{10}$ 近似**、および (3) **Cramér's V / Fei** です。`dashboard.html` の用語解説と同じ整理です。
@@ -46,7 +48,21 @@ $$\log \mathrm{BF}_{10} \approx \tfrac{1}{2}\bigl(\mathrm{EBIC}_{\mathrm{indep}}
 
 - **理由**: 変数が多すぎると「次元の呪い」により結果の解釈が困難になり、偽陽性のリスクも高まります。
 - **手順**: `.agent/shared/inspect_data.R` でデータを検分し、AI と対話して重要な軸（次元）や層別解析の必要性を判断してください。
-- **成果物**: Pass 0 を経ることで、Pass 1 でそのまま利用可能な `analysis_config.json` が得られます。
+- **成果物**: Pass 0 を経ることで、Pass 1 でそのまま利用可能な `analysis_config.json` が得られます。正準仕様は `references/analysis_config.schema.json` です。
+
+`analysis_config.json` の最小例:
+
+```json
+{
+  "input": "examples/titanic.csv",
+  "vars": ["Class", "Sex", "Age", "Survived"],
+  "freq": "Freq",
+  "output_dir": "output/titanic",
+  "run_id": "titanic_v1"
+}
+```
+
+`analysis.R --config` は、Pass 1 の統計計算前に `analysis_config.json` を検証します。必須キー、`vars` / `freq` の入力CSV列との一致、数値パラメータの型が不正な場合は日本語エラーで停止します。未知キーは警告を出しつつ読み込みます。
 
 ## 実行手順（3-Pass・順序厳守）
 
@@ -63,6 +79,13 @@ Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R \
   --top_k 10 \
   --threshold_k 1 \
   --large_n_threshold 1000
+```
+
+Pass 0 が生成した config を使う場合:
+
+```bash
+Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R \
+  --config output/titanic/run_v1/analysis_config.json
 ```
 
 | オプション | 既定値 | 説明 |

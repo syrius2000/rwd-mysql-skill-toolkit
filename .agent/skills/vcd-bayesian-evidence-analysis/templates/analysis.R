@@ -14,6 +14,7 @@ suppressPackageStartupMessages({
 script_file_arg <- grep("^--file=", commandArgs(), value = TRUE)[1]
 script_dir <- dirname(sub("^--file=", "", script_file_arg))
 source(file.path(script_dir, "pass1_compute.R"))
+source(file.path(script_dir, "config_validation.R"))
 
 find_agent_repo <- function() {
   d <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
@@ -155,19 +156,31 @@ cfg <- parse_args(commandArgs(trailingOnly = TRUE))
 
 # JSON 設定の読み込み (Pass 0 連携用)
 if (!is.null(cfg$config_path)) {
+  if (is.na(cfg$config_path) || !nzchar(cfg$config_path) || startsWith(cfg$config_path, "--")) {
+    stop("[ERROR] --config には analysis_config.json のパスを指定してください。", call. = FALSE)
+  }
   if (file.exists(cfg$config_path)) {
     if (!requireNamespace("jsonlite", quietly = TRUE)) {
       message("[WARN] jsonlite がインストールされていないため --config を無視します。")
     } else {
-      config_data <- jsonlite::fromJSON(cfg$config_path)
+      config_data <- tryCatch(
+        jsonlite::fromJSON(cfg$config_path),
+        error = function(e) {
+          stop("[ERROR] 設定ファイルを JSON として読めません: ", e$message, call. = FALSE)
+        }
+      )
       message("[INFO] 設定を読み込み中: ", cfg$config_path)
+      resolved_config <- validate_analysis_config(config_data, cfg$config_path, find_agent_repo())
+      if (!is.null(resolved_config$input)) {
+        config_data$input <- resolved_config$input
+      }
       # config_data の値を cfg に反映（JSON 優先）
       for (key in names(config_data)) {
         cfg[[key]] <- config_data[[key]]
       }
     }
   } else {
-    message("[WARN] 設定ファイルが見つかりません: ", cfg$config_path)
+    stop("[ERROR] 設定ファイルが見つかりません: ", cfg$config_path, call. = FALSE)
   }
 }
 

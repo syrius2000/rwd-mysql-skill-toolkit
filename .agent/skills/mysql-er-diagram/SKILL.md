@@ -1,6 +1,6 @@
 ---
 name: mysql-er-diagram
-description: 指定した MySQL データベースのテーブルのみを抽出し、Draw.io互換XMLおよびPlantUMLのER図を生成する。辞書CSVは都度フル再生成。Cursor および Antigravity（.agent）で利用可能。
+description: 指定した MySQL データベースのテーブルのみを抽出し、Draw.io互換XMLおよびPlantUMLのER図を生成する。辞書CSVは都度フル再生成。.agent で利用可能。
 license: MIT
 metadata:
   author: mysql-er-diagram-skill
@@ -52,9 +52,9 @@ metadata:
    - `--env <.envファイルパス>`: 認証用 .env を明示指定
 3. 生成された `[DB名]_dictionary.csv`、`[DB名]_er_MMDD_HHMM.xml`、`[DB名]_er_MMDD_HHMM.md` を確認し、ユーザーに報告する。
 
-## Cursor / Antigravity の違い
+## スキル配置
 
-- 正本は `.agent/skills/mysql-er-diagram/`。変更後は `./scripts/sync-cursor-skills.sh` で `.cursor/skills/` に同期する。実行コマンドのパスは、Cursor では `.cursor/skills/mysql-er-diagram/scripts/generate_er.py`、Antigravity では `.agent/skills/mysql-er-diagram/scripts/generate_er.py` を使う。
+- 正本は `.agent/skills/mysql-er-diagram/` です。旧ミラーは廃止済みのため参照しません。
 
 ## 次のステップ: Query 作成支援
 
