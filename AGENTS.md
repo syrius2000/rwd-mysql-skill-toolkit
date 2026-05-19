@@ -28,8 +28,10 @@
 - 不要になったコードは削除する
 - macOS/Ubuntu: BSD vs GNU の差異に注意。`sed -i` 等は実行前にチェック。GNU版（Homebrew）優先、不明時は POSIX 準拠で可搬性を確保
 
-## スキルの設置制限
-.agent
-.cursor
-両方に同一内容のskillを配置すること。火発は.agentで実行すること。
-開発は、.agentのskillを変更し、後に.cursorへ反映させること。
+## スキル管理
+
+- **正本**: `.agent/skills/`（開発・Antigravity 実行）
+- **Cursor**: `.cursor/skills/` は正本へのミラー。二重編集しない。
+- **同期**: `.agent` を編集したら `rsync -a --delete .agent/skills/ .cursor/skills/` で反映する。
+- **VCD 系**: `vcd-categorical-analysis` は3ステップ必須（集計 → `executive_summary.md` → `dashboard.Rmd` 既定）。`vcd-categorical-reporting` は非推奨。
+- **複雑分析**: `vcd-bayesian-evidence-analysis` 等も、実行フェーズでは Step 1→2→3 を途中停止せず完遂する。

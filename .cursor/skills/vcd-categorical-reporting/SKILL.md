@@ -1,58 +1,31 @@
 ---
 name: vcd-categorical-reporting
-description: vcd-categorical-analysis の出力（JSON/CSV/HTML/PNG）を読み取り、判断ファースト形式の AI 評価レポート（vcd_analysis_report.md）を3章構成で作成する。
+description: "【非推奨】AI考察・レポートは vcd-categorical-analysis の Step 2–3 に統合済み。後方互換の参照用。"
 license: MIT
 metadata:
   author: vcd-categorical-reporting-skill
-  version: "2.0"
+  version: "3.0-deprecated"
 ---
 
-`vcd-categorical-analysis` が生成した統計成果物を AI が読み取り、**判断ファースト**形式のレポートを構成する。
+# 非推奨（Deprecated）
 
-## 前提スキル
+**`vcd-categorical-reporting` は `vcd-categorical-analysis` v3.0 に統合されました。**
 
-- **先行**: `vcd-categorical-analysis` を先に実行し、`./skill_out/vcd_categorical/` に成果物が存在すること。
-- **契約**: `references/interface.md` を参照。
+新規作業では **`vcd-categorical-analysis` の必須3ステップ** を使用してください。
 
-## 手順
-
-### Pass 1: データプロファイルの確認
-
-1. `data_profile.json` を読み取る。
-2. 次元数・水準数・疎密度を確認し、`render_config.json` を生成して `vcd-categorical-analysis` の Pass 2 を実行させる。
-   - 水準数が多い場合（合計セル数 > 200）: `collapse_below_n` や `max_levels_per_var` の調整を検討
-   - 3-way の場合: `strata_to_render` で注目すべき層を選択（全層を生成する場合は空配列）
-
-### Pass 2 成果物の読み取りと判断
-
-1. `summary_*.json` を読み取り、以下の2段階で思考すること：
-   - **第1段階（全体構造の俯瞰）**: 主効果モデルの残差から、変数間の自明かつ強力な関連性を指摘
-   - **第2段階（局所交互作用の洞察）**: 2-way モデルの残差から、単純な相関では説明できない特異な偏りを言語化
-2. `strata_summary` を読み取り、**どの層の gt マトリックスを第2章に前面配置するか**を決定する。`max_abs_res_per_stratum` と `cramers_v_per_stratum` の値から統計的に最も注目すべき層を選ぶ。
-3. `n_significant_cells_5pct` と `n_significant_cells_1pct` の比率を確認し、有意セルが多すぎる場合は注釈を付与する。
-
-### レポート構成
-
-`vcd_analysis_report.md` を以下の3章構成で Artifact として作成すること：
-
-- **第1章：結論と所見** — サマリー文（1-2文）→ 箇条書き所見 → 推奨アクション（1-2文）
-- **第2章：判断根拠** — モデル比較表、AI が選択した gt マトリックス、有意セル数
-- **第3章：詳細データ** — DT テーブルへのリンク、全層別マトリックス、Mosaic/Assoc プロット
-
-> [!IMPORTANT]
-> 報告は必ず **`vcd_analysis_report.md`** という名前の Artifact として作成すること。
-> デザインは Mermaid シーケンス図による概況、`> [!NOTE]` / `> [!TIP]` バッジを活用し、ビジネスエグゼクティブにそのまま提示できる品質とすること。
-
-## リソース
-
-| パス | 役割 |
+| 旧 reporting | 新 analysis |
 | :--- | :--- |
-| `references/interface.md` | 共有契約（JSON/CSVスキーマ、命名規則） |
-| `references/workflow.md` | 2パスシーケンス図 |
-| `references/report-template.md` | 3章構成テンプレート |
-| `references/evaluation-criteria.md` | AI判断基準（残差閾値、層別選択ロジック） |
+| Pass 1: data_profile → render_config | Step 1: `analysis.R --render` |
+| Pass 2: AI が `vcd_analysis_report.md` | Step 2: `executive_summary.md`（＋任意で `vcd_analysis_report.md`） |
+| （別スキル） | Step 3: `dashboard.Rmd`（既定）または `report.Rmd` |
+
+## 参照のみ残すファイル
+
+- `references/report-template.md` … 判断ファースト3章のテンプレート
+- `references/evaluation-criteria.md` … AI 判断基準
+- `references/interface.md` … 共有契約（analysis 側と同期）
 
 ## 配置
 
 - **Cursor**: `.cursor/skills/vcd-categorical-reporting/`
-- **Antigravity**: `.agent/skills/vcd-categorical-reporting/`（**同一内容をミラー**）
+- **Antigravity**: `.agent/skills/vcd-categorical-reporting/`

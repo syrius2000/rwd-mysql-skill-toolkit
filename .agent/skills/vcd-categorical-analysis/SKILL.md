@@ -1,93 +1,109 @@
 ---
 name: vcd-categorical-analysis
-description: 名義カテゴリカル変数（最大 3-way）のクロス表・独立性・残差分析のための R パイプライン。2パス方式で data_profile.json（Pass 1）と統計成果物（Pass 2）を生成する。AI解釈・レポート構成は `vcd-categorical-reporting` を参照。
+description: "【必須3ステップ】1. analysis.Rで集計 2. executive_summary.mdを保存 3. dashboard.Rmd（既定）またはreport.RmdでHTML化。AI考察は本スキル内で完結（vcd-categorical-reportingは非推奨）。"
 license: MIT
 metadata:
   author: vcd-categorical-analysis-skill
-  version: "2.1"
+  version: "3.0"
 ---
 
-名義カテゴリのクロス表・独立性・**Pearson 残差**・**vcd** 可視化・**Poisson 対数線形（GLM）** を、2パス方式の R パイプラインで支援する。
+名義カテゴリカル変数（最大 3-way）の独立性検定（Poisson GLM）および残差の可視化を行う。**3ステップ方式**で集計・AI考察・レポート生成までを一貫して行う。
 
 ## スコープ
 
 | 項目 | 内容 |
 | :--- | :--- |
-| **次元** | **3-way まで**（`xtabs(~ A + B + C, data)`）。**4-way 以上は対象外**（ユーザーに明示し、分割・集約を提案）。 |
-| **主用途** | 比率・クロス表・独立性からの乖離（Pearson 残差の解釈）。 |
-| **可視化** | Mosaic / Association / Conditional mosaic（PNG）、gt 残差マトリックス（HTML）、DT ソート可能テーブル（HTML） |
+| **次元** | **3-way まで**。4-way 以上は対象外（分割・集約を提案）。 |
+| **出力先** | `./skill_out/vcd_categorical/` |
+| **配置** | 正本 `.agent/skills/`、Cursor は `.cursor/skills/` にミラー |
 
-## 出力先
+## 必須ワークフロー（実行フェーズ）
 
-分析成果物はプロジェクトルートの **`./skill_out/vcd_categorical/`** に出力する。
+ユーザーが **「実行して」** 等で実行フェーズに入った後、本スキル呼び出し時は **以下3ステップを連続実行**する。Step 1 完了前にチャットで要約して終了しない。
 
-## 2パス方式
+1. **Step 1（Data）**: `analysis.R` を実行し、`categorical_results.json`（および `summary_*.json` 等）が生成されたことを確認する。
+2. **Step 2（AI Review）**: JSON を読み、日本語考察を **`executive_summary.md`** として保存する（チャットへの長文出力のみで代替しない）。判断ファーストの詳細が必要な場合は同ディレクトリに `vcd_analysis_report.md` も可。
+3. **Step 3（Report）**: **既定は `dashboard.Rmd`**。`--template report` 指定時は `report.Rmd` をレンダリングする。HTML 生成を確認してから完了報告する。
 
-### Pass 1: プロファイリング（軽量）
-
-```bash
-Rscript analysis.R --profile
-```
-
-データの次元・水準数・疎密度を `data_profile.json` に出力する。AI はこの情報をもとに表示パラメータ（`render_config.json`）を決定する。
-
-### Pass 2: 本生成（パラメータ付き）
+## Step 1: R Engine
 
 ```bash
-Rscript analysis.R --render --config render_config.json
+Rscript .agent/skills/vcd-categorical-analysis/templates/analysis.R \
+  --render \
+  --data your_data.csv \
+  --vars "var1,var2" \
+  --freq "Freq" \
+  --label "mydata" \
+  --out ./skill_out/vcd_categorical/
 ```
 
-`render_config.json` に基づき以下を生成する：
+任意: 表示パラメータを調整する場合は先に `--profile` で `data_profile.json` を確認し、`render_config.json` を用意して `--config render_config.json` を付与する。
 
-| 成果物 | 形式 | 説明 |
+`--data` 省略時は内蔵 `HairEyeColor` を使用。
+
+## Step 2: AI 考察
+
+`categorical_results.json` を読み、`executive_summary.md` を生成する。
+
+**構成（最低限）**:
+- 節1: Cramér's V と Cohen 基準による全体関連
+- 節2: `abs_pearson_res` ≥ 1.96 のセル（偏りの方向）
+- 節3: 結論と実務的示唆
+
+**禁止**: 英語本文（変数名・数式除く）、P値のみでの結論。
+
+詳細な判断ファースト3章構成は、旧 `vcd-categorical-reporting/references/report-template.md` を参照可。
+
+## Step 3: レポート（テンプレ選択）
+
+### 既定: dashboard.Rmd
+
+```bash
+Rscript -e "rmarkdown::render(
+  '.agent/skills/vcd-categorical-analysis/templates/dashboard.Rmd',
+  output_file = 'dashboard.html',
+  output_dir = './skill_out/vcd_categorical/',
+  params = list(output_dir = './skill_out/vcd_categorical/'),
+  knit_root_dir = getwd()
+)"
+```
+
+### 代替: report.Rmd（レガシー・gt/DT 中心）
+
+```bash
+Rscript -e "rmarkdown::render(
+  '.agent/skills/vcd-categorical-analysis/templates/report.Rmd',
+  output_file = 'report.html',
+  output_dir = './skill_out/vcd_categorical/',
+  params = list(output_dir = './skill_out/vcd_categorical/'),
+  knit_root_dir = getwd()
+)"
+```
+
+## 生成ファイル
+
+| 出力 | Step | 説明 |
 | :--- | :--- | :--- |
-| `summary_{data}.json` | JSON | モデル比較指標、上位残差、層別統計 |
-| `residuals_{data}.csv` | CSV | 全残差データ（Main + 2-Way） |
-| `residuals_{data}_significant.csv` | CSV | 上位残差の抽出版 |
-| `matrix_marginal_{data}.html` | gt HTML | 周辺残差マトリックス（青赤グラデーション） |
-| `matrix_{data}_{layer}.html` | gt HTML | 層別残差マトリックス |
-| `dt_residuals_{data}.html` | DT HTML | ソート可能インタラクティブテーブル |
-| `mosaic_{data}.png` | PNG | Mosaic プロット |
-| `assoc_{data}.png` / `cotab_{data}.png` | PNG | Association / Conditional mosaic |
+| `categorical_results.json` | 1 | Cramér's V、全セル残差 |
+| `summary_*.json`, `residuals_*.csv` | 1 | 詳細統計（config 使用時） |
+| `executive_summary.md` | 2 | AI 日本語サマリー |
+| `dashboard.html` | 3（既定） | 統合ダッシュボード |
+| `report.html` | 3（代替） | レガシー Rmd レポート |
 
-## R 関数構成
-
-| 関数 | Pass | 役割 |
-| :--- | :--- | :--- |
-| `generate_profile()` | 1 | データプロファイル出力 |
-| `generate_data()` | 2 | GLM フィッティング、残差計算、JSON/CSV 出力 |
-| `generate_gt_matrix()` | 2 | gt ピボット残差マトリックス |
-| `generate_dt_table()` | 2 | DT ソート可能テーブル |
-| `generate_plots()` | 2 | Mosaic / Association PNG |
-
-## モデル（概要）
-
-- **2-way**: `stats::chisq.test` と `glm(count ~ A * B, family = poisson)`。
-- **3-way**: 主効果のみ → 2因子交互作用 → 飽和を `stats::anova(..., test = "Chisq")` で比較。
-- **gnm** や対称性モデルは **オプション**（`references/glm-gnm-goodness.md`）。
-
-## リソースの使い分け
+## リソース
 
 | パス | 役割 |
 | :--- | :--- |
-| `templates/analysis.R` | 5関数構成の R パイプライン（2パス対応）**推奨** |
-| `templates/report.Rmd` | レガシー: 一気通貫 Rmd（v1.x 互換用。新規は `analysis.R` 2パスを推奨） |
-| `references/interface.md` | 共有契約（JSON/CSVスキーマ、命名規則） |
-| `references/workflow.md` | 2パスシーケンス図 |
-| `references/dependencies.md` | 依存パッケージ一覧 |
-| `references/glm-gnm-goodness.md` | GLM/gnm モデル詳細 |
-| `references/ordinal-likert-advanced.md` | 序数リッカート応用 |
+| `templates/analysis.R` | 集計パイプライン |
+| `templates/dashboard.Rmd` | **既定** HTML ダッシュボード |
+| `templates/report.Rmd` | 代替 Rmd（v2.x 互換） |
+| `references/interface.md` | JSON/CSV 契約 |
+| `references/dependencies.md` | R パッケージ |
+| `references/workflow.md` | 3ステップ図 |
+| `tests/verify_skill.sh` | 検証スクリプト |
 
-## 連携スキル
+## 関連スキル
 
-- **後続**: `vcd-categorical-reporting` が本スキルの出力を読み取り、AI判断レポートを生成する。
-- **契約**: `references/interface.md` を参照。
-
-## 関連スキル（任意）
-
-DB からの件数・スキーマ確認が先に必要なら、本リポジトリの **`mysql-table-cardinality`** を参照。
-
-## 配置
-
-- **Cursor**: `.cursor/skills/vcd-categorical-analysis/`
-- **Antigravity**: `.agent/skills/vcd-categorical-analysis/`（**同一内容をミラー**）
+- `vcd-bayesian-evidence-analysis` … 大標本時の効果量・BIC/BF 視点
+- `vcd-categorical-reporting` … **非推奨**（本スキル Step 2 に統合）
+- `mysql-table-cardinality` … DB 探索が先の場合

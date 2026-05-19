@@ -33,7 +33,7 @@ open tests/skill_out_smoke/q01_gender_dept/report.html
 
 ## 管理スキル一覧
 
-`.agent/skills` と `.cursor/skills` の両方に同一の9スキルを配置しています。
+`.agent/skills` と `.cursor/skills` の両方に同一の11スキルを配置しています（正本は `.agent/skills`）。
 
 | スキル名 | 概要 |
 |---|---|
@@ -44,7 +44,9 @@ open tests/skill_out_smoke/q01_gender_dept/report.html
 | `mysql-table-cardinality` | 総行数・カーディナリティ等を CSV/JSON 出力 |
 | `mysql-entity-matrix` | 特定 ID の存在フラグ `[0,1]` マトリックス生成 |
 | `questionnaire-batch-analysis` | 設問設定 CSV で複数設問を一括処理し、HTML レポートと `summary.csv` を生成 |
-| `vcd-categorical-analysis` | 名義カテゴリ（最大 3-way）のクロス表・残差・vcd 可視化・対数線形モデル |
+| `vcd-categorical-analysis` | 名義カテゴリ（3-way）の3ステップ分析（集計 → AI考察 → dashboard/report HTML） |
+| `vcd-categorical-reporting` | **非推奨**（analysis に統合。参照テンプレのみ） |
+| `vcd-bayesian-evidence-analysis` | 大標本時の効果量・BIC/BF 視点の評価 |
 | `security-vulnerability-check` | ソースコードの脆弱性チェック（SQLi / OS コマンド / パストラバーサル等） |
 
 ## テスト
@@ -63,8 +65,8 @@ Rscript tests/test_vcd_categorical_smoke.R
 
 ## 同期ルール
 
-- **正本**: `.cursor/skills` ディレクトリ
-- **同期先**: `.agent/skills`（Antigravity 用）
+- **正本**: `.agent/skills` ディレクトリ
+- **同期先**: `.cursor/skills`（Cursor 用ミラー）
 - シンボリックリンクは使用しない
 
 詳細な同期ルール（対象ファイル一覧、置換ルール、コマンド例）は以下を参照：
@@ -75,6 +77,5 @@ Rscript tests/test_vcd_categorical_smoke.R
 
 | 種別 | 同期方法 |
 |------|----------|
-| スクリプト・プロンプト | `.cursor` → `.agent` へ内容完全一致でコピー |
-| SKILL.md（flat-file-mysql-* 3本, mysql-table-cardinality） | `.cursor` を正本として編集後、パス置換と description 補記で `.agent` 用を派生 |
-| その他スキル（questionnaire-batch-analysis, security-vulnerability-check, vcd-categorical-analysis, mysql-er-diagram, mysql-entity-matrix） | `.cursor/skills` と `.agent/skills` の両方を同時更新し、内容一致を維持 |
+| 全スキル | `.agent/skills` を編集後、`rsync -a --delete .agent/skills/ .cursor/skills/` |
+| flat-file-mysql-* の SKILL.md | `.agent` パス（`.agent/skills/...`）で記載 |

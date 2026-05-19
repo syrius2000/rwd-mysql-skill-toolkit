@@ -28,8 +28,10 @@ dir.create(out_dir, showWarnings = FALSE)
 # Test 1: Pass 1 - factor conversion and sparsity
 # ============================================================
 cat("[TEST 1] Pass 1: factor conversion and sparsity...\n")
-system2("Rscript", c(script_path, "--profile", "--data", test_csv,
-                      "--vars", "item,group", "--freq", "Freq", "--out", out_dir))
+system2("Rscript", c(
+  script_path, "--profile", "--data", test_csv,
+  "--vars", "item,group", "--freq", "Freq", "--out", out_dir
+))
 
 profile_path <- file.path(out_dir, "data_profile.json")
 if (!file.exists(profile_path)) stop("data_profile.json not generated")
@@ -73,16 +75,22 @@ cat("[PASS 2] OK\n")
 cat("[TEST 3] Pass 2: data_profile_post.json...\n")
 config_path <- file.path(out_dir, "test_config.json")
 write_json(list(collapse_below_n = 0, plot_mode = "residual_only"),
-           config_path, auto_unbox = TRUE)
+  config_path,
+  auto_unbox = TRUE
+)
 
 unlink(out_dir, recursive = TRUE)
 dir.create(out_dir, showWarnings = FALSE)
 write_json(list(collapse_below_n = 0, plot_mode = "residual_only"),
-           config_path, auto_unbox = TRUE)
+  config_path,
+  auto_unbox = TRUE
+)
 
-system2("Rscript", c(script_path, "--render", "--data", test_csv,
-                      "--vars", "item,group", "--freq", "Freq",
-                      "--config", config_path, "--out", out_dir))
+system2("Rscript", c(
+  script_path, "--render", "--data", test_csv,
+  "--vars", "item,group", "--freq", "Freq",
+  "--config", config_path, "--out", out_dir
+))
 
 post_path <- file.path(out_dir, "data_profile_post.json")
 if (!file.exists(post_path)) stop("data_profile_post.json not generated in Pass 2")
