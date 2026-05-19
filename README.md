@@ -1,18 +1,31 @@
-# IDE用スキル管理リポジトリ
+# 統合DB構築・分析スキル管理リポジトリ
 
-このリポジトリは、各種 IDE（Cursor / Antigravity）で使用する **Skill** を一元管理します。
+このリポジトリは、ローカル CSV やフラットファイルから RDBMS を構築し、MySQL/MariaDB 上で探索・Query作成・分析用データセット抽出を行い、R/R Markdown による分析へつなぐための **統合DB構築・分析スキル** を管理します。
+
+## このリポジトリのゴール
+
+このリポジトリは、単に CSV を MySQL に投入するためだけの道具ではありません。阪大講座内や小規模プロジェクトの手元データから RDBMS を作り、構造を確認し、必要な Query を作り、分析可能なデータセットへ整える経験を若手へ引き継ぐための Skill 群です。
+
+会社の大規模で整備済みの DB だけを使ってきた人でも、以下の流れを自分で辿れることを目標にします。
+
+1. CSV / flat files から DB を作る
+2. ER 図、dictionary、cardinality、entity matrix で DB を探索する
+3. 自然文の分析目的を SQL に落とす
+4. 本 SQL と検証 SQL を保存し、再利用可能な資産にする
+5. R / R Markdown の分析・レポートへ渡す
 
 ## リポジトリ構造
 
 ```
 .
-├── .agent/skills/          # Antigravity 用スキル
-├── .cursor/skills/         # Cursor 用スキル（正本）
+├── .agent/skills/          # Antigravity, Codex など汎用スキル
+├── .cursor/skills/         # Cursor 用スキル（.agent のミラー）
 ├── docs/
 │   ├── Artifacts/          # 生成ドキュメント
 │   ├── Reference/          # 参照ドキュメント（同期ルール等）
 │   ├── Archive/            # アーカイブ
 ├── skill_out/              # スキル実行の生成物
+├── sql/                    # Query作成支援で作成したSQL資産
 ├── AnotherPJ/              # 補助プロジェクト
 ├── flat_file_mysql/        # フラットファイル MySQL 関連資産
 └── tests/                  # テスト
@@ -31,9 +44,47 @@ Rscript tests/test_questionnaire_batch_smoke.R
 open tests/skill_out_smoke/q01_gender_dept/report.html
 ```
 
+## Query 作成支援
+
+`mysql-create-query-support` は、若手が「こういう患者群を抽出したい」「このイベントを数えたい」と自然文で相談したときに、SQL作成を段階的に支援する Skill です。
+
+この Skill は、いきなり完成 SQL を作りません。まず分析目的を、対象、イベント、曝露、アウトカム、属性、期間、除外条件、データセットの粒度に分解します。そのうえで、利用可能な ER 図、dictionary CSV、cardinality 結果、entity matrix 結果を参照し、必要なテーブル・カラム・JOIN キーを特定します。
+
+既存成果物がない場合は、`SHOW TABLES`、`DESCRIBE <table>`、`INFORMATION_SCHEMA.COLUMNS` などで Table Schema を確認してから SQL を設計します。スキーマ確認なしに本 SQL は作りません。
+
+標準成果物は repo root の `sql/` 配下に置きます。
+
+```text
+sql/drafts/<topic>/
+  main_query.sql
+  validation_query.sql
+  query_note.md
+```
+
+検証済みになった SQL は、ユーザー確認後に `sql/validated/<topic>/` へ移します。
+
+## ワークフロー
+
+```mermaid
+flowchart LR
+  A[CSV / flat files] --> B[構築系]
+  B --> C[MySQL / MariaDB]
+  C --> D[探索系]
+  D --> E[Query作成支援]
+  E --> F[sql/]
+  F --> G[分析系]
+```
+
+| 系統 | スキル | 役割 |
+|---|---|---|
+| 構築系 | `flat-file-mysql-overview`, `flat-file-mysql-ddl-generation`, `flat-file-mysql-load-validation` | DBを作る |
+| 探索系 | `mysql-er-diagram`, `mysql-table-cardinality`, `mysql-entity-matrix`, `mysql-create-query-support` | 構造・分布・ID所在を確認し、望むQueryを作る |
+| 分析系 | `questionnaire-batch-analysis`, `vcd-categorical-analysis`, `vcd-categorical-reporting`, `vcd-bayesian-evidence-analysis` | 抽出結果を分析・レポート化する |
+| 保守系 | `security-vulnerability-check` | スクリプトとSQL支援の安全性を確認する |
+
 ## 管理スキル一覧
 
-`.agent/skills` と `.cursor/skills` の両方に同一の11スキルを配置しています（正本は `.agent/skills`）。
+`.agent/skills` と `.cursor/skills` の両方に同一の12スキルを配置しています（正本は `.agent/skills`）。
 
 | スキル名 | 概要 |
 |---|---|
@@ -43,6 +94,7 @@ open tests/skill_out_smoke/q01_gender_dept/report.html
 | `mysql-er-diagram` | DB メタから辞書 CSV / Draw.io XML / PlantUML の ER 図生成 |
 | `mysql-table-cardinality` | 総行数・カーディナリティ等を CSV/JSON 出力 |
 | `mysql-entity-matrix` | 特定 ID の存在フラグ `[0,1]` マトリックス生成 |
+| `mysql-create-query-support` | 自然文の分析目的から本 SQL・検証 SQL・query note を作成する支援 |
 | `questionnaire-batch-analysis` | 設問設定 CSV で複数設問を一括処理し、HTML レポートと `summary.csv` を生成 |
 | `vcd-categorical-analysis` | 名義カテゴリ（3-way）の3ステップ分析（集計 → AI考察 → dashboard/report HTML） |
 | `vcd-categorical-reporting` | **非推奨**（analysis に統合。参照テンプレのみ） |
@@ -66,8 +118,8 @@ Rscript tests/test_vcd_categorical_smoke.R
 ## 同期ルール
 
 - **正本**: `.agent/skills` ディレクトリ
-- **同期先**: `.cursor/skills`（Cursor 用ミラー）
-- シンボリックリンクは使用しない
+- **同期先**: `.cursor/skills`（`rsync -a --delete .agent/skills/ .cursor/skills/`）
+- SQL成果物は Skill 配下に置かず、repo root の `sql/` に置く
 
 詳細な同期ルール（対象ファイル一覧、置換ルール、コマンド例）は以下を参照：
 

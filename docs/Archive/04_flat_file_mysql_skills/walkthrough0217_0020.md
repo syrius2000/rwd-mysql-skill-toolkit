@@ -4,14 +4,14 @@ author: AI Agent (Gemini 2.0 Pro)
 # Walkthrough: Repository Exploration & Analysis
 
 ## 1. Overview
-本ドキュメントは、`openspec-explore` スキルに基づき、`OSX_IDE_Skill_management` リポジトリの現状調査と分析を行った結果です。現状の定義（`openspec`）と参考実装（`AnotherPJ`）の整合性を確認し、実装に向けた見通しを立てました。
+本ドキュメントは、`openspec-explore` スキルに基づき、`rwd-mysql-skill-toolkit` リポジトリの現状調査と分析を行った結果です。現状の定義（`openspec`）と参考実装（`AnotherPJ`）の整合性を確認し、実装に向けた見通しを立てました。
 
 ## 2. Repository Map
 現在のリポジトリ構成と、各コンポーネントの関係性は以下の通りです。
 
 ```mermaid
 graph TD
-    subgraph Repo [OSX_IDE_Skill_management]
+    subgraph Repo [rwd-mysql-skill-toolkit]
         README[readme.md]
         Design1[1st_design.md]
 

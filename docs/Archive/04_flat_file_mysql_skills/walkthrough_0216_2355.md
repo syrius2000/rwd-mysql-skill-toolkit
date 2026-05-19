@@ -8,7 +8,7 @@ author: AI Agent (Antigravity)
 ## 調査結果
 
 1. **ディレクトリ構成の確認**:
-    * `/Users/myamaguchi/Programing/OSX_IDE_Skill_management/.agent` ディレクトリは存在し、内部に `workflows` および `skills` も正しく配置されています。
+    * `/Users/myamaguchi/Programing/rwd-mysql-skill-toolkit/.agent` ディレクトリは存在し、内部に `workflows` および `skills` も正しく配置されています。
 2. **ワークスペースの状態**:
     * 現在、エディタ側で「アクティブなワークスペース」が設定されていません。
     * Antigravityの機能（Slash Commandやプロジェクト固有のSkill）は、アクティブなワークスペースのルート直下にある `.agent` ディレクトリを探索します。
@@ -18,7 +18,7 @@ author: AI Agent (Antigravity)
 
 以下の手順を実行して、ワークスペースを明示的に設定してください。
 
-1. エディタ（Antigravity/Cursor）で、ディレクトリ `/Users/myamaguchi/Programing/OSX_IDE_Skill_management/` を**フォルダとして開く** (Open Folder) 操作を行ってください。
+1. エディタ（Antigravity/Cursor）で、ディレクトリ `/Users/myamaguchi/Programing/rwd-mysql-skill-toolkit/` を**フォルダとして開く** (Open Folder) 操作を行ってください。
 2. 開いた後、IDE側がこのパスをワークスペースのルートとして認識すれば、自動的に `.agent/workflows` 内のコマンド（例: `/opsx:new` など）が候補に表示されるようになります。
 
 ## 今後の対応

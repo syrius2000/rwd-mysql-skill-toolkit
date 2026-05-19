@@ -26,6 +26,7 @@ htmlcov/
 Thumbs.db
 
 # IDE / local
+.worktrees/
 chrome_profile_notebooklm/
 *.local
 .env
@@ -61,3 +62,6 @@ tests/skill_out_smoke/
 **/tests/temp_test.csv
 **/tests/test_out_logic/
 **/vcd-categorical-analysis/templates/skill_out/
+# skill templates may produce outputs (do not track)
+.agent/skills/**/templates/skill_out/
+.cursor/skills/**/templates/skill_out/

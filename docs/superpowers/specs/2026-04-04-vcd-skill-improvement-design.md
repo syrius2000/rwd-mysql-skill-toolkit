@@ -1,8 +1,9 @@
 # VCD カテゴリカル分析スキル改善設計書
 
 - **日付**: 2026-04-04
-- **ステータス**: レビュー中
-- **対象スキル**: `.agent/skills/vcd-categorical-analysis/`
+- **ステータス**: レビュー中（実装は interface **2.1** まで反映。差分は再構築仕様を参照）
+- **対象スキル**: `.agent/skills/vcd-categorical-analysis/` および `vcd-categorical-reporting`
+- **再構築・要求の正本（樹状）**: [vcd-skills-rebuild-specification.md](./vcd-skills-rebuild-specification.md)
 
 ## 背景
 

@@ -35,3 +35,14 @@
 - **同期**: `.agent` を編集したら `rsync -a --delete .agent/skills/ .cursor/skills/` で反映する。
 - **VCD 系**: `vcd-categorical-analysis` は3ステップ必須（集計 → `executive_summary.md` → `dashboard.Rmd` 既定）。`vcd-categorical-reporting` は非推奨。
 - **複雑分析**: `vcd-bayesian-evidence-analysis` 等も、実行フェーズでは Step 1→2→3 を途中停止せず完遂する。
+
+## 統合方針
+
+- このリポジトリを、統合DB構築・分析スキルの本体として扱う（GitHub: `rwd-mysql-skill-toolkit`）。
+- サテライトリポ（`_Gemini` / `_RAW` / `_VSCODE`）は参照専用。読み取りは可、本体への無断変更は禁止。
+
+## Query 作成支援
+
+- 自然文から SQL を作る `mysql-create-query-support` を探索系に置く。
+- SQL 成果物は repo root の `sql/` に保存（`sql/drafts/` → 検証後 `sql/validated/`）。
+- 標準: `main_query.sql`, `validation_query.sql`, `query_note.md`。
