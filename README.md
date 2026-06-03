@@ -69,13 +69,19 @@ sql/drafts/<topic>/
 
 ## カテゴリ分析・エビデンス（VCD）
 
-大標本（N > 5,000）では P 値だけでは実務判断できない。Pass 0 検分のあと、各分析スキルの 3ステップ（R 計算 → AI 考察 → ダッシュボード）で完結する。
+Pass 0 検分のあと、各分析スキルの 3ステップ（R 計算 → AI 考察 → ダッシュボード）で完結する。
+大標本（N > 2,000）では P 値だけでは実務判断できない（飽和問題）。
 
 | 指標 | 目安 | 意味 |
 |------|------|------|
 | Evidence Score | r² − k·log(N) > 0 | セル単位の信号 |
 | Bayes Factor BF₁₀ | > 100（目安） | 関連モデルの優位 |
 | Cramér's V | > 0.1（Cohen 目安） | 実務的関連の強さ |
+
+2016年にアメリカ統計学会（ASA）が発表した「p値に関する声明」の要点を以下に示します。
+- **p値は「仮説（偶然）とデータの矛盾度」を示す数字である**: p値とは、調べたい差が「全くない（偶然である）」と仮定したときに、そのデータ（またはそれ以上に極端なデータ）が得られる確率のことであり、それ以上の意味はありません。
+- **p値は「研究（ビジネス）の重要性」を証明しない**: p値がどれだけ小さくても（例：$p < 0.001$）、その差がビジネスや科学において「実務的に価値があるほど大きいか」は判断できません（飽和問題がこれに該当します）。
+- **「$p < 0.05$ かどうか」だけで白黒つけてはいけない**: p値が $0.05$ を下回ったからといって「大発見だ」と結論づけたり、上回ったからといって「差がない、無価値だ」と全否定するような、思考停止の二択評価はやめるべきです。
 
 ### 数理・統計 Reference
 
@@ -111,9 +117,7 @@ flowchart LR
 
 ## 管理スキル一覧
 
-`.agent/skills` が唯一の正本です。旧ミラー（`.cursor/skills`）は廃止しました。新規作成・修正・レビュー・検証は `.agent/skills/<skill-name>/` のみを対象にします。
-
-`agentic-evidence-analysis` に同名で存在する VCD/Questionnaire 系5スキルは、本リポジトリを正本として同期します。同期は `./scripts/sync-agentic-evidence-skills.sh`、一致確認は `./scripts/sync-agentic-evidence-skills.sh --check` を使います。MySQL 系スキルは agentic 側へ同期しません。
+新規作成・修正・レビュー・検証は `.agent/skills/<skill-name>/` を対象にします。
 
 | スキル名 | 概要 |
 |---|---|
@@ -146,11 +150,10 @@ pytest tests/test_mysql_create_query_support_assets.py
 - `questionnaire-batch-analysis`: `tests/skill_out_smoke/`（テスト実行時に生成）
 - `vcd-categorical-analysis`: `skill_out/vcd_categorical_test/`（テスト実行例）
 
-## 同期ルール
+## 管理ルール
 
 - **正本**: `.agent/skills` ディレクトリ
 - **廃止**: `.cursor/skills` は旧規格のため管理対象外
-- **サテライト同期**: VCD/Questionnaire 系5スキルのみ `agentic-evidence-analysis/.agent/skills` へ同期
 - SQL成果物は Skill 配下に置かず、repo root の `sql/` に置く
 
 ## ドキュメント
@@ -160,12 +163,3 @@ pytest tests/test_mysql_create_query_support_assets.py
 | [README.md](README.md) | 本ファイル（人向けの入口） |
 | [AGENTS.md](AGENTS.md) | Codex / Antigravity 等のエージェント向けルール（**編集時は機能を壊さない**） |
 | [docs/README.md](docs/README.md) | `docs/` 配下の索引・新規文書の置き場 |
-
-詳細な同期ルール（正本パス、サテライト同期）は [AGENTS.md](AGENTS.md) を参照。
-
-### 同期対象の概要
-
-| 種別 | 同期方法 |
-|------|----------|
-| VCD/Questionnaire 系5スキル | `./scripts/sync-agentic-evidence-skills.sh` |
-| flat-file-mysql-* の SKILL.md | `.agent` パス（`.agent/skills/...`）で記載 |

@@ -1,46 +1,39 @@
-# AI 考察文ワークフロー
+# AI 解釈（Cursor 二段レンダリング）
 
-このリファレンスは、R による統計処理とダッシュボード生成の間に、エージェントが日本語の考察文を作成するための判断順序を示す。現行フローでは **`executive_summary.md`** を考察文の入力として扱い、`dashboard.Rmd` がそれを読み込む。
+このスキルは本来「統計処理と図表の生成」を扱う。ここでは追加で、**Cursor デスクトップ上のエージェント**が解釈文（Markdown）を作り、**2回目のレンダリング**で HTML に差し込むための手順を示す。
 
 ## 前提
 
-- リポジトリに **API キーを埋め込まない**。
-- R/Python から外部 LLM API を呼ぶ **バッチ処理は行わない**。
-- 考察文は **エージェント（このチャットの AI）**が、生成済みの統計結果と図表を読んで作る。
-- P 値だけで結論を作らず、残差、効果量、層別差、分析設定を合わせて判断する。
+- リポジトリに **API キーを埋め込まない**
+- R/Python から外部 LLM API を呼ぶ **バッチ処理は行わない**
+- 解釈文は **エージェント（このチャットの AI）**が作る
 
-## 手順
+## 手順（概要）
 
-1. **Step 1: R 2パスで統計処理を完了する**
-   `analysis.R --profile` で `data_profile.json` を確認し、過大セル数や過剰水準への対応を `render_config.json` に反映する。その後 `analysis.R --render` を実行し、`summary_*.json`、`categorical_results.json`、残差 CSV、図表、ダッシュボード用素材が生成されたことを確認する。
+1. **1回目レンダリング（統計のみ）**  
+   `templates/report.Rmd` を通常どおりレンダリングし、`skill_out/.../report.html` と `figures/`、`.metrics.rds` を生成する。
 
-2. **Step 2: AI が `executive_summary.md` を作成する**
-   `summary_*.json`、`categorical_results.json`、残差 CSV、プロット、`render_config.json`、生成済みダッシュボード素材を読み、`skill_out/vcd_categorical/` または `--run-id` 配下に `executive_summary.md` を保存する。チャット本文だけで代替しない。
+2. **エージェントが解釈 Markdown を作成**  
+   生成物を見ながら、`skill_out/<slug>/ai_interpretation.md` を作る（例: `skill_out/vcd_categorical/ucb_admit_gender_dept/ai_interpretation.md`）。
 
-3. **Step 3: `dashboard.Rmd` をレンダリングする**
-   `templates/dashboard.Rmd` は出力先の `executive_summary.md` を読み込み、統計結果と考察文を統合する。レンダリング後、HTML 内に考察文が反映されていることを確認する。
+3. **2回目レンダリング（解釈を差し込み）**  
+   `params$ai_interpretation_path` に 2. で作った Markdown を指定して再レンダリングする。
 
-## 考察文の判断順序
+## 解釈 Markdown に含めると良い構成（素人向け）
 
-1. **全体関連**
-   Cramér's V と Cohen 基準で関連の強さを述べる。統計的有意性があっても効果量が小さい場合は、実務上の意味を控えめに扱う。
+- **結論（1〜2行）**: 何が重要な示唆か
+- **どこがズレたか（上位セル2〜3個）**: 期待より多い/少ないの説明
+- **強さ（効果量）**: Cramér の V とラベル（small 等）
+- **注意（1行）**: 層別（Dept）と周辺で結論が変わりうる等
 
-2. **残差の方向**
-   `abs_pearson_res` が大きいセルを優先し、「期待より多い」「期待より少ない」を明確に分ける。セル数が多い場合は上位2〜3個に絞り、網羅的な列挙にしない。
+## 解釈生成のプロンプト雛形（例）
 
-3. **層別差とモデル設定**
-   3-way や層別変数がある場合、周辺集計だけで断定しない。`render_config.json` で水準集約や除外を行った場合は、解釈の前提として短く明記する。
+以下をエージェントに渡す。
 
-4. **過剰主張の抑制**
-   観察データから因果を断定しない。残差は「偏りの候補」であり、業務判断にはデータ収集条件、サンプルサイズ、未観測交絡、カテゴリ定義の確認が必要であることを必要に応じて添える。
+- 入力: `report.html` の Summary / Decision summary / Residual table / Residual plot / mosaic
+- 出力: `ai_interpretation.md`（日本語、見出しは `##` から。1〜2画面で）
 
-## `executive_summary.md` の推奨構成
+**指示例:**
 
-- **結論**: 主要な関連と実務的示唆を1〜2段落で述べる。
-- **偏りのあるセル**: 期待より多い/少ないセルを残差の方向つきで説明する。
-- **効果量**: Cramér's V と small/medium/large 等のラベルを併記する。
-- **層別・注意点**: 層別差、集約設定、過剰主張を避けるための留意点を書く。
+「このレポートを統計に不慣れな人に説明する解釈文を Markdown で書いて。参照している残差のモデル（例: 2-way交互作用まで）を最初に明記し、上位のズレのセルを2〜3つ挙げて、正負の意味を添えて。」
 
-## エージェントへの依頼例
-
-「`summary_*.json`、`categorical_results.json`、残差 CSV、図表、`render_config.json` を読んで、`executive_summary.md` を日本語で作成して。Cramér's V、残差の上位セル、層別差、集約設定の影響を順に扱い、因果や実務影響を過剰主張しない表現にしてください。」

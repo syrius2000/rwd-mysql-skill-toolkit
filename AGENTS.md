@@ -52,20 +52,9 @@
 - **VCD 系**: `vcd-pass0-consultation` は分析前の検分。`vcd-categorical-analysis` は **3ステップ必須**（Step1 内で R `--profile` → `render_config.json` → `--render`、Step2 `executive_summary.md`、Step3 `dashboard.Rmd` 既定）。`vcd-categorical-reporting` は非推奨。
 - **複雑分析**: `vcd-bayesian-evidence-analysis` も実行フェーズでは Pass 1→2→3 を途中停止せず完遂する。
 
-### agentic-evidence-analysis との同名 Skill 同期
-
-- **正本**: 本リポジトリの `.agent/skills/`。
-- **サテライト**: `/Users/myamaguchi/Programing/agentic-evidence-analysis/.agent/skills/`。
-- **対象**: `questionnaire-batch-analysis`, `vcd-bayesian-evidence-analysis`, `vcd-categorical-analysis`, `vcd-categorical-reporting`, `vcd-pass0-consultation` の5スキルのみ。
-- **同期**: `./scripts/sync-agentic-evidence-skills.sh`。
-- **検証**: `./scripts/sync-agentic-evidence-skills.sh --check`（出力なしの `diff -qr` 成功後に OK 表示）。
-- MySQL 系スキルと `security-vulnerability-check` は agentic 側へ同期しない。
-- 同名スキルに差分が出た場合は、差分を評価して本リポジトリ側へ取り込んでから同期する。agentic 側を正本として直接編集しない。
-
 ## 統合方針
 
 - このリポジトリを、統合DB構築・分析スキルの本体として扱う（GitHub: `rwd-mysql-skill-toolkit`）。
-- サテライトリポ（`OSX_IDE_Skill_management_Gemini` / `OSX_IDE_Skill_management_RAW` / `OSX_IDE_Skill_management_VSCODE`）は参照専用。読み取りは可、本体への無断変更は禁止。
 
 ## Query 作成支援
 
