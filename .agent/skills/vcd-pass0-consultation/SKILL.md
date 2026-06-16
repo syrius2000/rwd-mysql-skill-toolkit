@@ -7,6 +7,10 @@ description: Use when starting a new categorical data analysis to inspect data, 
 
 大標本カテゴリカルデータ分析（`vcd-bayesian-evidence-analysis`）の最初の一手として、データの統計的性質を検分し、分析の軸（次元）や層別の要否を決定するための対話型スキル。
 
+## 共通品質契約
+
+本スキルは `.agent/shared/analysis_quality_contract.md` を参照する。Pass 0では、統計計算前の入力品質、分析スコープ、変数選択、集約・除外・層別の判断を契約に沿って確認し、`data_analysis_scope.md` と `analysis_config.json` に反映する。
+
 ## ワークフロー
 
 ### 1. データ物理検分 (Inspection)
@@ -21,6 +25,7 @@ Rscript .agent/shared/inspect_data.R <path_to_your_data.csv>
 - 度数の分布（極端に少ないセルはないか？）
 - 欠損値の有無
 - 度数列（`Freq` 等）の有無
+- 過剰次元、スパースセル、集約による情報損失の可能性
 
 ### 2. インタラクティブ提案 (Consultation)
 検分した統計量に基づき、ユーザーに対して以下の2点を主軸に提案を行います。
@@ -37,6 +42,7 @@ Rscript .agent/shared/inspect_data.R <path_to_your_data.csv>
 
 1. **`data_analysis_scope.md`**: 
    - 分析の背景、選択した変数の根拠、除外した変数の理由を記録した人間用ドキュメント。
+   - 集約、除外、層別、解釈保留が必要な場合は、その理由と影響を記録する。
 2. **`analysis_config.json`**:
    - Pass 1 (`analysis.R` 等) に渡すための設定ファイル。
    - `vcd-bayesian-evidence-analysis/references/analysis_config.schema.json` に従うフラットな JSON:
@@ -72,6 +78,12 @@ Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R --conf
 # 例
 Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R --config output/project/run_v1/analysis_config.json
 ```
+
+## 完了条件
+
+- `inspection_results.json` を読んだうえで、入力品質と分析スコープの確認結果を説明できる。
+- `data_analysis_scope.md` と `analysis_config.json` の保存先を示せる。
+- 未解決の欠損、過剰水準、スパースセル、設定不整合がある場合は、Pass 1へ進む前の解釈保留またはブロッカーとして示す。
 
 ## アンチパターン
 - **全変数投入**: 「とりあえず全部」は次元の呪いと解釈の混乱を招きます。Pass 0 で絞り込むことが重要です。

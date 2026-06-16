@@ -12,6 +12,10 @@ metadata:
 
 `mysql-create-query-support` などで検証済みになった抽出 SQL は、repo root の `sql/validated/` 配下を正本として参照する。分析用 CSV は、その SQL の粒度・除外条件・検証結果と対応するものを使う。
 
+## 共通品質契約
+
+本スキルは `.agent/shared/analysis_quality_contract.md` を参照する。Pass 0では分析スコープ、Pass 1では統計計算と主要JSON、Pass 2ではAIレビュー標準構成、Pass 2.5では品質確認、Pass 3ではHTMLと図表の読み取り確認を契約に沿って満たす。
+
 ## 統計的背景
 
 本スキルの **推論本体**は、(1) セル度数に対する **独立 Poisson GLM** の標準化ピアソン残差から作る **Evidence Score**、(2) **独立 Poisson 対 飽和 Poisson** の EBIC に基づく **$\mathrm{BF}_{10}$ 近似**、および (3) **Cramér's V / Fei** です。`dashboard.html` の用語解説と同じ整理です。
@@ -66,7 +70,7 @@ $$\log \mathrm{BF}_{10} \approx \tfrac{1}{2}\bigl(\mathrm{EBIC}_{\mathrm{indep}}
 
 ## 実行手順（3-Pass・順序厳守）
 
-**必須の流れ:** Pass 1 完了 → Pass 2 で `executive_summary.md` を `output_dir` に保存 → Pass 3 で `dashboard.html` を生成。Pass 3 は既定で `executive_summary.md` が無いと **エラーで停止**する（`dashboard.Rmd` の `params$require_pass2`、既定 `TRUE`）。プレビュー専用で Pass 2 を省略する場合のみ `require_pass2 = FALSE` を指定する。
+**必須の流れ:** Pass 1 完了 → Pass 2 で `executive_summary.md` を `output_dir` に保存 → 必要に応じて Pass 2.5 で `quality_check.md` を保存 → Pass 3 で `dashboard.html` を生成。Pass 3 は既定で `executive_summary.md` が無いと **エラーで停止**する（`dashboard.Rmd` の `params$require_pass2`、既定 `TRUE`）。プレビュー専用で Pass 2 を省略する場合のみ `require_pass2 = FALSE` を指定する。
 
 ### Pass 1: R Engine（統計計算）
 
@@ -119,6 +123,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 
 #### 節1: 全体的な関連性の評価（ベイズファクター + 効果量）
 - **重要: 見出しには必ず `####` (H4) を使用してください。**
+- 冒頭で主要結論、実務上の意味、解釈保留の有無を先に記述
 - `bf_independence` の値を明示し、Jeffreys スケールで解釈
 - `model_selection.method`（EBIC）と `model_selection.bf10_bic`（比較用）があれば併記
 - `effects.primary` が `cramers_v` または `fei` であることを踏まえて、実用的意義を評価
@@ -143,12 +148,15 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 - **重要: 見出しには必ず `####` (H4) を変えずに使用してください。**
 - 分析全体の要約（2〜3文）
 - 実務・学術的に重要な発見の強調
+- 欠損、スパースセル、過剰水準、集約、サンプルサイズに由来する限界
+- 次アクション（再分類、層別、追加確認、報告上の注意点）
 
 **禁止事項**:
 - 英語での考察出力（数式・変数名を除く）
 - Evidence Score 負値セルを「有意な関連あり」と表現すること
 - P値を主な根拠として使用すること
 - 2次元データとして3次元データを解釈すること
+- 時間順序や介入情報がない結果から因果を断定すること
 
 #### 大規模データモード（N > 1,000 の場合）
 `large_sample_mode` が `true` の場合、以下を必ず考察に含めること：
@@ -157,6 +165,18 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 - P値ではなく効果量を主な根拠として使用
 - `thresholds.threshold_k` が 1 より大きい場合、その閾値設定の根拠を記述
 - `warnings.practical_significance_low` が `true` の場合は Dual-Filter 警告を明示
+
+### Pass 2.5: 品質確認
+
+Pass 2 の後、必要に応じて `quality_check.md` を `executive_summary.md` と同じ run 出力ディレクトリに保存する。
+
+**確認項目**:
+- `executive_summary.md` が結論、根拠、限界、解釈保留、次アクションを含む。
+- P値、効果量、Evidence Score、Bayes Factor、セル数、サンプルサイズを読み分けている。
+- Evidence Score 負値セルを関連ありと扱っていない。
+- 大標本効果、スパースセル、過剰水準、集約による情報損失を必要に応じて明示している。
+- `evidence_results.json`、Top-K表、`dt_table.html`、`dashboard.html`予定の図表と本文が矛盾していない。
+- 重大な未解決事項がある場合は完了扱いにせず、ブロッカーまたは解釈保留として報告する。
 
 ### Pass 3: ダッシュボード生成
 
@@ -194,6 +214,7 @@ Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/render_dashboard.
 | `evidence_results.json` | `core/model_selection/effects/thresholds/warnings/extensions` のモジュール構造 + 旧キー互換（Pass 1） |
 | `dt_table.html` | 列フィルタ付きインタラクティブDTテーブル（+青/−赤色分け）（Pass 1）。`evidence_results.json` と同じ **`run_<prefix>/` 成果ディレクトリ**に保存される（`selfcontained` 時は同隣に補助ファイルが増える場合あり） |
 | `executive_summary.md` | AI日本語エグゼクティブサマリー（Pass 2） |
+| `quality_check.md` | AIレビュー・指標解釈・図表整合・解釈保留の品質確認（Pass 2.5） |
 | `dashboard.html` | Top-K＋折りたたみ全テーブル＋用語解説統合HTMLダッシュボード（Pass 3）。**`run_<prefix>/` 直下**（`dt_table.html` と同階層） |
 
 ## アンチパターン対策
@@ -204,6 +225,7 @@ Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/render_dashboard.
 | B | レンダリングパス失敗 | Pass 3 は `render_dashboard.R` を使い、リポジトリルートを `knit_root_dir` に固定する |
 | C | 英語のみ出力 | すべての出力（ラベル・UI・考察）を日本語にデフォルト設定 |
 | D | Pass 2 を飛ばして Pass 3 のみ実行 | 既定 `require_pass2 = TRUE` で `executive_summary.md` 必須。意図的プレビューのみ `FALSE` |
+| E | レビュー過剰主張 | `quality_check.md` でP値偏重、因果断定、Evidence Score負値セルの誤解釈、図表矛盾を確認 |
 
 ## 連携スキル
 

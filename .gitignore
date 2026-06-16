@@ -27,6 +27,11 @@ Thumbs.db
 
 # IDE / local
 .worktrees/
+.codex/
+.cursor/
+tmp/
+.agent/skills/openspec-*/
+.agent/workflows/
 chrome_profile_notebooklm/
 *.local
 .env

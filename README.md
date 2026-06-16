@@ -20,8 +20,6 @@
 ├── .agent/
 │   ├── skills/             # スキル正本
 │   └── shared/             # R ユーティリティ（run_scope.R 等）
-├── scripts/
-│   └── sync-agentic-evidence-skills.sh
 ├── docs/
 │   ├── README.md           # ドキュメント索引（配置ルール）
 │   ├── Artifacts/          # 計画・実装の成果物（plan-artifacts 命名）
@@ -71,6 +69,8 @@ sql/drafts/<topic>/
 
 Pass 0 検分のあと、各分析スキルの 3ステップ（R 計算 → AI 考察 → ダッシュボード）で完結する。
 大標本（N > 2,000）では P 値だけでは実務判断できない（飽和問題）。
+
+VCD 系と `questionnaire-batch-analysis` は [agentic-evidence-analysis](https://github.com/syrius2000/agentic-evidence-analysis) を正本として参照し、このリポジトリでは利用案内と周辺ドキュメントを保つ。共通契約として `.agent/shared/analysis_quality_contract.md` を参照し、Pass 2 のあとに必要なら `quality_check.md`、複数設問では `cross_question_summary.md` を追加する。
 
 | 指標 | 目安 | 意味 |
 |------|------|------|
@@ -129,10 +129,10 @@ flowchart LR
 | `mysql-entity-matrix` | 特定 ID の全テーブル存在フラグ `[1,0]` マトリックス SQL 生成 |
 | `mysql-create-query-support` | 自然文の分析目的から探索 SQL・本 SQL・検証 SQL・query note（`sql/` 配下） |
 | `vcd-pass0-consultation` | カテゴリ分析前のデータ検分・次元選定（bayesian / questionnaire 前段） |
-| `questionnaire-batch-analysis` | 設問設定 CSV で `nominal_2way` / `likert_2way` / `nominal_3way` を一括処理、`summary.csv` と設問別 HTML |
-| `vcd-categorical-analysis` | 2-way/3-way 名義カテゴリ。**3ステップ**（R 2パス集計 → `executive_summary.md` → `dashboard.Rmd`） |
+| `questionnaire-batch-analysis` | 設問設定 CSV で `nominal_2way` / `likert_2way` / `nominal_3way` を一括処理、`summary.csv` と設問別 HTML、必要に応じて `cross_question_summary.md` |
+| `vcd-categorical-analysis` | 2-way/3-way 名義カテゴリ。**3ステップ**（R 2パス集計 → `executive_summary.md` → `quality_check.md` → `dashboard.Rmd`） |
 | `vcd-categorical-reporting` | **非推奨**（analysis Step 2 に統合。参照テンプレのみ） |
-| `vcd-bayesian-evidence-analysis` | 大標本 2-way/3-way。**3-Pass**（`evidence_results.json` → `executive_summary.md` → `dashboard.html`） |
+| `vcd-bayesian-evidence-analysis` | 大標本 2-way/3-way。**3-Pass**（`evidence_results.json` → `executive_summary.md` → `quality_check.md` → `dashboard.html`） |
 | `security-vulnerability-check` | ソースコードの脆弱性チェック（SQLi / OS コマンド / パストラバーサル等） |
 
 ## テスト

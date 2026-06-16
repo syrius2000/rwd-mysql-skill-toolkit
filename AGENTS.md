@@ -54,7 +54,8 @@
 
 ## 統合方針
 
-- このリポジトリを、統合DB構築・分析スキルの本体として扱う（GitHub: `rwd-mysql-skill-toolkit`）。
+- このリポジトリは統合DB構築・Query作成支援の本体として扱う。
+- カテゴリカル分析・エビデンス分析の同名5スキルは [agentic-evidence-analysis](https://github.com/syrius2000/agentic-evidence-analysis) を正本とし、ここでは案内と補助資産を保つ。
 
 ## Query 作成支援
 

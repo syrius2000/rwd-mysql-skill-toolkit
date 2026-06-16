@@ -9,6 +9,10 @@ metadata:
 
 名義カテゴリカル変数（クロス表 **2-way / 3-way**）の独立性検定（Poisson GLM）および残差の可視化を行う。**エージェント3ステップ**で集計・AI考察・レポート生成までを一貫して行う。Step 1 の R エンジンは **2パス**（`--profile` → `render_config.json` → `--render`）。
 
+## 共通品質契約
+
+本スキルは `.agent/shared/analysis_quality_contract.md` を参照する。Step 1では入力品質と出力生成、Step 2ではAIレビュー標準構成、Step 2.5では品質確認、Step 3ではHTMLと図表の読み取り確認を契約に沿って満たす。
+
 ## スコープ
 
 | 項目 | 内容 |
@@ -23,7 +27,8 @@ metadata:
 
 1. **Step 1（Data）**: R **2パス**を完遂し、`summary_*.json`・`categorical_results.json`・残差 CSV/HTML/PNG 等が生成されたことを確認する。
 2. **Step 2（AI Review）**: JSON を読み、日本語考察を **`executive_summary.md`** として保存する（チャットへの長文出力のみで代替しない）。詳細が必要な場合は `vcd_analysis_report.md` も可。
-3. **Step 3（Report）**: **既定は `dashboard.Rmd`**。`report.Rmd` はレガシー代替。HTML 生成を確認してから完了報告する。
+3. **Step 2.5（Quality Check）**: 必要に応じて **`quality_check.md`** を保存し、P値偏重、残差方向、スパースセル、集約による情報損失、図表と本文の矛盾を確認する。
+4. **Step 3（Report）**: **既定は `dashboard.Rmd`**。`report.Rmd` はレガシー代替。HTML 生成と読み取り確認を行ってから完了報告する。
 
 ## Step 1: R Engine（2パス）
 
@@ -66,19 +71,32 @@ Rscript .agent/skills/vcd-categorical-analysis/templates/analysis.R \
 - 別データを連続解析する場合は **`--run-id`** でサブフォルダを分ける。
 - `--out` が既存の場合、上書き可否を確認する。
 - `render_config.json` で `collapse_below_n` 等を使う場合、情報損失の許容可否を確認する。
+- `data_profile.json` で過剰水準、スパースセル、4-way以上相当の複雑性が見える場合は、集約、除外、層別、解釈保留のいずれかを提案する。
 
 ## Step 2: AI 考察
 
 主に `summary_{label}.json` および `categorical_results.json` を読み、`executive_summary.md` を生成する。
 
 **構成（最低限）**:
-- 節1: Cramér's V と Cohen 基準による全体関連
-- 節2: `abs_pearson_res` ≥ 1.96 のセル（偏りの方向）
-- 節3: 結論と実務的示唆
+- 節1: 結論ファースト（何が分かったか、実務上何を保留するか）
+- 節2: Cramér's V と Cohen 基準による全体関連
+- 節3: `abs_pearson_res` ≥ 1.96 のセル（観測度数が期待度数より多い/少ない方向）
+- 節4: 限界、解釈保留、次アクション
 
-**禁止**: 英語本文（変数名・数式除く）、P値のみでの結論。
+**禁止**: 英語本文（変数名・数式除く）、P値のみでの結論、残差方向を確認しない「多い/少ない」表現、セル数や集約による情報損失を無視した断定。
 
 判断ファースト3章の詳細は `vcd-categorical-reporting/references/report-template.md`（非推奨スキル・参照テンプレ）を参照可。
+
+## Step 2.5: 品質確認
+
+Step 2 の後、必要に応じて `quality_check.md` を同じ出力ディレクトリに保存する。
+
+**確認項目**:
+- AIレビューが結論、根拠、限界、解釈保留、次アクションを含む。
+- P値だけで結論していない。
+- 残差方向、効果量、セル数、スパースセル、集約による情報損失を区別している。
+- 図表、残差表、`categorical_results.json` と本文が矛盾していない。
+- 重大な未解決事項がある場合は完了扱いにせず、ブロッカーまたは解釈保留として報告する。
 
 ## Step 3: レポート
 
@@ -95,6 +113,7 @@ Rscript -e "rmarkdown::render(
 ```
 
 `executive_summary.md` が無いとダッシュボードに警告が出る。Step 2 を省略しない。
+`quality_check.md` がある場合は、未解決事項が残っていないか確認してから完了報告する。
 
 ### 代替: report.Rmd（レガシー）
 
@@ -118,6 +137,7 @@ Rscript -e "rmarkdown::render(
 | `residuals_{label}.csv` 等 | Pass 2 | 残差・gt/DT HTML・PNG |
 | `categorical_results.json` | Pass 2 | ダッシュボード連携用 JSON |
 | `executive_summary.md` | Step 2 | AI 日本語サマリー |
+| `quality_check.md` | Step 2.5 | AIレビュー・図表・解釈保留の品質確認 |
 | `dashboard.html` | Step 3（既定） | 統合ダッシュボード |
 
 ## リソース
@@ -130,6 +150,7 @@ Rscript -e "rmarkdown::render(
 | `references/interface.md` | JSON/CSV 契約 |
 | `references/workflow.md` | 3ステップ + 2パス図 |
 | `references/ai-narrative-workflow.md` | AI による考察文生成、残差・効果量・層別差の説明順序、過剰主張を避ける表現ルール |
+| `.agent/shared/analysis_quality_contract.md` | 共通分析品質契約、Pass 2.5、完了条件 |
 | `tests/verify_skill.sh` | 検証スクリプト |
 
 ## 関連スキル
