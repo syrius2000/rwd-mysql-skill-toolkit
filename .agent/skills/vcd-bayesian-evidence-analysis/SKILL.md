@@ -133,6 +133,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 あなたは **計量薬理学・医療統計の専門家** です。`evidence_results.json` を入力として受け取り、以下の4節構成で日本語考察を執筆してください。
 
 #### 節1: 全体的な関連性の評価（ベイズファクター + 効果量）
+
 - **重要: 見出しには必ず `####` (H4) を使用してください。**
 - 冒頭で主要結論、実務上の意味、解釈保留の有無を先に記述
 - `bf_independence` の値を明示し、Jeffreys スケールで解釈
@@ -144,6 +145,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 - 対象次元数と変数名を明記
 
 #### 節2: エビデンス・スコアによる「真の関連」の抽出
+
 - **重要: 見出しには必ず `####` (H4) を使用してください。**
 - Evidence Score の定義を数式で示す: $\mathrm{Evidence\;Score} = r^2 - k \cdot \log(N)$（JSON の `thresholds.threshold_k` と `core.log_n` を明示）
 - `thresholds.level1/level2/level3` の値と意味（強度レベル）を説明
@@ -151,6 +153,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 - 大標本でのP値の限界（type I error inflation）に言及
 
 #### 節3: 多次元交互作用の解釈（層別エビデンス）
+
 - **重要: 見出しには必ず `####` (H4) を使用してください。**
 - `core.top_k_data` に含まれる **上位セル**（Evidence Score 降順）を具体的数値付きで記述
 - **レイアウト**: セル一覧は長文の連続を避け、読みやすい **Markdown表**（`| 変数 | 水準 | … |`）または **番号付き箇条書き**で整列させる（Pass 3 の Top-K 表と対応しやすい形）
@@ -158,6 +161,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 - 層別変数がある場合、層ごとのスコア差異を比較・考察
 
 #### 節4: 結論と実務的示唆
+
 - **重要: 見出しには必ず `####` (H4) を変えずに使用してください。**
 - 分析全体の要約（2〜3文）
 - 実務・学術的に重要な発見の強調
@@ -165,6 +169,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 - 次アクション（再分類、層別、追加確認、報告上の注意点）
 
 **禁止事項**:
+
 - 英語での考察出力（数式・変数名を除く）
 - Evidence Score 負値セルを「有意な関連あり」と表現すること
 - P値を主な根拠として使用すること
@@ -173,6 +178,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 
 #### 大規模データモード（N > 1,000 の場合）
 `large_sample_mode` が `true` の場合、以下を必ず考察に含めること：
+
 - Cramér's V の値と Cohen 基準による評価を冒頭に明示
 - Cramér's V が未算出の場合は、未算出理由と、Evidence Scoreがセル単位指標であることを明示
 - Evidence Score が多数のセルで正値になっている場合、「大標本効果による飽和の可能性」に言及
@@ -185,6 +191,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 Pass 2 の後、必要に応じて `quality_check.md` を `executive_summary.md` と同じ run 出力ディレクトリに保存する。
 
 **確認項目**:
+
 - `executive_summary.md` が結論、根拠、限界、解釈保留、次アクションを含む。
 - P値、効果量、Evidence Score、Bayes Factor、セル数、サンプルサイズを読み分けている。
 - Evidence Score 負値セルを関連ありと扱っていない。
