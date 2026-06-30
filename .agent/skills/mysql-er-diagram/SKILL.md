@@ -44,10 +44,16 @@ metadata:
 
 1. ユーザー指示から対象の **データベース名** を取得する。
 2. 以下のコマンドを実行する。
+
    ```bash
    python3 .agent/skills/mysql-er-diagram/scripts/generate_er.py --db <ターゲットDB名>
+   # SQLite の場合
+   python3 .agent/skills/mysql-er-diagram/scripts/generate_er.py --sqlite <path/to/file.db> --out ./example/skill_out
    ```
+
    **オプション:**
+   - `--db <DB名>`: MySQL 対象（`--sqlite` と排他）
+   - `--sqlite <パス>`: SQLite 対象（`.db` / `.sqlite` / `.sqlite3`、View 除外）
    - `--out <出力ディレクトリ>`: 出力先（デフォルト: `./skill_out/`）
    - `--env <.envファイルパス>`: 認証用 .env を明示指定
 3. 生成された `[DB名]_dictionary.csv`、`[DB名]_er_MMDD_HHMM.xml`、`[DB名]_er_MMDD_HHMM.md` を確認し、ユーザーに報告する。
