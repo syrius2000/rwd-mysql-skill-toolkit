@@ -55,6 +55,7 @@ base_config <- list(
   input = "examples/titanic.csv",
   vars = c("Class", "Sex", "Age", "Survived"),
   freq = "Freq",
+  response_var = "Survived",
   output_dir = file.path(td, "valid_out"),
   run_id = "schema_valid_v1",
   threshold_k = 1.25,
@@ -72,6 +73,10 @@ stopifnot(file.exists(json_path))
 res <- jsonlite::fromJSON(json_path)
 stopifnot(identical(res$core$dimensions, base_config$vars))
 stopifnot(identical(as.character(res$run_id), base_config$run_id))
+stopifnot(identical(as.character(res$effects$response_var), base_config$response_var))
+stopifnot(identical(as.character(res$effects$effect_status), "computed"))
+stopifnot(!is.na(as.numeric(res$effects$cramers_v)))
+stopifnot(!is.na(as.numeric(res$cramers_v)))
 
 missing_vars <- base_config
 missing_vars$vars <- NULL
@@ -86,6 +91,11 @@ bad_freq <- base_config
 bad_freq$output_dir <- file.path(td, "bad_freq_out")
 bad_freq$freq <- "MissingFreq"
 expect_failure_mentions("bad freq column", make_config(td, bad_freq), "MissingFreq")
+
+bad_response <- base_config
+bad_response$output_dir <- file.path(td, "bad_response_out")
+bad_response$response_var <- "MissingResponse"
+expect_failure_mentions("bad response_var column", make_config(td, bad_response), "MissingResponse")
 
 bad_numeric <- base_config
 bad_numeric$output_dir <- file.path(td, "bad_numeric_out")

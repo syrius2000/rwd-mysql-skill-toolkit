@@ -40,6 +40,7 @@ parse_args <- function(args) {
     dataset_name = "dataset",
     vars = NULL,
     freq = "Freq",
+    response_var = NULL,
     top_k = 10L,
     threshold_k = 1,
     large_n_threshold = 1000,
@@ -90,6 +91,14 @@ parse_args <- function(args) {
       "--freq" = {
         i <- i + 1L
         result$freq <- args[i]
+      },
+      "--response_var" = {
+        i <- i + 1L
+        result$response_var <- args[i]
+      },
+      "--response-var" = {
+        i <- i + 1L
+        result$response_var <- args[i]
       },
       "--top_k" = {
         i <- i + 1L
@@ -202,6 +211,7 @@ Options:
   --dataset_name <name>       データセット名（既定: dataset）
   --vars <v1,v2,...>          分析変数（カンマ区切り、省略時: 全変数）
   --freq <col>                度数列名（既定: Freq）
+  --response_var <col>        応答変数。3次元以上のCramér's V算出で使用
   --top_k <N>                 Top-K 表示件数（既定: 10）
   --threshold_k <k>           Evidence閾値係数（既定: 1）
   --large_n_threshold <N>     大規模データモード閾値（既定: 1000）
@@ -296,6 +306,21 @@ if (length(cat_vars) < 1L) {
 }
 message(paste("[INFO] 分析変数:", paste(cat_vars, collapse = ", ")))
 
+response_var <- cfg$response_var
+if (!is.null(response_var)) {
+  response_var <- as.character(response_var)[1L]
+  if (is.na(response_var) || !nzchar(response_var)) {
+    stop("[ERROR] response_var は空でない列名である必要があります。", call. = FALSE)
+  }
+  if (!(response_var %in% names(df_input))) {
+    stop(paste("[ERROR] response_var が入力データに存在しません:", response_var), call. = FALSE)
+  }
+  if (!(response_var %in% cat_vars)) {
+    stop(paste("[ERROR] response_var は分析変数 vars に含める必要があります:", response_var), call. = FALSE)
+  }
+  message(paste("[INFO] 応答変数 response_var:", response_var))
+}
+
 arm_df <- df_input
 arm_weight_col <- if (freq_exists) freq_col else ".arm_weight"
 if (!freq_exists) {
@@ -353,24 +378,59 @@ message(paste("[INFO] ΔEBIC =", round(delta_ebic, 2), "/ log BF(EBIC) =", round
 message(paste("[INFO] BF10(EBIC) =", bf_str, "| BF10(BIC) =", bf_bic_str))
 message(paste("[INFO] BF解釈:", interpret_bf(bf_val)))
 
-ct <- xtabs(as.formula(paste(freq_col, "~", paste(cat_vars, collapse = " + "))), data = df)
-cv_result <- tryCatch(
-  {
-    if (length(cat_vars) == 2L) {
-      effectsize::cramers_v(ct, ci = 0.95)
-    } else {
-      effectsize::cramers_v(stats::chisq.test(stats::ftable(ct)), ci = 0.95)
-    }
-  },
-  error = function(e) {
-    message(paste("[WARN] Cramér's V 算出失敗:", e$message))
-    NULL
+drop_empty_margins <- function(tab) {
+  if (length(dim(tab)) != 2L) {
+    return(tab)
   }
-)
+  tab[rowSums(tab) > 0, colSums(tab) > 0, drop = FALSE]
+}
 
+ct <- xtabs(as.formula(paste(freq_col, "~", paste(cat_vars, collapse = " + "))), data = df)
+effect_status <- "not_applicable"
+effect_reason <- "Cramér's V は2次元表、または3次元以上では response_var 指定時のみ算出します。"
+effect_scope <- "none"
+effect_table_dimensions <- character()
 cramers_v_val <- NA_real_
 cramers_v_ci_low <- NA_real_
 cramers_v_ci_high <- NA_real_
+
+cv_input <- NULL
+if (length(cat_vars) == 2L) {
+  cv_input <- drop_empty_margins(ct)
+  effect_scope <- "two_way_table"
+  effect_table_dimensions <- cat_vars
+  effect_reason <- "2次元分割表からCramér's Vを算出しました。"
+} else if (length(cat_vars) > 2L && !is.null(response_var)) {
+  predictor_vars <- setdiff(cat_vars, response_var)
+  if (length(predictor_vars) >= 1L) {
+    effect_df <- df
+    effect_df$.predictor_profile <- interaction(effect_df[predictor_vars], drop = TRUE, sep = " | ")
+    cv_input <- xtabs(as.formula(paste(freq_col, "~ .predictor_profile +", response_var)), data = effect_df)
+    cv_input <- drop_empty_margins(cv_input)
+    effect_scope <- "predictor_profile_by_response"
+    effect_table_dimensions <- c(paste(predictor_vars, collapse = " + "), response_var)
+    effect_reason <- paste0(
+      "3次元以上の表を response_var=", response_var,
+      " に対し、予測側水準の組み合わせ × 応答変数へ畳み込んでCramér's Vを算出しました。"
+    )
+  }
+}
+
+cv_result <- if (!is.null(cv_input)) {
+  tryCatch(
+    effectsize::cramers_v(cv_input, ci = 0.95),
+    error = function(e) {
+      effect_status <<- "failed"
+      effect_reason <<- paste("Cramér's V 算出失敗:", e$message)
+      message(paste("[WARN]", effect_reason))
+      NULL
+    }
+  )
+} else {
+  message(paste("[INFO]", effect_reason))
+  NULL
+}
+
 if (!is.null(cv_result)) {
   cramers_v_val <- if ("Cramers_v_adjusted" %in% names(cv_result)) {
     as.numeric(cv_result$Cramers_v_adjusted)
@@ -381,6 +441,10 @@ if (!is.null(cv_result)) {
   }
   cramers_v_ci_low <- safe_num(cv_result$CI_low)
   cramers_v_ci_high <- safe_num(cv_result$CI_high)
+  effect_status <- if (!is.na(cramers_v_val)) "computed" else "failed"
+  if (is.na(cramers_v_val)) {
+    effect_reason <- "Cramér's Vの結果がNAでした。入力表の構造を確認してください。"
+  }
 }
 
 fei_val <- NA_real_
@@ -514,6 +578,11 @@ model_selection <- list(
 
 effects <- list(
   primary = effect_metric,
+  response_var = response_var,
+  effect_status = effect_status,
+  effect_reason = effect_reason,
+  effect_scope = effect_scope,
+  effect_table_dimensions = effect_table_dimensions,
   cramers_v = safe_round(cramers_v_val, 4),
   cramers_v_ci_low = safe_round(cramers_v_ci_low, 4),
   cramers_v_ci_high = safe_round(cramers_v_ci_high, 4),
@@ -576,6 +645,9 @@ result_list <- list(
   bic_indep = model_selection$bic_indep,
   bic_satur = model_selection$bic_satur,
   delta_bic = model_selection$delta_bic,
+  response_var = effects$response_var,
+  effect_status = effects$effect_status,
+  effect_reason = effects$effect_reason,
   cramers_v = effects$cramers_v,
   cramers_v_ci_low = effects$cramers_v_ci_low,
   cramers_v_ci_high = effects$cramers_v_ci_high,
@@ -612,7 +684,7 @@ primary_effect_caption <- if (!is.na(effects$cramers_v)) {
 } else if (!is.na(effects$fei)) {
   paste0(" | Fei = ", effects$fei)
 } else {
-  ""
+  paste0(" | 効果量: 未算出 (", effects$effect_status, ")")
 }
 
 dt_widget <- datatable(
@@ -671,6 +743,8 @@ if (!is.na(cramers_v_val)) {
     " Cramér's V         : ", safe_round(cramers_v_val, 4),
     " [", safe_round(cramers_v_ci_low, 4), ", ", safe_round(cramers_v_ci_high, 4), "]\n"
   ))
+} else if (effect_metric == "cramers_v") {
+  cat(paste0(" Cramér's V         : 未算出 (", effect_reason, ")\n"))
 }
 if (!is.na(fei_val)) {
   cat(paste0(

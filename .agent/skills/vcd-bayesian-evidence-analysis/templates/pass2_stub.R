@@ -58,13 +58,21 @@ if (!is.null(res$bf_independence)) {
 }
 
 if (!is.null(res$cramers_v)) {
-  cram_str <- sprintf("- **Cramér's V**: %.4f", res$cramers_v)
-  if (!is.null(res$cramers_v_ci_low) && !is.null(res$cramers_v_ci_high)) {
-    cram_str <- paste0(cram_str, sprintf(" (95%% CI: %.4f - %.4f)", res$cramers_v_ci_low, res$cramers_v_ci_high))
+  effect_status <- if (!is.null(res$effect_status)) res$effect_status else res$effects$effect_status
+  effect_reason <- if (!is.null(res$effect_reason)) res$effect_reason else res$effects$effect_reason
+  if (!is.na(res$cramers_v)) {
+    cram_str <- sprintf("- **Cramér's V（全体効果量）**: %.4f", res$cramers_v)
+    if (!is.null(res$cramers_v_ci_low) && !is.null(res$cramers_v_ci_high) &&
+      !is.na(res$cramers_v_ci_low) && !is.na(res$cramers_v_ci_high)) {
+      cram_str <- paste0(cram_str, sprintf(" (95%% CI: %.4f - %.4f)", res$cramers_v_ci_low, res$cramers_v_ci_high))
+    }
+  } else {
+    cram_str <- sprintf("- **Cramér's V（全体効果量）**: 未算出（%s: %s）", effect_status, effect_reason)
   }
   md_lines <- c(md_lines,
     "#### 3. 効果量 (Dual-Filter)",
     cram_str,
+    "- **注**: Cramér's V はセル単位ではなく表全体の効果量です。セル単位の偏りは Residual / Evidence Score で確認します。",
     ""
   )
 }

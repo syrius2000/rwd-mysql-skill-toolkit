@@ -102,6 +102,8 @@ full_data <- as.data.frame(res$full_data)
 cramers_v <- res$cramers_v
 cramers_v_ci_low <- res$cramers_v_ci_low
 cramers_v_ci_high <- res$cramers_v_ci_high
+effect_status <- res$effect_status %||% res$effects$effect_status %||% "unknown"
+effect_reason <- res$effect_reason %||% res$effects$effect_reason %||% "効果量の算出状態が記録されていません。"
 large_sample_mode <- isTRUE(res$large_sample_mode)
 top_k <- as.integer(res$top_k %||% 10L)
 top_k_data <- if (!is.null(res$top_k_data)) {
@@ -296,11 +298,6 @@ body {
   margin-top: 0;
 }
 
-.dashboard-main-content {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
 .glossary-md {
   font-size: 14px;
   line-height: 1.65;
@@ -346,10 +343,13 @@ pct_evidence <- round(n_positive / n_cells * 100, 1)
 cv_display <- if (!is.null(cramers_v) && length(cramers_v) && !is.na(cramers_v)) {
   sprintf("%.4f", as.numeric(cramers_v[1]))
 } else {
-  "N/A"
+  "未算出"
 }
-
-cat('<div class="dashboard-main-content">')
+cv_label <- if (!is.null(cramers_v) && length(cramers_v) && !is.na(cramers_v)) {
+  "Cram&eacute;r's V（全体効果量）"
+} else {
+  paste0("Cram&eacute;r's V（", htmltools::htmlEscape(effect_status), "）")
+}
 
 cat(paste0(
   '<div class="stats-grid">',
@@ -363,9 +363,18 @@ cat(paste0(
   '<div class="label">エビデンス率</div></div>',
   '<div class="stat-card" style="border-color: #8e44ad;"><div class="value" style="color: #8e44ad;">',
   cv_display, "</div>",
-  '<div class="label">Cram&eacute;r\'s V（効果量）</div></div>',
+  '<div class="label">', cv_label, "</div></div>",
   "</div>"
 ))
+
+if (is.null(cramers_v) || !length(cramers_v) || is.na(cramers_v)) {
+  cat(paste0(
+    '<div class="evidence-note" style="background:#eef5ff;border-color:#b6d4fe;color:#084298;">',
+    "&#9432; <strong>Cram&eacute;r's V 未算出</strong>: ",
+    htmltools::htmlEscape(effect_reason),
+    " Residual / Evidence Score はセル単位、Cram&eacute;r's V は全体効果量として扱います。</div>"
+  ))
+}
 
 if (large_sample_mode) {
   # Dual-Filter 警告の取得
@@ -555,7 +564,8 @@ dt_widget <- datatable(
       "全 ", n_cells, " セル | N = ", format(n_total, big.mark = ","),
       " | BF10 = ", bf10_display,
       " | threshold = ", threshold_display,
-      " | ※ エビデンス・スコア > 0 が実質的エビデンス"
+      " | ※ エビデンス・スコア > 0 が実質的エビデンス",
+      " | Cramér's V は全体効果量のため、このセル単位テーブルには列表示しません"
     )
   ),
   options = list(
@@ -619,7 +629,9 @@ md <- paste0(
   "- ここで $\\mathrm{EBIC}_{\\mathrm{indep}}$ は **主効果のみの Poisson（独立構造）**、$\\mathrm{EBIC}_{\\mathrm{sat}}$ は **セルごとに別期待値を持つ飽和 Poisson** に対応します。\n",
   "- Jeffreys の目安: $\\mathrm{BF}_{10} > 100$ 決定的、$> 10$ 強い、$> 3$ 中程度\n\n",
   "### Cramér's $V \\in [0,1]$\n\n",
-  "- $V < 0.1$: 弱い　$\\sim 0.3$: 中程度　$\\ge 0.5$: 強い（Cohen, 1988 の目安）\n\n",
+  "- $V < 0.1$: 弱い　$\\sim 0.3$: 中程度　$\\ge 0.5$: 強い（Cohen, 1988 の目安）\n",
+  "- Cramér's $V$ は**表全体の効果量**です。全セル・エビデンス・テーブルの各行に付く指標ではありません。\n",
+  "- 本レポートの算出状態: `", effect_status, "`（", effect_reason, "）\n\n",
   "### 標準化ピアソン残差 $r_{ijk}$\n\n",
   "- **正**: そのセルの観測度数が、独立モデルの期待度数より大きい（過剰）\n",
   "- **負**: 期待より小さい（過少）\n\n",
@@ -644,6 +656,4 @@ cat(paste0(
   format(Sys.time(), "%Y-%m-%d %H:%M JST", tz = "Asia/Tokyo"),
   "</p>"
 ))
-
-cat('</div>') # End .dashboard-main-content
 ```

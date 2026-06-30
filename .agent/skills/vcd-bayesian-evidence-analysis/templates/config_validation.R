@@ -2,6 +2,7 @@
 
 analysis_config_allowed_keys <- c(
   "input", "vars", "freq", "output_dir", "run_id", "dataset_name",
+  "response_var",
   "top_k", "threshold_k", "large_n_threshold", "ebic_gamma", "ebic_p",
   "level2_factor", "level3_factor", "arm_top_rules", "arm_min_support",
   "arm_min_confidence"
@@ -58,7 +59,7 @@ validate_analysis_config <- function(config_data, config_path = NULL, repo_root 
     message("[WARN] analysis_config.json の未知キーを無視せず読み込みます: ", paste(unknown_keys, collapse = ", "))
   }
 
-  scalar_string_keys <- c("input", "freq", "output_dir", "run_id", "dataset_name")
+  scalar_string_keys <- c("input", "freq", "output_dir", "run_id", "dataset_name", "response_var")
   for (key in intersect(scalar_string_keys, names(config_data))) {
     if (!is_nonempty_scalar_string(config_data[[key]])) {
       errors <- c(errors, paste0(key, " は空でない文字列である必要があります。"))
@@ -111,6 +112,15 @@ validate_analysis_config <- function(config_data, config_path = NULL, repo_root 
       }
       if ("freq" %in% names(config_data) && is_nonempty_scalar_string(config_data$freq) && !(config_data$freq %in% header)) {
         errors <- c(errors, paste0("freq が input CSV に存在しません: ", config_data$freq))
+      }
+      if ("response_var" %in% names(config_data) && is_nonempty_scalar_string(config_data$response_var)) {
+        if (!(config_data$response_var %in% header)) {
+          errors <- c(errors, paste0("response_var が input CSV に存在しません: ", config_data$response_var))
+        }
+        if ("vars" %in% names(config_data) && is_nonempty_string_vector(config_data$vars) &&
+          !(config_data$response_var %in% config_data$vars)) {
+          errors <- c(errors, paste0("response_var は vars に含める必要があります: ", config_data$response_var))
+        }
       }
     }
   }

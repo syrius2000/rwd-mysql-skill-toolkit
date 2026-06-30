@@ -20,6 +20,13 @@ metadata:
 
 本スキルの **推論本体**は、(1) セル度数に対する **独立 Poisson GLM** の標準化ピアソン残差から作る **Evidence Score**、(2) **独立 Poisson 対 飽和 Poisson** の EBIC に基づく **$\mathrm{BF}_{10}$ 近似**、および (3) **Cramér's V / Fei** です。`dashboard.html` の用語解説と同じ整理です。
 
+### 指標の粒度契約
+
+- **セル単位**: `Residual` と `Evidence_Score` は、各セルの観測度数が独立モデルの期待値からどれだけ逸脱したかを示す。
+- **全体効果量**: `Cramér's V` / `Fei` は、セルごとの列ではなく、表全体または分析全体の効果量として扱う。
+- **全セル表の禁止事項**: `dashboard.html` の全セル・エビデンス・テーブルに Cramér's V を行ごとの列として表示しない。必要な場合は上部カード、効果量説明枠、または比較レポートの別枠に表示する。
+- **未算出時**: `effects.effect_status`, `effects.effect_reason` を確認し、値を捏造しない。Pass 2 では「未算出」と理由を明示する。
+
 ### Evidence Score
 
 $$\mathrm{Evidence\;Score}_{ijk} = r_{ijk}^2 - k \cdot \log(N)$$
@@ -61,6 +68,7 @@ $$\log \mathrm{BF}_{10} \approx \tfrac{1}{2}\bigl(\mathrm{EBIC}_{\mathrm{indep}}
   "input": "examples/titanic.csv",
   "vars": ["Class", "Sex", "Age", "Survived"],
   "freq": "Freq",
+  "response_var": "Survived",
   "output_dir": "output/titanic",
   "run_id": "titanic_v1"
 }
@@ -80,6 +88,7 @@ Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R \
   --output_dir ./skill_out/vcd_bayesian/ \
   --run-id datasetA_20260417 \
   --dataset_name mydata \
+  --response_var outcome_col \
   --top_k 10 \
   --threshold_k 1 \
   --large_n_threshold 1000
@@ -95,6 +104,7 @@ Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R \
 | オプション | 既定値 | 説明 |
 | :--- | :--- | :--- |
 | `--run-id` | （なし） | 指定時は `<--output_dir>/run_<prefix>/` に隔離（`prefix` = 解決後 `run_id` の先頭16文字。未指定時は入力から算出したハッシュの先頭16文字）。`auto` は JST タイムスタンプに展開される |
+| `--response_var` | （なし） | 3次元以上でCramér's Vを算出するための応答変数。指定時は「予測側水準の組み合わせ × 応答変数」の2次元表へ畳み込んで全体効果量を算出する |
 | `--top_k` | 10 | Top-K 表示件数 |
 | `--threshold_k` | 1 | 多段階閾値係数（Score > k × log(N)） |
 | `--large_n_threshold` | 1000 | 大規模データモード切替閾値 |
@@ -111,6 +121,7 @@ Rscript .agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R \
 ※ `--input` が無い場合は R 組み込みの `HairEyeColor` データセットを使用する。
 ※ `--vars` で分析対象変数を指定可能（省略時は全変数を使用）。
 ※ `--freq` で度数列名を指定可能（省略時は `Freq`）。
+※ `--response_var` は `--vars` に含める。未指定または算出不可の場合、Cramér's Vは未算出理由付きで `effects.effect_status = "not_applicable"` または `"failed"` になる。
 ※ ARM は **行データのみ** 対象。`Freq` がある場合は重みとして扱う。
 
 ### Pass 2: AI 考察生成（本スキル）
@@ -127,6 +138,8 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 - `bf_independence` の値を明示し、Jeffreys スケールで解釈
 - `model_selection.method`（EBIC）と `model_selection.bf10_bic`（比較用）があれば併記
 - `effects.primary` が `cramers_v` または `fei` であることを踏まえて、実用的意義を評価
+- `effects.effect_status` が `computed` の場合のみ、Cramér's V / Fei の数値を示す。`not_applicable` または `failed` の場合は「未算出」と `effects.effect_reason` を明記し、値があるかのように書かない
+- Cramér's V は全体効果量であり、`core.full_data` の各セルへ割り付ける指標ではないことを明示
 - BF = Inf → 「独立モデルでは到底説明不可能な極めて強固な交互作用」
 - 対象次元数と変数名を明記
 
@@ -161,6 +174,7 @@ Pass 1 が生成した `evidence_results.json` を読み込み、以下の **日
 #### 大規模データモード（N > 1,000 の場合）
 `large_sample_mode` が `true` の場合、以下を必ず考察に含めること：
 - Cramér's V の値と Cohen 基準による評価を冒頭に明示
+- Cramér's V が未算出の場合は、未算出理由と、Evidence Scoreがセル単位指標であることを明示
 - Evidence Score が多数のセルで正値になっている場合、「大標本効果による飽和の可能性」に言及
 - P値ではなく効果量を主な根拠として使用
 - `thresholds.threshold_k` が 1 より大きい場合、その閾値設定の根拠を記述

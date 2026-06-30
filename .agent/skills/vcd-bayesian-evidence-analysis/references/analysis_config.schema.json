@@ -25,6 +25,11 @@
       "minLength": 1,
       "description": "Frequency/count column."
     },
+    "response_var": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional response/outcome variable. For 3+ dimensions, Cramer's V is computed on predictor-level combinations by response_var."
+    },
     "output_dir": {
       "type": "string",
       "minLength": 1,

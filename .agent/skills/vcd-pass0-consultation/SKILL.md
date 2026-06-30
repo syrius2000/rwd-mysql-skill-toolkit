@@ -47,11 +47,12 @@ Rscript .agent/shared/inspect_data.R <path_to_your_data.csv>
    - Pass 1 (`analysis.R` 等) に渡すための設定ファイル。
    - `vcd-bayesian-evidence-analysis/references/analysis_config.schema.json` に従うフラットな JSON:
      - `input`: 入力CSVのパス
-     - `vars`: 分析対象の変数リスト (`["var1", "var2"]`)
-     - `freq`: 度数列の名前 (例: `"Freq"`)
-     - `output_dir`: 出力の親ディレクトリ
-     - `run_id`: 実行識別子
-   - 任意キーとして `dataset_name`, `top_k`, `threshold_k`, `large_n_threshold`, `ebic_gamma`, `ebic_p`, `level2_factor`, `level3_factor`, `arm_top_rules`, `arm_min_support`, `arm_min_confidence` を指定できます。
+    - `vars`: 分析対象の変数リスト (`["var1", "var2"]`)
+    - `freq`: 度数列の名前 (例: `"Freq"`)
+    - `response_var`: 応答変数。3次元以上でCramér's Vを算出する場合は、`vars` に含まれる目的変数を指定する
+    - `output_dir`: 出力の親ディレクトリ
+    - `run_id`: 実行識別子
+   - 任意キーとして `dataset_name`, `response_var`, `top_k`, `threshold_k`, `large_n_threshold`, `ebic_gamma`, `ebic_p`, `level2_factor`, `level3_factor`, `arm_top_rules`, `arm_min_support`, `arm_min_confidence` を指定できます。
 
 最小例:
 
@@ -60,6 +61,7 @@ Rscript .agent/shared/inspect_data.R <path_to_your_data.csv>
   "input": "examples/titanic.csv",
   "vars": ["Class", "Sex", "Age", "Survived"],
   "freq": "Freq",
+  "response_var": "Survived",
   "output_dir": "output/titanic",
   "run_id": "titanic_v1"
 }

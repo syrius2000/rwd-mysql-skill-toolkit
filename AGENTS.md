@@ -36,15 +36,16 @@
 
 ### `.agent/` 構成
 
-`.agent/skills/<skill-name>/` が唯一のスキル正本です。旧ミラー（`.cursor/skills/`）は廃止済みなので、復活させないでください。
+`.agent/skills/<skill-name>/` は、このリポジトリ内で扱うスキル資産の配置先です。旧ミラー（`.cursor/skills/`）は廃止済みなので、復活させないでください。
 
 ```text
 .agent/
-├── skills/<skill-name>/   # 正本（SKILL.md, references/, templates/, ...）
+├── skills/<skill-name>/   # スキル資産（SKILL.md, references/, templates/, ...）
 └── shared/                # R ユーティリティ（スキルではない）
 ```
 
-- **正本**: `.agent/skills/<skill-name>/`
+- **DB/Query系スキルの正本**: `.agent/skills/<skill-name>/`
+- **VCD系スキルの扱い**: `vcd-*` 同名5スキルの恒久正本は `agentic-evidence-analysis`。このリポジトリ内の `vcd-*` は統合・実験・検証用ミラーとして扱い、検証済み変更は恒久正本へ反映する。
 - **編集対象**: `SKILL.md`, `Reference.md`, `references/`, `templates/`, `scripts/`, `tests/`
 - **R ユーティリティ**: `.agent/shared/`（`run_scope.R`, `inspect_data.R`）
 - **Reference.md**: `.agent/skills/<name>/Reference.md` のみ編集
@@ -55,7 +56,8 @@
 ## 統合方針
 
 - このリポジトリは統合DB構築・Query作成支援の本体として扱う。
-- カテゴリカル分析・エビデンス分析の同名5スキルは [agentic-evidence-analysis](https://github.com/syrius2000/agentic-evidence-analysis) を正本とし、ここでは案内と補助資産を保つ。
+- カテゴリカル分析・エビデンス分析の同名5スキルは [agentic-evidence-analysis](https://github.com/syrius2000/agentic-evidence-analysis) を恒久正本とし、ここでは案内・補助資産・統合検証用ミラーを保つ。
+- 研修や実験で得たVCD系の改善は、まずこのリポジトリで作業・検証・ローカルコミットし、ユーザー確認後に `agentic-evidence-analysis` へ PR / cherry-pick / 同期する。`presentation20260709/.agent/skills/` は検証済み内容の実行用ミラーとして同期する。
 
 ## Query 作成支援
 
