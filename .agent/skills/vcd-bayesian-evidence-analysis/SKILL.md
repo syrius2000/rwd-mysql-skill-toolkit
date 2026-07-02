@@ -65,7 +65,7 @@ $$\log \mathrm{BF}_{10} \approx \tfrac{1}{2}\bigl(\mathrm{EBIC}_{\mathrm{indep}}
 
 ```json
 {
-  "input": "examples/titanic.csv",
+  "input": "examples/data/titanic.csv",
   "vars": ["Class", "Sex", "Age", "Survived"],
   "freq": "Freq",
   "response_var": "Survived",

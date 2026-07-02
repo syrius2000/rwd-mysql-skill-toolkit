@@ -61,7 +61,7 @@ Rscript .agent/shared/inspect_data.R <path_to_your_data.csv>
 
 ```json
 {
-  "input": "examples/titanic.csv",
+  "input": "examples/data/titanic.csv",
   "vars": ["Class", "Sex", "Age", "Survived"],
   "freq": "Freq",
   "response_var": "Survived",

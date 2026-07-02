@@ -52,7 +52,7 @@ dir.create(td)
 on.exit(unlink(td, recursive = TRUE), add = TRUE)
 
 base_config <- list(
-  input = "examples/titanic.csv",
+  input = "examples/data/titanic.csv",
   vars = c("Class", "Sex", "Age", "Survived"),
   freq = "Freq",
   response_var = "Survived",
@@ -117,7 +117,7 @@ if (!grepl("--config", paste(missing_config_value, collapse = "\n"), fixed = TRU
 relative_dir <- file.path(td, "relative_config")
 dir.create(relative_dir)
 relative_csv <- file.path(relative_dir, "local_titanic.csv")
-invisible(file.copy(file.path(root, "examples/titanic.csv"), relative_csv))
+invisible(file.copy(file.path(root, "examples/data/titanic.csv"), relative_csv))
 relative_config <- base_config
 relative_config$input <- "local_titanic.csv"
 relative_config$output_dir <- file.path(td, "relative_out")

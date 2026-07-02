@@ -5,7 +5,7 @@ library(jsonlite)
 library(readr)
 
 args <- commandArgs(trailingOnly = TRUE)
-input_file <- if (length(args) > 0) args[1] else "examples/titanic.csv"
+input_file <- if (length(args) > 0) args[1] else "examples/data/titanic.csv"
 
 if (!file.exists(input_file)) {
   stop(paste("File not found:", input_file))

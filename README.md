@@ -92,7 +92,8 @@ VCD 系と `questionnaire-batch-analysis` は [agentic-evidence-analysis](https:
 | 実務的な深掘り | `docs/Reference/evidence-analysis/advanced_analysis.md` | 効果量、セル単位エビデンス、層別の優先順位を決める |
 | AI 考察文 | `.agent/skills/vcd-categorical-analysis/references/ai-narrative-workflow.md` | 残差、効果量、層別差を過剰主張せず説明する |
 
-- 例データ: `examples/titanic.csv`, `examples/ucb_admissions.csv`
+- 例データ: `examples/data/titanic.csv`, `examples/data/ucb_admissions.csv`
+- 研修用プロンプト: `examples/prompt/`
 - `vcd-categorical-analysis`: **3ステップ**（R 2パス → `executive_summary.md` → `dashboard.Rmd`）
 - `vcd-categorical-reporting`: **非推奨**（Step 2 に統合）
 
