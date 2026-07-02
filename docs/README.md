@@ -12,6 +12,7 @@
 | [Archive/](Archive/) | 完了した調査・ウォークスルー・旧計画 | 参照用 |
 | [Reference/](Reference/) | 手順書・運用メモ（例: git push） | 人 |
 | [Reference/evidence-analysis/](Reference/evidence-analysis/) | VCD / ベイズエビデンスの統計リファレンス（大標本・効果量） | 人 / エージェント |
+| [Reference/anomaly-detection/](Reference/anomaly-detection/) | anomaly-detection の `review_note.md` / `anomaly_results.jsonl` 解釈ガイド | 人 / エージェント |
 | [../sql/README.md](../sql/README.md) | Query 資産の置き場ルール | 人 / エージェント |
 
 ## Archive（過去）

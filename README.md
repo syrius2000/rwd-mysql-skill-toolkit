@@ -90,6 +90,7 @@ VCD 系と `questionnaire-batch-analysis` は [agentic-evidence-analysis](https:
 | ベイズ的エビデンス | `docs/Reference/evidence-analysis/stats_bayesian.md` | BF10、Evidence Score、EBIC/BIC ペナルティの意味を確認する |
 | 実務的な深掘り | `docs/Reference/evidence-analysis/advanced_analysis.md` | 効果量、セル単位エビデンス、層別の優先順位を決める |
 | AI 考察文 | `.agent/skills/vcd-categorical-analysis/references/ai-narrative-workflow.md` | 残差、効果量、層別差を過剰主張せず説明する |
+| 異常検知結果の解釈 | `docs/Reference/anomaly-detection/anomaly_results_interpretation.md` | `review_note.md` / `anomaly_results.jsonl` のスコア、ラベル、確認順序を読む |
 
 - 例データ: `examples/data/titanic.csv`, `examples/data/ucb_admissions.csv`
 - 研修用プロンプト: `examples/prompt/`
@@ -112,7 +113,7 @@ flowchart LR
 |---|---|---|
 | 構築系 | `flat-file-mysql-overview`, `flat-file-mysql-ddl-generation`, `flat-file-mysql-load-validation` | DBを作る |
 | 探索系 | `mysql-er-diagram`, `mysql-table-cardinality`, `mysql-entity-matrix`, `mysql-create-query-support` | 構造・分布・ID所在を確認し、望むQueryを作る |
-| 分析系 | `vcd-pass0-consultation`, `questionnaire-batch-analysis`, `vcd-categorical-analysis`, `vcd-bayesian-evidence-analysis` | データ検分・抽出結果の分析・レポート化（`vcd-categorical-reporting` は非推奨） |
+| 分析系 | `vcd-pass0-consultation`, `questionnaire-batch-analysis`, `vcd-categorical-analysis`, `vcd-bayesian-evidence-analysis`, `anomaly-detection` | データ検分・抽出結果の分析・異常検知・レポート化（`vcd-categorical-reporting` は非推奨） |
 | 保守系 | `security-vulnerability-check` | スクリプトとSQL支援の安全性を確認する |
 
 ## 管理スキル一覧
@@ -133,6 +134,7 @@ flowchart LR
 | `vcd-categorical-analysis` | 2-way/3-way 名義カテゴリ。**3ステップ**（R 2パス集計 → `executive_summary.md` → `quality_check.md` → `dashboard.Rmd`） |
 | `vcd-categorical-reporting` | **非推奨**（analysis Step 2 に統合。参照テンプレのみ） |
 | `vcd-bayesian-evidence-analysis` | 大標本 2-way/3-way。**3-Pass**（`evidence_results.json` → `executive_summary.md` → `quality_check.md` → `dashboard.html`） |
+| `anomaly-detection` | EDC/RWD データの異常候補をルール、ロバスト統計、Isolation Forest、LOF で順位付けし、素人にも読めるレビュー文書へつなぐ |
 | `security-vulnerability-check` | ソースコードの脆弱性チェック（SQLi / OS コマンド / パストラバーサル等） |
 
 ## テスト
