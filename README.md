@@ -22,8 +22,7 @@
 │   └── shared/             # R ユーティリティ（run_scope.R 等）
 ├── docs/
 │   ├── README.md           # ドキュメント索引（配置ルール）
-│   ├── Artifacts/          # 計画・実装の成果物（plan-artifacts 命名）
-│   ├── superpowers/        # 現行の設計・計画・バックログ
+│   ├── Artifacts/          # 計画・実装・未着手メモ（plan-artifacts 命名）
 │   ├── Reference/          # 手順書・運用メモ
 │   ├── Archive/            # 完了した調査・旧計画
 ├── skill_out/              # スキル実行の生成物

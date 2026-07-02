@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EDC/RWD Anomaly Detection Output",
+  "type": "object",
+  "required": [
+    "results",
+    "summary"
+  ],
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "score",
+          "label"
+        ],
+        "properties": {
+          "record_id": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "label": {
+            "enum": [
+              "normal",
+              "warning",
+              "critical"
+            ]
+          },
+          "triggered_rules": {
+            "type": "array"
+          },
+          "model_contributions": {
+            "type": "object"
+          },
+          "explanation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object"
+    }
+  }
+}

@@ -20,8 +20,7 @@
 
 - Skill の成果物・指示書は各 Skill の指示に従う（一般的には `./skill_out` 配下など）。
 - **ルートの Markdown**: 本ファイル（エージェントルール）と `README.md`（人向け概要）のみ。それ以外は `docs/` 配下（索引は [docs/README.md](docs/README.md)）。
-- **計画成果物**: `./docs/Artifacts/`（Cursor `plan-artifacts` の命名・先頭メタ行に従う）。
-- **現行設計・計画**: `./docs/superpowers/`。未着手改善は `./docs/superpowers/backlog/`。
+- **計画成果物・未着手メモ**: `./docs/Artifacts/`（Cursor `plan-artifacts` の命名・先頭メタ行に従う）。
 - **過去記録**: `./docs/Archive/`。
 
 ## コーディング

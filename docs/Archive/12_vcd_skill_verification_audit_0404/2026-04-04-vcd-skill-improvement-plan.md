@@ -10,7 +10,7 @@ archived_from: docs/superpowers/plans/2026-04-04-vcd-skill-improvement.md
 
 **Tech Stack:** R 4.4.x, gt, DT, htmlwidgets, jsonlite, vcd, ggplot2
 
-**Spec:** [2026-04-04-vcd-skill-improvement-design.md](../../superpowers/specs/2026-04-04-vcd-skill-improvement-design.md)
+**Spec:** 設計文書は `docs/superpowers/` 廃止（2026-07-02）に伴い削除。契約正本は各スキル `references/interface.md`（[agentic-evidence-analysis](https://github.com/syrius2000/agentic-evidence-analysis)）。
 
 ---
 

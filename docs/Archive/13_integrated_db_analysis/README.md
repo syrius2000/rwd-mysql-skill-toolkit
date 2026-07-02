@@ -11,6 +11,6 @@
 | [integrated_db_analysis_skills_merge_message_2026-05-13.md](integrated_db_analysis_skills_merge_message_2026-05-13.md) | マージ時のメッセージ・要約 |
 | [questionnaire_margin_table_namespace_2026-05-13.md](questionnaire_margin_table_namespace_2026-05-13.md) | 周辺表の名前空間メモ |
 
-## 現行計画（正本）
+## 備考
 
-- [docs/superpowers/plans/2026-05-13-integrated-db-analysis-skills.md](../../superpowers/plans/2026-05-13-integrated-db-analysis-skills.md)
+統合DB構築スキル群の実装計画（2026-05-13）は完了済み。`docs/superpowers/` は 2026-07-02 に廃止。

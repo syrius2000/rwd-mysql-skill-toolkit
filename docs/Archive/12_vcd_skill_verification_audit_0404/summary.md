@@ -30,8 +30,8 @@
 - `audit_report_agent_skills_0404.md`: スキル群の現状分析
 - `implementation_plan_vcd_testing_0404.md`: テスト導入の戦略
 - `walkthrough_vcd_testing_0404.md`: 実施結果と検証ログ
-- 設計正本: [docs/superpowers/specs/2026-04-04-vcd-skill-improvement-design.md](../../superpowers/specs/2026-04-04-vcd-skill-improvement-design.md)
 - `2026-04-04-vcd-skill-improvement-plan.md`: 実装計画（本アーカイブ）
+- 契約正本: [agentic-evidence-analysis](https://github.com/syrius2000/agentic-evidence-analysis) 各スキル `references/interface.md`
 - 統合DB（2026-05）: [docs/Archive/13_integrated_db_analysis/](../13_integrated_db_analysis/README.md)
 
 ---
