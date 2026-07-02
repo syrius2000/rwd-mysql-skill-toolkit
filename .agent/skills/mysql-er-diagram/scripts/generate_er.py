@@ -12,6 +12,7 @@
   - .env ファイルの安全な読み込み
 """
 import argparse
+import configparser
 import csv
 import datetime
 import os
@@ -168,6 +169,18 @@ def load_env(env_path: str | None = None) -> dict[str, str]:
     return env_vars
 
 
+def _load_my_cnf_client() -> dict[str, str]:
+    """~/.my.cnf の [client] セクションを読み込む（存在しない場合は空）。"""
+    my_cnf = os.path.expanduser("~/.my.cnf")
+    if not os.path.isfile(my_cnf):
+        return {}
+    parser = configparser.ConfigParser()
+    parser.read(my_cnf)
+    if not parser.has_section("client"):
+        return {}
+    return {k: v for k, v in parser.items("client")}
+
+
 def run_mysql_query(
     db_name: str,
     env_vars: dict[str, str],
@@ -180,10 +193,11 @@ def run_mysql_query(
         プロセスリストへの露出を回避する
       - shell=True は使用しない (リスト形式で引数を渡す)
     """
-    user: str = env_vars.get("MYSQL_USER", "root")
-    password: str = env_vars.get("MYSQL_PASSWORD", "")
-    host: str = env_vars.get("MYSQL_HOST", "127.0.0.1")
-    port: str = env_vars.get("MYSQL_PORT", "3306")
+    my_cnf = _load_my_cnf_client()
+    user: str = env_vars.get("MYSQL_USER", my_cnf.get("user", "root"))
+    password: str = env_vars.get("MYSQL_PASSWORD", my_cnf.get("password", ""))
+    host: str = env_vars.get("MYSQL_HOST", my_cnf.get("host", "127.0.0.1"))
+    port: str = env_vars.get("MYSQL_PORT", my_cnf.get("port", "3306"))
 
     # db_name はホワイトリスト検証済みのため、クエリ内に安全に埋め込める
     # (INFORMATION_SCHEMA への読み取り専用クエリ)
@@ -206,20 +220,26 @@ def run_mysql_query(
         " ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION;"
     )
 
-    # パスワードを --defaults-extra-file で安全に渡す
+    # 認証情報を --defaults-extra-file で安全に渡す
     defaults_file: str | None = None
+    temp_defaults: str | None = None
     try:
-        if password:
+        if env_vars.get("MYSQL_PASSWORD"):
             fd: int
             defaults_file_path: str
             fd, defaults_file_path = tempfile.mkstemp(
                 prefix=".mysql_er_",
                 suffix=".cnf",
             )
-            defaults_file = defaults_file_path
+            temp_defaults = defaults_file_path
             with os.fdopen(fd, "w") as tmp:
                 tmp.write(f"[client]\npassword={password}\n")
-            os.chmod(defaults_file, 0o600)
+            os.chmod(temp_defaults, 0o600)
+            defaults_file = temp_defaults
+        else:
+            my_cnf_path = os.path.expanduser("~/.my.cnf")
+            if os.path.isfile(my_cnf_path):
+                defaults_file = my_cnf_path
 
         cmd: list[str] = ["mysql"]
         if defaults_file:
@@ -232,9 +252,8 @@ def run_mysql_query(
             text=True,
         )
     finally:
-        # 一時ファイルを確実に削除
-        if defaults_file and os.path.exists(defaults_file):
-            os.unlink(defaults_file)
+        if temp_defaults and os.path.exists(temp_defaults):
+            os.unlink(temp_defaults)
 
     if res.returncode != 0:
         # エラーメッセージからパスワード等の機密情報を除去して表示
