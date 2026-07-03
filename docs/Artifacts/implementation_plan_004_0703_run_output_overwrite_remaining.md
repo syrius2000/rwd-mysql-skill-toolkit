@@ -27,6 +27,20 @@ status: draft
 
 各項目は「ファイル名契約は維持」を原則とし、`--out-dir` / `--report-dir` / `--run-id` 等で **ディレクトリ単位に隔離できる設計** へ寄せる方針。ファイル名の一意化は SKILL.md の契約更新とセットでのみ行う。
 
+### 残タスク一覧（チェックリスト）
+
+| ID | 対象ファイル | 優先度 | MySQL要否 | 一言でいう修正 | 完了(受け入れ)基準 |
+|---|---|---|---|---|---|
+| [ ] T1 | `flat-file-mysql-load-validation/scripts/step3_cli.py` | 高 | 要（成功パス）／エラーパスは不要 | `--report-dir` を run 単位に隔離（ファイル名据え置き） | 異なる DB/SQL で2回実行し両レポートが残る |
+| [ ] T2 | `mysql-table-cardinality/scripts/get_cardinality_cli.py` | 中 | 要 | `--out-dir` の run 隔離オプション追加 | 同一 db.table を2回実行し両方残る |
+| [ ] T3 | `mysql-er-diagram/scripts/generate_er.py` | 中 | 不要（`--sqlite` で検証可） | 辞書CSVの docstring/実装乖離を解消＋timestampに年・秒 | 同一分内2回実行で衝突しない／docstring と実装が一致 |
+| [ ] T4 | `mysql-entity-matrix/scripts/generate_matrix_sql.py` | 中 | 要 | timestampに年・秒付与 or `--run-id` 受理 | 同一分・同一DBの連続実行で衝突しない |
+| [ ] T5 | `flat-file-mysql-ddl-generation/scripts/step1_cli.py` | 低 | 不要 | レポートのみ `--out-dir` run 隔離（SQL名は据え置き） | `test_step1_e2e.py` が緑のまま／再実行でレポート衝突しない |
+| [ ] T6 | `anomaly-detection`（`io.py` 他） | 低 | 不要 | 運用ガイド追記 or `--run-id` オプション検討 | 方針決定（当面は運用ガイドで可） |
+| [ ] T7 | `vcd-categorical-analysis/templates/analysis.R` | 低 | 不要 | run-id 未指定時も入力ハッシュで自動隔離を検討 | 挙動変更がテストに影響しないことを確認 |
+
+> 共通の完了基準: 修正後も回帰テストが baseline と同数（`pytest` 14 passed / 5 failed、R 5 passed / 8 failed）から悪化しないこと。ファイル名契約を変える場合は該当 `SKILL.md` を同一コミットで更新すること。
+
 ### T1. `flat-file-mysql-load-validation/scripts/step3_cli.py`（優先度: 高）
 - 現状: DB / SQL が違っても常に同一 `step3_report.json` に上書き（`step3_cli.py:148,178`）。
 - 案A（契約維持・推奨）: `--report-dir` の既定を run 単位（例: `--run-id` かタイムスタンプ由来のサブディレクトリ）に分離。ファイル名は据え置き。
