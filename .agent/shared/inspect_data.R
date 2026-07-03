@@ -5,7 +5,31 @@ library(jsonlite)
 library(readr)
 
 args <- commandArgs(trailingOnly = TRUE)
-input_file <- if (length(args) > 0) args[1] else "examples/data/titanic.csv"
+
+# 出力先ディレクトリを指定できるようにする。run ごとに一意なディレクトリを
+# 渡すことで、入力を変えて再実行しても過去の inspection_results.json を
+# 上書きしない（既定はカレントディレクトリで後方互換）。
+# 使い方: Rscript inspect_data.R <input.csv> [<out_dir>]
+#         Rscript inspect_data.R <input.csv> --out-dir <out_dir>
+out_dir <- "."
+positional <- character(0)
+i <- 1L
+while (i <= length(args)) {
+  a <- args[[i]]
+  if (identical(a, "--out-dir")) {
+    if (i == length(args)) stop("--out-dir requires a value")
+    out_dir <- args[[i + 1L]]
+    i <- i + 2L
+  } else if (grepl("^--out-dir=", a)) {
+    out_dir <- sub("^--out-dir=", "", a)
+    i <- i + 1L
+  } else {
+    positional <- c(positional, a)
+    i <- i + 1L
+  }
+}
+input_file <- if (length(positional) >= 1L) positional[[1L]] else "examples/data/titanic.csv"
+if (length(positional) >= 2L) out_dir <- positional[[2L]]
 
 if (!file.exists(input_file)) {
   stop(paste("File not found:", input_file))
@@ -36,5 +60,9 @@ output <- list(
   numeric_vars = df %>% select(where(is.numeric)) %>% names()
 )
 
-writeLines(toJSON(output, auto_unbox = TRUE, pretty = TRUE), "inspection_results.json")
-message("[INFO] Inspection results saved to inspection_results.json")
+if (!dir.exists(out_dir)) {
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+}
+out_path <- file.path(out_dir, "inspection_results.json")
+writeLines(toJSON(output, auto_unbox = TRUE, pretty = TRUE), out_path)
+message("[INFO] Inspection results saved to ", normalizePath(out_path, mustWork = FALSE))
