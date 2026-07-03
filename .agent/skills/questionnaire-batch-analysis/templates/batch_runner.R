@@ -152,6 +152,19 @@ sanitize_cfg_var <- function(x) {
 required_cols <- c("survey_id", "question_id", "analysis_type", "var1", "var2", "var3", "output_slug", "question_label", "subset_expr", "na_policy", "ordered_levels", "reference_note")
 stopifnot(all(required_cols %in% names(cfg)))
 
+# 同一実行内で output_slug が重複すると、後の行が先の行の report.html /
+# questionnaire_results.json / figures/residual_plot.png を無言で上書きし、
+# 成果物が失われる。重複は設定ミスとみなして明示的に停止する。
+slugs <- trimws(as.character(cfg$output_slug))
+dup_slugs <- unique(slugs[duplicated(slugs)])
+if (length(dup_slugs) > 0L) {
+  stop(
+    "output_slug が重複しています（成果物が上書きされます）: ",
+    paste(dup_slugs, collapse = ", "),
+    "。各設問に一意な output_slug を設定してください。"
+  )
+}
+
 jp_font <- detect_jp_font()
 if (!nzchar(jp_font)) jp_font <- ""
 
