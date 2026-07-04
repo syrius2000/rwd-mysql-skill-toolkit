@@ -13,14 +13,14 @@ metadata:
 
 - 実行 cwd は **プロジェクトルート**。
 - ステップ 2 の成果物は `./skill_out/step2_complete_sql` に保存する。
-- ステップ 3 のレポートは `./skill_out/step3_report` に保存する。
+- ステップ 3 のレポートは `./skill_out/step3_report/run_<id>/step3_report.json` に保存する（`--report-dir` は親ディレクトリ、`--run-id` 未指定時は JST タイムスタンプで自動隔離）。
 
 ## 実行前の前提条件・注意・確認事項
 
 - `mysql` コマンドが PATH にあることを確認する。
 - DB 名が指定されていることを確認する（未指定なら停止）。
 - Step 1 で不具合を見つけた場合は原因修正後に **Step 1 から再実行**し、続けて Step 2・Step 3 も再実行する。
-- 再実行時は出力が上書きされる。以前の成果物を残す必要がある場合は事前にバックアップする。
+- 再実行時は同一 `--report-dir` でも別 `run_<id>/` サブディレクトリに保存される（上書きしない）。明示的な run 名が必要な場合は `--run-id` を指定する。
 
 ## DB 名の扱い
 
@@ -44,7 +44,7 @@ metadata:
 1. 上記の問い合わせでユーザーが実施すると答えた場合のみ、エージェントが **Python CLI**（ステップ 3 用：SQL 実行・件数比較）を呼び出す。CLI に完成版 SQL のパスと対象 DB 接続情報を渡す。
    - `python3 .agent/skills/flat-file-mysql-load-validation/scripts/step3_cli.py <complete.sql> -d <database> --table <table> --expected-count <n> --report-dir ./skill_out/step3_report`
 2. CLI が指定 DB に対して SQL を実行し、投入後の件数カウントと件数比較バリデーション（元件数・重複件数・投入件数）を行う。バリデーション完了＝ステップ 1 のユニーク数と DB レコード数が一致したとき。
-3. レポート出力（`step3_report.json`）を確認し、成功/失敗をユーザーに報告する。
+3. レポート出力（`run_<id>/step3_report.json`）を確認し、成功/失敗をユーザーに報告する。
 
 ## 参照
 

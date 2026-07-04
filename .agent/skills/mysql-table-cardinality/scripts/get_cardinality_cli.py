@@ -8,9 +8,19 @@ import csv
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+
+def _load_run_scope():
+    shared = _find_repo_root(Path(__file__).resolve().parent) / ".agent" / "shared"
+    if str(shared) not in sys.path:
+        sys.path.insert(0, str(shared))
+    import run_scope
+
+    return run_scope
 
 
 def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
@@ -250,7 +260,7 @@ def _process_table(
         out_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:
         return False, f"出力ディレクトリの作成に失敗しました ({out_dir}): {e}"
-        
+
     safe_db = database.replace("/", "_").replace("\\", "_").replace("..", "_")
     safe_table = table.replace("/", "_").replace("\\", "_").replace("..", "_")
     base = f"{safe_db}_{safe_table}"
@@ -306,11 +316,22 @@ def main() -> int:
         "--out-dir",
         type=Path,
         default=default_out_dir,
-        help="出力先（既定: ./skill_out/mysql_table_cardinality）",
+        help="出力先の親ディレクトリ（既定: ./skill_out/mysql_table_cardinality）",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="run 識別子（未指定時は JST タイムスタンプ。auto も可）",
     )
     args = parser.parse_args()
     project_root = repo_root
-    out_dir = args.out_dir.resolve()
+    rs = _load_run_scope()
+    run_dir, _rid = rs.prepare_run_output_dir(
+        args.out_dir,
+        "mysql-table-cardinality",
+        run_id=args.run_id,
+    )
+    out_dir = run_dir.resolve()
 
     host, port, user, password = _resolve_credentials(args, project_root)
     if args.password:

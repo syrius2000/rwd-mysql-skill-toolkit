@@ -89,10 +89,22 @@ sanitize_run_slug <- function(x) {
 }
 out_root_for_meta <- base::sub("/+$", "", output_dir)
 run_slug <- sanitize_run_slug(run_id_raw)
-if (!base::is.null(run_slug)) {
-  output_dir <- base::file.path(out_root_for_meta, "runs", run_slug)
-  base::message("[INFO] --run-id により出力先: ", output_dir)
+if (base::is.null(run_slug)) {
+  run_slug <- base::format(base::Sys.time(), "%Y%m%d_%H%M%S", tz = "Asia/Tokyo")
 }
+output_dir <- run_output_dir_from_root(out_root_for_meta, run_slug)
+prefix16 <- run_id_short16(run_slug)
+candidate <- output_dir
+collision <- 2L
+while (base::dir.exists(candidate)) {
+  candidate <- base::file.path(out_root_for_meta, base::sprintf("run_%s_%d", prefix16, collision))
+  collision <- collision + 1L
+}
+if (collision > 2L) {
+  run_slug <- base::sprintf("%s_%d", run_slug, collision - 1L)
+}
+output_dir <- candidate
+base::message("[INFO] run 出力先: ", output_dir)
 
 # ディレクトリ作成
 if (!base::dir.exists(output_dir)) {
@@ -104,7 +116,7 @@ write_run_meta(
   out_root = out_root_for_meta,
   run_output_dir = output_dir,
   skill = "vcd-categorical-analysis",
-  run_id = if (!base::is.null(run_slug)) run_slug else if (!base::is.null(run_id_raw)) run_id_raw else "manual",
+  run_id = run_slug,
   input_data_path = data_path
 )
 

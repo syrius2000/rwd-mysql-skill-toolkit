@@ -13,7 +13,7 @@ metadata:
 
 1. **DB名指定** → スクリプトを実行する。
 2. **スキーマ取得** → DBから **TABLE_TYPE = 'BASE TABLE'** のテーブルのみとカラム情報を取得。共通キー名（PATIENTNO 等）から参照先を推論し、辞書行を組み立てる。
-3. **辞書・ER図出力** → `[DB名]_dictionary.csv` を全件上書き出力し、続けて **Draw.io XML**（`[DB名]_er_MMDD_HHMM.xml`）と **PlantUML**（`[DB名]_er_MMDD_HHMM.md`）の両方を生成する。
+3. **辞書・ER図出力** → `run_<id>/` 配下に `[DB名]_dictionary.csv`、**Draw.io XML**（`[DB名]_er_YYYYMMDD_HHMMSS.xml`）、**PlantUML**（`[DB名]_er_YYYYMMDD_HHMMSS.md`）を生成する。`--out` は親ディレクトリ、`--run-id` 未指定時は JST タイムスタンプで自動隔離。
 
 ## トリガー
 
@@ -23,7 +23,7 @@ metadata:
 ## 入力
 
 - **DB 名**（必須）。
-- **出力ディレクトリ**（任意）。未指定時は `./skill_out/`。
+- **出力ディレクトリ**（任意）。未指定時は `./skill_out/`（成果物は `run_<id>/` サブディレクトリ）。
 
 ## 前提
 
@@ -54,9 +54,10 @@ metadata:
    **オプション:**
    - `--db <DB名>`: MySQL 対象（`--sqlite` と排他）
    - `--sqlite <パス>`: SQLite 対象（`.db` / `.sqlite` / `.sqlite3`、View 除外）
-   - `--out <出力ディレクトリ>`: 出力先（デフォルト: `./skill_out/`）
+   - `--out <出力ディレクトリ>`: 出力先の親ディレクトリ（デフォルト: `./skill_out/`）
+   - `--run-id <id>`: run 識別子（未指定時は JST タイムスタンプ。`auto` も可）
    - `--env <.envファイルパス>`: 認証用 .env を明示指定
-3. 生成された `[DB名]_dictionary.csv`、`[DB名]_er_MMDD_HHMM.xml`、`[DB名]_er_MMDD_HHMM.md` を確認し、ユーザーに報告する。
+3. 生成された `run_<id>/[DB名]_dictionary.csv`、`run_<id>/[DB名]_er_YYYYMMDD_HHMMSS.xml`、`run_<id>/[DB名]_er_YYYYMMDD_HHMMSS.md` を確認し、ユーザーに報告する。
 
 ## スキル配置
 

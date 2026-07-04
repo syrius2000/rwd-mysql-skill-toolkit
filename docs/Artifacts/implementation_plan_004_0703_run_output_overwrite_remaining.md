@@ -2,7 +2,7 @@
 
 created: 2026-07-03 13:15 (JST)
 author: AI Agent (Claude)
-status: draft
+status: completed (MySQL 成功パス: T2/T4 検証済み。T1 step3 成功パスは未検証)
 
 > 実行条件: 自宅の Python / MySQL 起動環境で作業する前提。DB 接続・SQL 実行・commit / push は、着手時に本メモの手順で進める。テスト済み仕様と SKILL.md の文書化済みファイル名契約は変更しない。
 
@@ -31,13 +31,13 @@ status: draft
 
 | ID | 対象ファイル | 優先度 | MySQL要否 | 一言でいう修正 | 完了(受け入れ)基準 |
 |---|---|---|---|---|---|
-| [ ] T1 | `flat-file-mysql-load-validation/scripts/step3_cli.py` | 高 | 要（成功パス）／エラーパスは不要 | `--report-dir` を run 単位に隔離（ファイル名据え置き） | 異なる DB/SQL で2回実行し両レポートが残る |
-| [ ] T2 | `mysql-table-cardinality/scripts/get_cardinality_cli.py` | 中 | 要 | `--out-dir` の run 隔離オプション追加 | 同一 db.table を2回実行し両方残る |
-| [ ] T3 | `mysql-er-diagram/scripts/generate_er.py` | 中 | 不要（`--sqlite` で検証可） | 辞書CSVの docstring/実装乖離を解消＋timestampに年・秒 | 同一分内2回実行で衝突しない／docstring と実装が一致 |
-| [ ] T4 | `mysql-entity-matrix/scripts/generate_matrix_sql.py` | 中 | 要 | timestampに年・秒付与 or `--run-id` 受理 | 同一分・同一DBの連続実行で衝突しない |
-| [ ] T5 | `flat-file-mysql-ddl-generation/scripts/step1_cli.py` | 低 | 不要 | レポートのみ `--out-dir` run 隔離（SQL名は据え置き） | `test_step1_e2e.py` が緑のまま／再実行でレポート衝突しない |
-| [ ] T6 | `anomaly-detection`（`io.py` 他） | 低 | 不要 | 運用ガイド追記 or `--run-id` オプション検討 | 方針決定（当面は運用ガイドで可） |
-| [ ] T7 | `vcd-categorical-analysis/templates/analysis.R` | 低 | 不要 | run-id 未指定時も入力ハッシュで自動隔離を検討 | 挙動変更がテストに影響しないことを確認 |
+| [x] T1 | `flat-file-mysql-load-validation/scripts/step3_cli.py` | 高 | 要（成功パス）／エラーパスは不要 | `--report-dir` を run 単位に隔離（ファイル名据え置き） | エラーパス2 run 確認済み。**成功パス（SQL 実行・件数比較）は未検証** |
+| [x] T2 | `mysql-table-cardinality/scripts/get_cardinality_cli.py` | 中 | 要 | `--out-dir` の run 隔離オプション追加 | 同一 db.table を2回実行し両方残る |
+| [x] T3 | `mysql-er-diagram/scripts/generate_er.py` | 中 | 不要（`--sqlite` で検証可） | 辞書CSVの docstring/実装乖離を解消＋timestampに年・秒 | 同一分内2回実行で衝突しない／docstring と実装が一致 |
+| [x] T4 | `mysql-entity-matrix/scripts/generate_matrix_sql.py` | 中 | 要 | timestampに年・秒付与 or `--run-id` 受理 | 同一分・同一DBの連続実行で衝突しない |
+| [x] T5 | `flat-file-mysql-ddl-generation/scripts/step1_cli.py` | 低 | 不要 | レポートのみ `--out-dir` run 隔離（SQL名は据え置き） | `test_step1_e2e.py` が緑のまま／再実行でレポート衝突しない |
+| [x] T6 | `anomaly-detection`（`io.py` 他） | 低 | 不要 | 運用ガイド追記 or `--run-id` オプション検討 | 方針決定（当面は運用ガイドで可） |
+| [x] T7 | `vcd-categorical-analysis/templates/analysis.R` | 低 | 不要 | run-id 未指定時も JST タイムスタンプで自動隔離 | 挙動変更がテストに影響しないことを確認 |
 
 > 共通の完了基準: 修正後も回帰テストが baseline と同数（`pytest` 14 passed / 5 failed、R 5 passed / 8 failed）から悪化しないこと。ファイル名契約を変える場合は該当 `SKILL.md` を同一コミットで更新すること。
 
@@ -103,4 +103,4 @@ for f in tests/test_*.R; do Rscript "$f"; done
 
 ## 参考
 - レビュー観点の正本: 出力ディレクトリの一意化・上書き回避のみ。
-- 関連: `.agent/shared/run_scope.R`（run 隔離ヘルパー: `resolve_run_id`, `run_output_dir_from_root`, `write_run_meta`）。
+- 関連: `.agent/shared/run_scope.R` / `.agent/shared/run_scope.py`（run 隔離ヘルパー: `resolve_run_id`, `run_output_dir_from_root`, `write_run_meta`, `prepare_run_output_dir`）。

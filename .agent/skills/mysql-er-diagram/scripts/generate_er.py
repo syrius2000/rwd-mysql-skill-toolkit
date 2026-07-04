@@ -2,7 +2,7 @@
 """mysql-er-diagram スキル用 ER図生成スクリプト.
 
 指定されたMySQLデータベースからテーブル・カラム情報を抽出し、
-辞書CSV・PlantUML・Draw.io互換XMLを生成（またはマージ更新）する。
+辞書CSV・PlantUML・Draw.io互換XMLをフル再生成する（既存CSVは読み込まない）。
 標準ライブラリのみを使用。
 
 セキュリティ対策:
@@ -24,6 +24,9 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
+
+JST = ZoneInfo("Asia/Tokyo")
 
 # ── セキュリティ: DB名に許可する文字パターン (ホワイトリスト) ──
 _SAFE_DB_NAME_PATTERN: re.Pattern[str] = re.compile(r"^[A-Za-z0-9_]+$")
@@ -46,6 +49,15 @@ def _find_repo_root(start: Path, *, max_levels: int = 15) -> Path:
             break
         current = current.parent
     return Path.cwd()
+
+
+def _load_run_scope():
+    shared = _find_repo_root(Path(__file__).resolve().parent) / ".agent" / "shared"
+    if str(shared) not in sys.path:
+        sys.path.insert(0, str(shared))
+    import run_scope
+
+    return run_scope
 
 
 def _validate_db_name(db_name: str) -> str:
@@ -390,10 +402,21 @@ def generate_files(
     out_dir: str,
     env_path: str | None = None,
     sqlite_path: str | None = None,
+    run_id: str | None = None,
 ) -> None:
-    """メインの生成ロジック: CSV/PlantUML/Draw.io XML を出力する."""
-    out_dir = _validate_output_dir(out_dir)
-    os.makedirs(out_dir, exist_ok=True)
+    """メインの生成ロジック: CSV/PlantUML/Draw.io XML を run 単位ディレクトリに出力する."""
+    out_root = _validate_output_dir(out_dir)
+    os.makedirs(out_root, exist_ok=True)
+
+    rs = _load_run_scope()
+    input_for_meta = sqlite_path if sqlite_path else None
+    run_dir, rid = rs.prepare_run_output_dir(
+        out_root,
+        "mysql-er-diagram",
+        run_id=run_id,
+        input_path=input_for_meta,
+    )
+    out_dir = str(run_dir)
 
     if sqlite_path:
         db_name = _validate_db_name(Path(sqlite_path).stem)
@@ -425,8 +448,9 @@ def generate_files(
         writer.writeheader()
         writer.writerows(merged_columns)
 
-    now_str: str = datetime.datetime.now().strftime("%m%d_%H%M")
-    now_full: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    now = datetime.datetime.now(JST)
+    now_str: str = now.strftime("%Y%m%d_%H%M%S")
+    now_full: str = now.strftime("%Y-%m-%d %H:%M:%S")
 
     # テーブル別にグルーピング
     tables: dict[str, dict[str, Any]] = {}
@@ -616,7 +640,12 @@ if __name__ == "__main__":
     )
     repo_root = _find_repo_root(Path(__file__).resolve().parent)
     default_out_dir = str(repo_root / "skill_out")
-    parser.add_argument("--out", default=default_out_dir, help="出力先ディレクトリ")
+    parser.add_argument("--out", default=default_out_dir, help="出力先の親ディレクトリ")
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="run 識別子（未指定時は JST タイムスタンプ。auto も可）",
+    )
     parser.add_argument(
         "--env", default=None, help=".env ファイルパス (省略時は自動探索)"
     )
@@ -627,4 +656,5 @@ if __name__ == "__main__":
         args.out,
         env_path=args.env,
         sqlite_path=args.sqlite,
+        run_id=args.run_id,
     )

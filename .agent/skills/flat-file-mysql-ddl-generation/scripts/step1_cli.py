@@ -6,6 +6,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
+import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
@@ -44,6 +47,15 @@ def _read_sample_bytes(path: Path, max_bytes: int = -1, sample_lines: int = 4) -
     return bytes(collected)
 
 
+def _load_run_scope():
+    shared = _find_repo_root(Path(__file__).resolve().parent) / ".agent" / "shared"
+    if str(shared) not in sys.path:
+        sys.path.insert(0, str(shared))
+    import run_scope
+
+    return run_scope
+
+
 def detect_encoding(path: Path, encodings: Iterable[str] | None = None) -> str:
     data = _read_sample_bytes(path, sample_lines=10)
     for enc in encodings or TRY_ENCODINGS:
@@ -70,7 +82,11 @@ def _detect_delimiter(head_lines: list[str]) -> tuple[str, str]:
     if not head_lines:
         return ",", ","
     header = head_lines[0]
-    candidates = [(",", header.count(",")), ("\t", header.count("\t")), ("|", header.count("|"))]
+    candidates = [
+        (",", header.count(",")),
+        ("\t", header.count("\t")),
+        ("|", header.count("|")),
+    ]
     delim, _ = max(candidates, key=lambda x: x[1])
     if delim == "\t":
         return "\t", "\\t"
@@ -135,7 +151,9 @@ def _build_sample_sql(path: Path, encoding: str, head_lines: list[str]) -> str:
     return "\n".join(parts) + "\n"
 
 
-def _count_rows_and_duplicates(path: Path, encoding: str, delimiter: str) -> tuple[int, int]:
+def _count_rows_and_duplicates(
+    path: Path, encoding: str, delimiter: str
+) -> tuple[int, int]:
     """Returns (total, duplicates). duplicates は重複している出現回数（余分な行の数）。ユニーク行数 = total − duplicates。"""
     total = 0
     seen: set[tuple[str, ...]] = set()
@@ -161,11 +179,27 @@ def run_step1(csv_paths: list[Path], out_dir: Path) -> list[dict[str, object]]:
     out_dir.mkdir(parents=True, exist_ok=True)
     for path in csv_paths:
         if not path.exists():
-            reports.append({"path": str(path), "error": "not found", "total": 0, "duplicates": 0, "unique": 0})
+            reports.append(
+                {
+                    "path": str(path),
+                    "error": "not found",
+                    "total": 0,
+                    "duplicates": 0,
+                    "unique": 0,
+                }
+            )
             continue
         enc = detect_encoding(path)
         if enc == "binary":
-            reports.append({"path": str(path), "error": "encoding detection failed", "total": 0, "duplicates": 0, "unique": 0})
+            reports.append(
+                {
+                    "path": str(path),
+                    "error": "encoding detection failed",
+                    "total": 0,
+                    "duplicates": 0,
+                    "unique": 0,
+                }
+            )
             continue
         head = _read_head_lines(path, enc, 4)
         delim_char, _ = _detect_delimiter(head)
@@ -199,8 +233,14 @@ def main() -> int:
         default=default_out_dir,
         help="出力先（既定: ./skill_out/step1_sample_sql）",
     )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="run 識別子（未指定時は JST タイムスタンプ。auto も可）",
+    )
     args = parser.parse_args()
-    reports = run_step1(list(args.csv_paths), args.out_dir.resolve())
+    out_dir = args.out_dir.resolve()
+    reports = run_step1(list(args.csv_paths), out_dir)
     error = False
     for r in reports:
         if r.get("error"):
@@ -211,8 +251,18 @@ def main() -> int:
             f"{Path(str(r['path'])).name}: total={r['total']}, duplicates={r['duplicates']}, unique={r['unique']}, "
             f"encoding={r['encoding']} -> {Path(str(r['out_sql'])).name}"
         )
-    report_path = args.out_dir.resolve() / "step1_report.json"
-    report_path.write_text(json.dumps(reports, ensure_ascii=False, indent=2), encoding="utf-8")
+    rs = _load_run_scope()
+    first_csv = args.csv_paths[0] if args.csv_paths else None
+    run_dir, _rid = rs.prepare_run_output_dir(
+        out_dir,
+        "flat-file-mysql-ddl-generation",
+        run_id=args.run_id,
+        input_path=first_csv,
+    )
+    report_path = run_dir / "step1_report.json"
+    report_path.write_text(
+        json.dumps(reports, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(f"report: {report_path}")
     return 1 if error else 0
 

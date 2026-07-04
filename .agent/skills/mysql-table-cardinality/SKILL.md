@@ -12,7 +12,7 @@ metadata:
 ## 実行前提
 
 - 実行 cwd は **プロジェクトルート**。
-- 出力先は `./skill_out/mysql_table_cardinality`（`-o` 未指定時の既定）。
+- 出力先は `./skill_out/mysql_table_cardinality/run_<id>/`（`-o` は親ディレクトリ、`--run-id` 未指定時は JST タイムスタンプで自動隔離）。
 - エージェントが本 Skill に従い、MCP または `scripts/get_cardinality_cli.py` を呼び出す。
 - 正本は `.agent/skills/mysql-table-cardinality/` です。旧ミラーは廃止済みのため参照しません。
 
@@ -26,8 +26,8 @@ metadata:
 
 ## 出力の場所
 
-- `./skill_out/mysql_table_cardinality/<db>_<table>_columns_cardinality.csv` … カラム一覧＋濃度数
-- `./skill_out/mysql_table_cardinality/<db>_<table>_report.json` … database, table, total_rows, columns_count, timestamp
+- `./skill_out/mysql_table_cardinality/run_<id>/<db>_<table>_columns_cardinality.csv` … カラム一覧＋濃度数
+- `./skill_out/mysql_table_cardinality/run_<id>/<db>_<table>_report.json` … database, table, total_rows, columns_count, timestamp
 
 ## 覚えておくこと
 

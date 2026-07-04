@@ -46,7 +46,8 @@
 - **DB/Query系スキルの正本**: `.agent/skills/<skill-name>/`
 - **VCD系スキルの扱い**: `vcd-*` 同名5スキルの恒久正本は `agentic-evidence-analysis`。このリポジトリ内の `vcd-*` は統合・実験・検証用ミラーとして扱い、検証済み変更は恒久正本へ反映する。
 - **編集対象**: `SKILL.md`, `Reference.md`, `references/`, `templates/`, `scripts/`, `tests/`
-- **R ユーティリティ**: `.agent/shared/`（`run_scope.R`, `inspect_data.R`）
+- **R ユーティリティ**: `.agent/shared/`（`run_scope.R`, `run_scope.py`, `inspect_data.R`）
+- **成果物の run 隔離**: 同一スキルを再実行する場合、CLI/R スクリプトは `run_<id>/` サブディレクトリに成果物を保存する（`--out-dir` / `--report-dir` / `--output-root` は親ディレクトリ）。`--run-id` 未指定時は JST タイムスタンプで自動隔離。
 - **Reference.md**: `.agent/skills/<name>/Reference.md` のみ編集
 - **契約の正本**: `references/interface.md`（変更時は `interface_version` を整合させる）。
 - **VCD 系**: `vcd-pass0-consultation` は分析前の検分。`vcd-categorical-analysis` は **3ステップ必須**（Step1 内で R `--profile` → `render_config.json` → `--render`、Step2 `executive_summary.md`、Step3 `dashboard.Rmd` 既定）。`vcd-categorical-reporting` は非推奨。

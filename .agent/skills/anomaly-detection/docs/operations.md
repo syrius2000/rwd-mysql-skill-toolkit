@@ -13,6 +13,13 @@ Each batch should save:
 - output hash
 - reviewer decision when available
 
+## Run output isolation
+
+- Prefer `python -m anomaly_detection.cli --input <path> --output-root ./skill_out/anomaly_detection` without `--output`.
+- Artifacts are written to `run_<id>/anomaly_results.jsonl` (or `.csv` with `--format csv`).
+- `--run-id` is optional; when omitted, a JST timestamp run id is used and collisions create `run_<id>_2`, etc.
+- Legacy `--output <path>` remains supported for explicit paths (may overwrite on re-run).
+
 ## 21 CFR Part 11 Considerations
 
 This scaffold is not a validated Part 11 system. For regulated production use, connect it to validated identity, access control, audit trail, electronic signature, change control, backup, and SOP-governed operational processes.

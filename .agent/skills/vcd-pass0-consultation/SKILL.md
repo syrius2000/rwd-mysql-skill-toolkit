@@ -17,10 +17,10 @@ description: Use when starting a new categorical data analysis to inspect data, 
 まず、以下のスクリプトを実行して、データの客観的な統計情報を取得します。
 
 ```bash
-Rscript .agent/shared/inspect_data.R <path_to_your_data.csv>
+Rscript .agent/shared/inspect_data.R <path_to_your_data.csv> --out-dir output/<project_name>/run_<id>/
 ```
 
-実行後、生成された `inspection_results.json` を読み取り、以下の点を確認します：
+実行後、生成された `output/<project_name>/run_<id>/inspection_results.json` を読み取り、以下の点を確認します：
 
 - 各変数の水準数（多すぎないか？）
 - 度数の分布（極端に少ないセルはないか？）

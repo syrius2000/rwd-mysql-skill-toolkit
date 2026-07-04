@@ -18,7 +18,7 @@ metadata:
 | 項目 | 内容 |
 | :--- | :--- |
 | **次元** | **3-way まで**。4-way 以上は対象外（分割・集約を提案）。 |
-| **出力先** | `./skill_out/vcd_categorical/`（`--run-id` 指定時は `runs/<id>/`） |
+| **出力先** | `./skill_out/vcd_categorical/run_<id>/`（`--out` は親ディレクトリ、`--run-id` 未指定時は JST タイムスタンプで自動隔離） |
 | **正本** | `.agent/skills/vcd-categorical-analysis/` です。旧ミラーは廃止済みのため参照しません。 |
 
 ## 必須ワークフロー（実行フェーズ）
@@ -46,7 +46,7 @@ Rscript .agent/skills/vcd-categorical-analysis/templates/analysis.R \
   --run-id datasetA_20260417
 ```
 
-- **`--run-id`（任意）**: 成果物を `<--out>/runs/<id>/` に隔離。`auto` で JST タイムスタンプ ID。
+- **`--run-id`（任意）**: 成果物を `<--out>/run_<prefix>/` に隔離。未指定時は JST タイムスタンプ。`auto` も可。
 - **`--data` 省略時**: 内蔵 `HairEyeColor` を使用。
 - **`--freq` 列が無い場合**: 自動集計し `Freq` として扱う。
 
@@ -68,8 +68,8 @@ Rscript .agent/skills/vcd-categorical-analysis/templates/analysis.R \
 
 ### Step 1 確認ゲート
 
-- 別データを連続解析する場合は **`--run-id`** でサブフォルダを分ける。
-- `--out` が既存の場合、上書き可否を確認する。
+- 別データを連続解析する場合も、未指定の `--run-id` なら自動で別 `run_<id>/` に隔離される。明示名が必要なら `--run-id` を指定する。
+- `--out` が既存の場合でも、run サブディレクトリ単位で上書きを避けられる。
 - `render_config.json` で `collapse_below_n` 等を使う場合、情報損失の許容可否を確認する。
 - `data_profile.json` で過剰水準、スパースセル、4-way以上相当の複雑性が見える場合は、集約、除外、層別、解釈保留のいずれかを提案する。
 
