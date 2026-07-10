@@ -137,6 +137,20 @@ flowchart LR
 | `anomaly-detection` | EDC/RWD データの異常候補をルール、ロバスト統計、Isolation Forest、LOF で順位付けし、素人にも読めるレビュー文書へつなぐ |
 | `security-vulnerability-check` | ソースコードの脆弱性チェック（SQLi / OS コマンド / パストラバーサル等） |
 
+## プロダクティビティ（利用者向け・別枠）
+
+この欄のスキルは、統合DB構築・分析のドメイン資産ではありません。リポジトリの**利用者**が Cursor / Agent と協働するときの生産性ツールです（本リポジトリ自体の開発専用ではありません）。
+
+| スキル名 | 概要 |
+|---|---|
+| `grilling` | 計画・設計を徹底的に問い詰め、共有理解に到達するまで実装しない |
+| `brainstorming` | 実装前に意図・要件・設計を探索する |
+| `writing-plans` | 多段タスクの実装計画を作成する |
+| `executing-plans` | 書かれた計画をチェックポイント付きで実行する |
+| `verification-before-completion` | 完了宣言前に検証コマンドを実行し、証拠を残す |
+| `systematic-debugging` | バグ・テスト失敗の原因を体系的に切り分ける |
+| `find-skills` | 追加の Agent スキルを探索・導入する |
+
 ## テスト
 
 R ベースの smoke テストと Python pytest があります（`tests/test_*.R`, `tests/test_*.py`）。例:
