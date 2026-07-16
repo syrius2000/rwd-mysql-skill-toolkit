@@ -4,15 +4,16 @@
 
 ## このリポジトリのゴール
 
-このリポジトリは、単に CSV を MySQL に投入するためだけの道具ではありません。大規模な大学講座や小規模プロジェクトの手元データから RDBMS を作り、構造を確認し、必要な Query を作り、分析可能なデータセットへ整える経験を若手へ引き継ぐための Skill 群です。
+このリポジトリは、単に CSV を MySQL に投入するためだけの道具ではありません。
+大学講座や小規模プロジェクトに於いて、手元のフラットデータから RDBMS を作り、構造を確認し、必要な Query を作り、分析可能なデータセットへ整える経験をAIの補助によって若手へ引き継ぐための Skill 群です。
 
-会社の大規模で整備済みの DB だけを使ってきた人でも、以下の流れを自分で辿れることを目標にします。
+会社の大規模で整備済みの DB だけを使ってきた人でも、AIの補助によって以下の流れを自分で辿れることを目標にします。
 
 1. CSV / flat files から DB を作る
 2. ER 図、dictionary、cardinality、entity matrix で DB を探索する
 3. 自然文の分析目的を SQL に落とす
 4. 本 SQL と検証 SQL を保存し、再利用可能な資産にする
-5. R / R Markdown の分析・レポートへ渡す
+5. R / SAS、R Markdown 等の分析・レポートへ渡す
 
 ## リポジトリ構造
 
@@ -47,7 +48,7 @@ open tests/skill_out_smoke/q01_gender_dept/report.html
 
 ## Query 作成支援
 
-`mysql-create-query-support` は、若手が「こういう患者群を抽出したい」「このイベントを数えたい」と自然文で相談したときに、SQL作成を段階的に支援する Skill です。
+`mysql-create-query-support` は、「こういう患者群を抽出したい」「このイベントを数えたい」といった自然文で相談したときに、SQL作成を段階的に支援する Skill です。
 
 この Skill は、いきなり完成 SQL を作りません。まず分析目的を、対象、イベント、曝露、アウトカム、属性、期間、除外条件、データセットの粒度に分解します。そのうえで、利用可能な ER 図、dictionary CSV、cardinality 結果、entity matrix 結果を参照し、必要なテーブル・カラム・JOIN キーを特定します。
 
@@ -64,7 +65,10 @@ sql/drafts/<topic>/
 
 検証済みになった SQL は、ユーザー確認後に `sql/validated/<topic>/` へ移します。
 
-## カテゴリ分析・エビデンス（VCD）
+## カテゴリカルデータ分析
+
+多くの場合RWD/EDCのデータを分析することは、カテゴリカルデータ分析を中心とした分析が多いと思います。
+そのような場合には、`vcd-categorical-analysis` や `vcd-bayesian-evidence-analysis` 等の分析スキルを利用することができます。
 
 Pass 0 検分のあと、各分析スキルの 3ステップ（R 計算 → AI 考察 → ダッシュボード）で完結する。
 大標本（N > 2,000）では P 値だけでは実務判断できない（飽和問題）。
@@ -137,19 +141,11 @@ flowchart LR
 | `anomaly-detection` | EDC/RWD データの異常候補をルール、ロバスト統計、Isolation Forest、LOF で順位付けし、素人にも読めるレビュー文書へつなぐ |
 | `security-vulnerability-check` | ソースコードの脆弱性チェック（SQLi / OS コマンド / パストラバーサル等） |
 
-## プロダクティビティ（利用者向け・別枠）
+## プロダクティビティ汎用スキル（本リポ非管理）
 
-この欄のスキルは、統合DB構築・分析のドメイン資産ではありません。リポジトリの**利用者**が Cursor / Agent と協働するときの生産性ツールです（本リポジトリ自体の開発専用ではありません）。
+`brainstorming` / `writing-plans` / `executing-plans` / `systematic-debugging` / `verification-before-completion` / `grilling` / `find-skills` などの汎用スキルは、統合DB構築・分析のドメイン資産ではありません。本リポジトリでは **正本として扱わず** `.gitignore` 対象とします。Cursor プラグインや `~/.agents` 側で利用してください。
 
-| スキル名 | 概要 |
-|---|---|
-| `grilling` | 計画・設計を徹底的に問い詰め、共有理解に到達するまで実装しない |
-| `brainstorming` | 実装前に意図・要件・設計を探索する |
-| `writing-plans` | 多段タスクの実装計画を作成する |
-| `executing-plans` | 書かれた計画をチェックポイント付きで実行する |
-| `verification-before-completion` | 完了宣言前に検証コマンドを実行し、証拠を残す |
-| `systematic-debugging` | バグ・テスト失敗の原因を体系的に切り分ける |
-| `find-skills` | 追加の Agent スキルを探索・導入する |
+`.agent/skills/` には本リポジトリ特有のスキル（構築・探索・Query・分析・保守）のみを置きます。
 
 ## テスト
 
@@ -168,7 +164,8 @@ pytest tests/test_mysql_create_query_support_assets.py
 
 ## 管理ルール
 
-- **正本**: `.agent/skills` ディレクトリ
+- **正本**: `.agent/skills` ディレクトリ（ドメインスキルのみ）
+- **非管理**: プロダクティビティ汎用スキルは gitignore（上記「本リポ非管理」を参照）
 - **廃止**: `.cursor/skills` は旧規格のため管理対象外
 - SQL成果物は Skill 配下に置かず、repo root の `sql/` に置く
 

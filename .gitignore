@@ -32,6 +32,16 @@ Thumbs.db
 tmp/
 .agent/skills/openspec-*/
 .agent/workflows/
+
+# Productivity / generic agent skills (not repo-specific)
+# Prefer Cursor plugins or ~/.agents; do not vendor here.
+.agent/skills/brainstorming/
+.agent/skills/executing-plans/
+.agent/skills/find-skills/
+.agent/skills/grilling/
+.agent/skills/systematic-debugging/
+.agent/skills/verification-before-completion/
+.agent/skills/writing-plans/
 chrome_profile_notebooklm/
 *.local
 .env

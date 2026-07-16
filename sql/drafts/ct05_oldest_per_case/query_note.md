@@ -1,5 +1,7 @@
 # Query Note
 
+> 曖昧プロンプトから本ノートに到達するまでの思考経過: [ambiguity_resolution_trace.md](./ambiguity_resolution_trace.md)
+
 ## 分析目的
 
 - 自然文の問い: Ct05 テーブルから、各症例の一番古いレコードを抽出したい

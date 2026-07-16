@@ -44,6 +44,7 @@
 ```
 
 - **DB/Query系スキルの正本**: `.agent/skills/<skill-name>/`
+- **プロダクティビティ汎用スキル**: 本リポジトリでは管理しない（`.gitignore`）。`brainstorming` / `writing-plans` / `executing-plans` / `systematic-debugging` / `verification-before-completion` / `grilling` / `find-skills` は Cursor プラグインや `~/.agents` で利用する。
 - **VCD系スキルの扱い**: `vcd-*` 同名5スキルの恒久正本は `agentic-evidence-analysis`。このリポジトリ内の `vcd-*` は統合・実験・検証用ミラーとして扱い、検証済み変更は恒久正本へ反映する。
 - **編集対象**: `SKILL.md`, `Reference.md`, `references/`, `templates/`, `scripts/`, `tests/`
 - **R ユーティリティ**: `.agent/shared/`（`run_scope.R`, `run_scope.py`, `inspect_data.R`）
