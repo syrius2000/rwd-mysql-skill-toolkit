@@ -1,5 +1,9 @@
 # Query Note
 
+status: validated
+validated_at: 2026-07-18 (JST)
+assumptions_confirmed: EVENTDATE で最古判定 / Ct05 = `CH_t05_covid_vaccine`
+
 > 曖昧プロンプトから本ノートに到達するまでの思考経過: [ambiguity_resolution_trace.md](./ambiguity_resolution_trace.md)
 
 ## 分析目的
@@ -49,6 +53,6 @@
 
 ## 分析系への引き渡し
 
-- 出力先: `sql/drafts/ct05_oldest_per_case/main_query.sql`
+- 出力先: `sql/validated/ct05_oldest_per_case/main_query.sql`
 - 推奨する次スキル: 必要に応じて `mysql-table-cardinality` で他テーブルとの ID 重なり確認
 - 注意点: 1 症例 1 行。初回接種問診の属性のみが必要な場合は列を絞ること
