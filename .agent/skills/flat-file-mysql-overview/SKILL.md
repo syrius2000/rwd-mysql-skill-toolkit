@@ -1,6 +1,6 @@
 ---
 name: flat-file-mysql-overview
-description: CP932 CSV を MySQL に投入する一連の流れ（ステップ 1→2→3）のオーバービュー。Skill B と Skill C の使い分け。Antigravity 用。
+description: Use when planning or explaining the three-step workflow for loading CP932 CSV files into MySQL, including choosing the DDL and validation skills.
 license: MIT
 metadata:
   author: flat-file-to-mysql-ddl-creator

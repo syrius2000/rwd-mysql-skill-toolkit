@@ -1,6 +1,6 @@
 ---
 name: vcd-bayesian-evidence-analysis
-description: 大標本カテゴリカルデータ（クロス表/2-way/3-way）を Poisson GLM で解析し、EBIC近似ベイズファクター（BF10）と Evidence Score（r²−k·logN）・効果量（Cramér's V/Fei）で「統計的有意性」と「実質的意義」を分離して関連セルを抽出する。3-Pass（Pass1: evidence_results.json → Pass2: executive_summary.md → Pass3: dashboard.html）。
+description: Use when analyzing large-sample categorical cross-tabs with Poisson GLM, Bayesian evidence, Evidence Score, or effect sizes, and when separating statistical significance from practical importance.
 license: MIT
 metadata:
   version: "1.0"

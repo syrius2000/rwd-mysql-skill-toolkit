@@ -1,6 +1,6 @@
 ---
 name: mysql-entity-matrix
-description: Target MySQL databases to cross-check existence of a specific ID column across all tables. Generates a robust matrix SQL containing `[1, 0]` values to show presence in corresponding tables. Use when the user requests generating a query tracking an identifier (like PATIENTNO, user_id) presence over all tables in a Database schema, or requests an "entity presence matrix".
+description: Use when checking whether a specific identifier such as PATIENTNO or user_id exists across tables in a MySQL schema, or when requesting an entity presence matrix.
 license: Complete terms in LICENSE.txt
 ---
 

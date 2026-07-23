@@ -1,6 +1,6 @@
 ---
 name: vcd-categorical-analysis
-description: "【必須3ステップ】1. analysis.R（R 2パス: profile→render）2. executive_summary.md 3. dashboard.Rmd。2-way/3-way 名義カテゴリ。vcd-categorical-reporting は非推奨。"
+description: Use when analyzing two-way or three-way nominal categorical data with the vcd workflow and producing an executive summary or dashboard.
 license: MIT
 metadata:
   author: vcd-categorical-analysis-skill

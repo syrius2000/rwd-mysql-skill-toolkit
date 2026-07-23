@@ -1,6 +1,6 @@
 ---
 name: questionnaire-batch-analysis
-description: 設問設定CSV（question config）を用いて、アンケートの複数カテゴリカル設問を一括でクロス集計・カイ二乗検定し、`summary.csv` と設問別 `report.html` を生成するRバッチ実行スキル。`nominal_2way` / `likert_2way` / `nominal_3way` を扱う。
+description: Use when batch-analyzing multiple categorical questionnaire items from a question-config CSV with two-way or three-way tabulations.
 license: MIT
 metadata:
   version: "1.1"

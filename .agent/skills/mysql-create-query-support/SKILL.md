@@ -1,6 +1,6 @@
 ---
 name: mysql-create-query-support
-description: 若手エンジニアが自然文の分析目的から MySQL/MariaDB の探索 SQL、本 SQL、検証 SQL、分析用データセット抽出 SQL を作れるよう支援する。ER図、cardinality、entity matrix の結果を使い、粒度・JOIN・期間・NULL・重複・カテゴリ値を確認する。出力は repo root の sql/ 配下に保存する。
+description: Use when translating a natural-language analysis request into MySQL/MariaDB exploration, production, validation, or dataset-extraction SQL.
 license: MIT
 metadata:
   author: rwd-mysql-skill-toolkit

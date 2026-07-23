@@ -1,6 +1,6 @@
 ---
 name: flat-file-mysql-load-validation
-description: 完成版 SQL の作成支援・DB 名指定・指定 DB への実行・件数比較（ステップ 2〜3）。ステップ 3 実行前にユーザーに確認し、依頼に応じて CLI を呼ぶ。Antigravity 用。
+description: Use when generating final import SQL, specifying a database, executing SQL, or comparing loaded row counts for import steps 2-3.
 license: MIT
 metadata:
   author: flat-file-to-mysql-ddl-creator

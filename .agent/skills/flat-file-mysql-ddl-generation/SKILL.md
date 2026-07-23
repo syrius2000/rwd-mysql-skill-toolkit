@@ -1,6 +1,6 @@
 ---
 name: flat-file-mysql-ddl-generation
-description: CP932 CSV から数行の DDL 用サンプル SQL とレコード数・重複数レポートを生成する（ステップ 1）。エージェントが CLI を呼ぶ前提。Antigravity 用。
+description: Use when converting CP932 CSV files into sample DDL SQL or record-count and duplicate reports for the first database-import step.
 license: MIT
 compatibility: Python 3 標準ライブラリのみ。仮想環境不要。
 metadata:

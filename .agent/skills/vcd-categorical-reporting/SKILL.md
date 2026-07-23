@@ -1,6 +1,6 @@
 ---
 name: vcd-categorical-reporting
-description: "【非推奨】参照テンプレのみ。新規分析は vcd-categorical-analysis の Step 2（executive_summary.md）で完結すること。"
+description: Use when consulting legacy categorical-analysis reporting templates; use vcd-categorical-analysis for new analyses.
 license: MIT
 metadata:
   author: vcd-categorical-reporting-skill

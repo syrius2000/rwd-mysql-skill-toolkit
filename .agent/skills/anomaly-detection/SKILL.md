@@ -1,6 +1,6 @@
 ---
 name: anomaly-detection
-description: EDC/RWD data anomaly and outlier detection skill for RBQM and central monitoring.
+description: Use when reviewing EDC/RWD, RBQM, central monitoring, audit trail, query log, or site-level indicators for anomaly or outlier signals.
 license: MIT
 metadata:
   author: Yamaguchi Manabu

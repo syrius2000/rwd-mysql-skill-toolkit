@@ -1,6 +1,6 @@
 ---
 name: mysql-er-diagram
-description: 指定した MySQL データベースのテーブルのみを抽出し、Draw.io互換XMLおよびPlantUMLのER図を生成する。辞書CSVは都度フル再生成。.agent で利用可能。
+description: Use when generating Draw.io or PlantUML ER diagrams and a dictionary from selected MySQL database tables.
 license: MIT
 metadata:
   author: mysql-er-diagram-skill

@@ -1,6 +1,6 @@
 ---
 name: mysql-table-cardinality
-description: 指定 MySQL DB・テーブルからカラム一覧・総行数・カラムごとの濃度数（cardinality）を取得し、./skill_out/mysql_table_cardinality に CSV/JSON を出力する。MCP 利用可時は execute_sql、不可時は CLI。DB 名・テーブル名必須。全テーブルは -t '*'。濃度数・cardinality を確認したいとき、テーブル統計を取得したいときに使う。.agent で利用可能。
+description: Use when inspecting MySQL table structure, row counts, or per-column cardinality for a named database table or all tables.
 license: MIT
 metadata:
   author: mysql-table-cardinality-skill
