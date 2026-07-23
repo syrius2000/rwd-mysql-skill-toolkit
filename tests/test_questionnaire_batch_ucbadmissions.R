@@ -47,7 +47,7 @@ if (dir.exists(default_out_dir)) {
 }
 
 cmd <- sprintf(
-  'cd "%s" && Rscript --vanilla "%s" --data "%s" --config "%s" --run-id ucb_regression',
+  'cd "%s" && Rscript --vanilla "%s" --data "%s" --question-config "%s" --run-id ucb_regression',
   root,
   runner_path,
   data_path,
@@ -80,7 +80,8 @@ check <- function(label, expr) {
 check("batch_runner returned exit 0", ret == 0L)
 check("default output directory created", dir.exists(default_out_dir))
 
-summary_csv <- file.path(default_out_dir, "summary.csv")
+run_out_dir <- file.path(default_out_dir, "runs", "ucb_regression")
+summary_csv <- file.path(run_out_dir, "summary.csv")
 check("summary.csv exists in default output directory", file.exists(summary_csv))
 
 if (file.exists(summary_csv)) {
@@ -108,14 +109,14 @@ if (file.exists(summary_csv)) {
   for (slug in q_slugs) {
     check(
       sprintf("report.html exists in default dir: %s", slug),
-      file.exists(file.path(default_out_dir, slug, "report.html"))
+      file.exists(file.path(run_out_dir, slug, "report.html"))
     )
   }
 
   for (slug in q_slugs) {
     check(
       sprintf("residual_plot.png exists in default dir: %s", slug),
-      file.exists(file.path(default_out_dir, slug, "figures", "residual_plot.png"))
+      file.exists(file.path(run_out_dir, slug, "figures", "residual_plot.png"))
     )
   }
 

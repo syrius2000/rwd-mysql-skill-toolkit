@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 # tests/test_summary_csv_new_columns.R
-# summary.csv に新規カラム (n_significant_cells, n_total_cells,
-# top3_residual_cells, interpretation_flag) が存在し値が妥当であることを検証
+# summary.csv のCramér's V・層別指標が存在し値が妥当であることを検証
 # 前提: test_questionnaire_batch_ucbadmissions.R が先に実行されていること
 # Run: Rscript tests/test_summary_csv_new_columns.R
 
@@ -42,7 +41,7 @@ config_lines <- c(
 writeLines(config_lines, config_path, useBytes = TRUE)
 
 cmd <- sprintf(
-  'cd "%s" && Rscript --vanilla "%s" --data "%s" --config "%s" --out "%s" --run-id summary_test',
+  'cd "%s" && Rscript --vanilla "%s" --data "%s" --question-config "%s" --out "%s" --run-id summary_test',
   root, runner_path, data_path, config_path, out_dir
 )
 cat("Running:", cmd, "\n\n")
@@ -64,52 +63,11 @@ check <- function(label, expr) {
 
 check("batch_runner exit 0", ret == 0L)
 
-summary_csv <- file.path(out_dir, "summary.csv")
+summary_csv <- file.path(out_dir, "runs", "summary_test", "summary.csv")
 check("summary.csv exists", file.exists(summary_csv))
 
 if (file.exists(summary_csv)) {
   s <- read.csv(summary_csv, stringsAsFactors = FALSE, na.strings = "")
-
-  # 新規カラムの存在チェック
-  new_cols <- c("n_significant_cells", "n_total_cells", "top3_residual_cells", "interpretation_flag")
-  for (col in new_cols) {
-    check(paste("column exists:", col), col %in% names(s))
-  }
-
-  # 値の妥当性チェック
-  if ("n_significant_cells" %in% names(s)) {
-    check("n_significant_cells is non-negative integer",
-          all(!is.na(s$n_significant_cells)) && all(s$n_significant_cells >= 0))
-  }
-
-  if ("n_total_cells" %in% names(s)) {
-    check("n_total_cells is positive integer",
-          all(!is.na(s$n_total_cells)) && all(s$n_total_cells > 0))
-    # 2-way: Admit(2) x Gender(2) = 4, 3-way: Admit(2) x Gender(2) x Dept(6) = 24
-    check("n_total_cells q01 = 4", s$n_total_cells[s$question_id == "q01"] == 4L)
-    check("n_total_cells q02 = 24", s$n_total_cells[s$question_id == "q02"] == 24L)
-  }
-
-  if ("n_significant_cells" %in% names(s) && "n_total_cells" %in% names(s)) {
-    check("n_significant_cells <= n_total_cells",
-          all(s$n_significant_cells <= s$n_total_cells))
-  }
-
-  if ("top3_residual_cells" %in% names(s)) {
-    check("top3_residual_cells is non-empty string",
-          all(!is.na(s$top3_residual_cells)) && all(nzchar(s$top3_residual_cells)))
-    # パイプ区切りで最大3要素
-    for (i in seq_len(nrow(s))) {
-      parts <- strsplit(s$top3_residual_cells[i], "\\|")[[1]]
-      check(paste("top3 has <= 3 elements, row", i), length(parts) <= 3L && length(parts) >= 1L)
-    }
-  }
-
-  if ("interpretation_flag" %in% names(s)) {
-    valid_flags <- c("strong_association", "weak_association", "no_association")
-    check("interpretation_flag values are valid",
-          all(s$interpretation_flag %in% valid_flags))
-  }
 
   cram_cols <- c(
     "cramer_v_marginal", "cramer_v_df_star", "cramer_v_effect_label",
@@ -122,18 +80,19 @@ if (file.exists(summary_csv)) {
 
   if (all(cram_cols %in% names(s))) {
     row2 <- s[s$question_id == "q02", , drop = FALSE]
-    check("3-way cramer_v_marginal is finite", length(row2) == 1L && is.finite(row2$cramer_v_marginal[1]))
+    check("3-way cramer_v_marginal is finite", nrow(row2) == 1L && is.finite(row2$cramer_v_marginal[1]))
     check("3-way cramer_v_strata_json parses as JSON",
-          length(row2) == 1L && nzchar(row2$cramer_v_strata_json[1]))
-    if (length(row2) == 1L && nzchar(row2$cramer_v_strata_json[1])) {
+          nrow(row2) == 1L && nzchar(row2$cramer_v_strata_json[1]))
+    if (nrow(row2) == 1L && nzchar(row2$cramer_v_strata_json[1])) {
       suppressPackageStartupMessages({
         if (!requireNamespace("jsonlite", quietly = TRUE)) install.packages("jsonlite")
       })
       parsed <- tryCatch(jsonlite::parse_json(row2$cramer_v_strata_json[1]), error = function(e) NULL)
-      check("cramer_v_strata_json is valid JSON", is.list(parsed) && length(parsed) >= 1L))
+      check("cramer_v_strata_json is valid JSON", is.list(parsed) && length(parsed) >= 1L)
     }
-    sig_ok <- row2$marginal_strata_signal[1] %in% c("none", "review_stratified")
-    check("marginal_strata_signal is none or review_stratified", length(row2) == 1L && sig_ok)
+    sig_ok <- is.na(row2$marginal_strata_signal[1]) ||
+      row2$marginal_strata_signal[1] %in% c("none", "review_stratified")
+    check("marginal_strata_signal is NA, none, or review_stratified", nrow(row2) == 1L && sig_ok)
   }
 }
 

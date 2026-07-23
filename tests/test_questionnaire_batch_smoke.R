@@ -38,7 +38,7 @@ cat("out    :", out_dir, "\n\n")
 
 # ---- バッチ実行 ----
 cmd <- sprintf(
-  'Rscript --vanilla "%s" --data "%s" --config "%s" --out "%s" --run-id smoke_test',
+  'Rscript --vanilla "%s" --data "%s" --question-config "%s" --out "%s" --run-id smoke_test',
   runner_path, data_path, config_path, out_dir
 )
 cat("Running:", cmd, "\n\n")
@@ -61,7 +61,8 @@ check <- function(label, expr) {
 
 check("batch_runner returned exit 0", ret == 0L)
 
-summary_csv <- file.path(out_dir, "summary.csv")
+run_out_dir <- file.path(out_dir, "runs", "smoke_test")
+summary_csv <- file.path(run_out_dir, "summary.csv")
 check("summary.csv exists", file.exists(summary_csv))
 
 if (file.exists(summary_csv)) {
@@ -107,12 +108,12 @@ if (file.exists(summary_csv)) {
   # HTML レポートの存在確認
   q_slugs <- c("q01_gender_dept", "q02_satisfaction_age", "q03_waiting_dept_time")
   for (slug in q_slugs) {
-    rpath <- file.path(out_dir, slug, "report.html")
+    rpath <- file.path(run_out_dir, slug, "report.html")
     check(sprintf("report.html exists: %s", slug), file.exists(rpath))
   }
 
   for (slug in q_slugs) {
-    rpath <- file.path(out_dir, slug, "report.html")
+    rpath <- file.path(run_out_dir, slug, "report.html")
     html_lines <- if (file.exists(rpath)) readLines(rpath, warn = FALSE, encoding = "UTF-8") else character()
     check(
       sprintf("report.html includes residual plot section: %s", slug),
@@ -122,7 +123,7 @@ if (file.exists(summary_csv)) {
 
   # 残差プロットの存在確認
   for (slug in q_slugs) {
-    ppath <- file.path(out_dir, slug, "figures", "residual_plot.png")
+    ppath <- file.path(run_out_dir, slug, "figures", "residual_plot.png")
     check(sprintf("residual_plot.png exists: %s", slug), file.exists(ppath))
   }
 

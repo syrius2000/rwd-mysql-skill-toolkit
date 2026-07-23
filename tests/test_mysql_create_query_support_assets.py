@@ -12,18 +12,14 @@ REQUIRED_RELATIVE_FILES = [
 ]
 
 
-def test_query_support_skill_exists_in_agent_and_cursor():
-    for base in [".agent/skills", ".cursor/skills"]:
-        for rel in REQUIRED_RELATIVE_FILES:
-            path = ROOT / base / SKILL / rel
-            assert path.exists(), f"missing {path}"
-
-
-def test_agent_and_cursor_query_support_files_match():
+def test_query_support_skill_exists_in_agent():
     for rel in REQUIRED_RELATIVE_FILES:
-        agent_file = ROOT / ".agent/skills" / SKILL / rel
-        cursor_file = ROOT / ".cursor/skills" / SKILL / rel
-        assert agent_file.read_text(encoding="utf-8") == cursor_file.read_text(encoding="utf-8")
+        path = ROOT / ".agent/skills" / SKILL / rel
+        assert path.exists(), f"missing {path}"
+
+
+def test_cursor_skill_mirror_is_not_tracked():
+    assert not (ROOT / ".cursor/skills").exists()
 
 
 def test_query_support_skill_requires_validation_sql_and_note():
@@ -53,17 +49,18 @@ def test_sql_readme_defines_drafts_and_validated_policy():
 
 def test_readme_describes_integrated_db_analysis_goal():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "統合DB構築・分析スキル" in readme
-    assert "構築系" in readme
-    assert "探索系" in readme
-    assert "分析系" in readme
+    assert "RWDデータワークフローの実行・統合ハブ" in readme
+    assert "DB構築・探索（7）" in readme
+    assert "RWD実行・品質（3）" in readme
+    assert "VCD統合ミラー（4）" in readme
     assert "mysql-create-query-support" in readme
 
 
-def test_agents_mentions_read_only_reference_dirs_and_sql_policy():
+def test_agents_describes_external_sources_and_sql_policy():
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    assert "参照専用" in agents
-    assert "OSX_IDE_Skill_management_Gemini" in agents
+    assert "Productivity-Skill" in agents
+    assert "agentic-evidence-analysis" in agents
+    assert "ローカル管理Skillは14件" in agents
     assert "sql/" in agents
     assert "mysql-create-query-support" in agents
 
@@ -74,31 +71,21 @@ def test_existing_db_skills_link_to_query_support():
         ".agent/skills/mysql-er-diagram/SKILL.md",
         ".agent/skills/mysql-table-cardinality/SKILL.md",
         ".agent/skills/mysql-entity-matrix/SKILL.md",
-        ".cursor/skills/flat-file-mysql-overview/SKILL.md",
-        ".cursor/skills/mysql-er-diagram/SKILL.md",
-        ".cursor/skills/mysql-table-cardinality/SKILL.md",
-        ".cursor/skills/mysql-entity-matrix/SKILL.md",
     ]
     for rel in skill_paths:
         content = (ROOT / rel).read_text(encoding="utf-8")
         assert "mysql-create-query-support" in content, rel
 
 
-def test_reference_analysis_skills_are_mirrored_and_neutralized():
+def test_reference_analysis_skills_are_local_integration_mirrors():
     optional_skills = [
         "vcd-categorical-reporting",
         "vcd-bayesian-evidence-analysis",
     ]
     for skill in optional_skills:
         agent_dir = ROOT / ".agent/skills" / skill
-        cursor_dir = ROOT / ".cursor/skills" / skill
         assert agent_dir.exists(), f"missing {agent_dir}"
-        assert cursor_dir.exists(), f"missing {cursor_dir}"
         assert (agent_dir / "SKILL.md").exists(), f"missing {agent_dir / 'SKILL.md'}"
-        assert (cursor_dir / "SKILL.md").exists(), f"missing {cursor_dir / 'SKILL.md'}"
-        assert (agent_dir / "SKILL.md").read_text(encoding="utf-8") == (
-            cursor_dir / "SKILL.md"
-        ).read_text(encoding="utf-8")
 
     bayesian = (
         ROOT / ".agent/skills/vcd-bayesian-evidence-analysis/SKILL.md"

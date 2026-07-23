@@ -5,6 +5,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+GENERIC_SKILL_COPIES = (
+    "code-understanding-pro",
+    "code-understanding-pyramid",
+    "stats-sql-comprehension",
+    "teach",
+    "writing-great-skills",
+)
 
 
 def read_frontmatter(path: Path) -> str:
@@ -38,3 +45,12 @@ def test_all_skill_frontmatter_has_valid_discovery_fields() -> None:
         assert re.fullmatch(r"[a-z0-9-]+", name)
         assert description.startswith("Use when")
         assert description
+
+
+def test_generic_skill_copies_are_not_tracked_locally() -> None:
+    skills_dir = ROOT / ".agent/skills"
+    tracked_copies = [name for name in GENERIC_SKILL_COPIES if (skills_dir / name).exists()]
+    assert not tracked_copies, (
+        "generic skills belong to Productivity-Skill and must not be tracked here: "
+        f"{tracked_copies}"
+    )
