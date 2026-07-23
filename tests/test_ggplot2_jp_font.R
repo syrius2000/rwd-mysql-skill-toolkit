@@ -53,22 +53,7 @@ stopifnot(res_quest$detect)
 stopifnot(res_quest$base_family)
 message("  [PASS] questionnaire report.Rmd has detect_jp_font and base_family")
 
-# --- 4. Mirror consistency ---
-vcd_agent <- readLines(vcd_rmd, warn = FALSE)
-vcd_cursor <- readLines(
-  sub("^\\.agent/", ".cursor/", vcd_rmd), warn = FALSE
-)
-stopifnot(identical(vcd_agent, vcd_cursor))
-message("  [PASS] vcd template: .agent == .cursor mirror")
-
-quest_agent <- readLines(quest_rmd, warn = FALSE)
-quest_cursor <- readLines(
-  sub("^\\.agent/", ".cursor/", quest_rmd), warn = FALSE
-)
-stopifnot(identical(quest_agent, quest_cursor))
-message("  [PASS] questionnaire template: .agent == .cursor mirror")
-
-# --- 5. ggplot2 renders Japanese legend without error ---
+# --- 4. ggplot2 renders Japanese legend without error ---
 if (requireNamespace("ggplot2", quietly = TRUE)) {
   jp_font <- detect_jp_font()
   tmp <- tempfile(fileext = ".png")

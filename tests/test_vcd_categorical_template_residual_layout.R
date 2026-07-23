@@ -10,12 +10,9 @@ repo <- if (is.na(f) || !nzchar(f)) {
   normalizePath(file.path(dirname(f), ".."), winslash = "/", mustWork = TRUE)
 }
 
-paths <- c(
-  file.path(repo, ".cursor/skills/vcd-categorical-analysis/templates/report.Rmd"),
-  file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd")
-)
+path <- file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd")
 
-for (p in paths) {
+p <- path
   stopifnot(file.exists(p))
   lines <- readLines(p, warn = FALSE)
 
@@ -63,6 +60,4 @@ for (p in paths) {
   if (!any(grepl("plot_mode", lines))) {
     stop("plot_mode parameter is missing in: ", p)
   }
-}
-
-message("OK: residual plot + table layout present in both vcd report templates.")
+message("OK: residual plot + table layout present in the local vcd report template.")

@@ -8,11 +8,8 @@ repo <- if (is.na(f) || !nzchar(f)) {
 } else {
   normalizePath(file.path(dirname(f), ".."), winslash = "/", mustWork = TRUE)
 }
-paths <- c(
-  file.path(repo, ".cursor/skills/vcd-categorical-analysis/templates/report.Rmd"),
-  file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd")
-)
-for (p in paths) {
+path <- file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd")
+p <- path
   stopifnot(file.exists(p))
   lines <- readLines(p, warn = FALSE)
   chunk_start <- grep("^```\\{r assoc-plot\\}", lines)
@@ -20,10 +17,12 @@ for (p in paths) {
   chunk_end <- chunk_end[chunk_end > chunk_start[1L]][1L]
   stopifnot(length(chunk_start) == 1L, !is.na(chunk_end))
   chunk <- lines[(chunk_start + 1L):(chunk_end - 1L)]
-  assoc_lines <- grep("^[[:space:]]*assoc\\(", chunk, value = TRUE)
-  stopifnot(length(assoc_lines) >= 1L)
-  if (!all(grepl("shade\\s*=\\s*TRUE", assoc_lines))) {
-    stop("assoc() must use shade = TRUE in: ", p)
+  assoc_starts <- grep("^[[:space:]]*assoc\\(", chunk)
+  stopifnot(length(assoc_starts) >= 1L)
+  for (start in assoc_starts) {
+    call_lines <- chunk[start:min(start + 3L, length(chunk))]
+    if (!any(grepl("shade\\s*=\\s*TRUE", call_lines))) {
+      stop("assoc() must use shade = TRUE in: ", p)
+    }
   }
-}
-message("OK: assoc shade = TRUE present in both report.Rmd templates.")
+message("OK: assoc shade = TRUE present in the local report.Rmd template.")

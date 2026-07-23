@@ -13,9 +13,7 @@ repo <- if (is.na(f) || !nzchar(f)) {
 
 # 対象テンプレート: vcd と questionnaire 両方
 paths <- c(
-  file.path(repo, ".cursor/skills/vcd-categorical-analysis/templates/report.Rmd"),
   file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd"),
-  file.path(repo, ".cursor/skills/questionnaire-batch-analysis/templates/report.Rmd"),
   file.path(repo, ".agent/skills/questionnaire-batch-analysis/templates/report.Rmd")
 )
 

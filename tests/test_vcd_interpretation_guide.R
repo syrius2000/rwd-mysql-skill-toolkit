@@ -12,16 +12,10 @@ repo <- if (is.na(f) || !nzchar(f)) {
 }
 
 # --- 対象: vcd-categorical-analysis report.Rmd ---
-vcd_paths <- c(
-  file.path(repo, ".cursor/skills/vcd-categorical-analysis/templates/report.Rmd"),
-  file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd")
-)
+vcd_path <- file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd")
 
 # --- 対象: questionnaire-batch-analysis report.Rmd ---
-qba_paths <- c(
-  file.path(repo, ".cursor/skills/questionnaire-batch-analysis/templates/report.Rmd"),
-  file.path(repo, ".agent/skills/questionnaire-batch-analysis/templates/report.Rmd")
-)
+qba_path <- file.path(repo, ".agent/skills/questionnaire-batch-analysis/templates/report.Rmd")
 
 pass <- 0L
 fail <- 0L
@@ -37,9 +31,10 @@ check <- function(label, expr) {
   }
 }
 
-for (p in vcd_paths) {
-  check(paste("file exists:", basename(dirname(dirname(p)))), file.exists(p))
-  if (!file.exists(p)) next
+p <- vcd_path
+check(paste("file exists:", basename(dirname(dirname(p)))), file.exists(p))
+
+if (file.exists(p)) {
   lines <- readLines(p, warn = FALSE)
 
   # 解釈ガイドチャンクの存在
@@ -73,9 +68,10 @@ for (p in vcd_paths) {
   )
 }
 
-for (p in qba_paths) {
-  check(paste("file exists:", basename(dirname(dirname(p)))), file.exists(p))
-  if (!file.exists(p)) next
+p <- qba_path
+check(paste("file exists:", basename(dirname(dirname(p)))), file.exists(p))
+
+if (file.exists(p)) {
   lines <- readLines(p, warn = FALSE)
 
   check(

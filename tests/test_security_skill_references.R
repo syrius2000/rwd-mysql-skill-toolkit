@@ -21,14 +21,11 @@ check <- function(cond, msg) {
   }
 }
 
-# --- 両ディレクトリのベースパス ---
-dirs <- c(
-  file.path(ws, ".agent", "skills", "security-vulnerability-check"),
-  file.path(ws, ".cursor", "skills", "security-vulnerability-check")
-)
+# --- ローカルSkillディレクトリのベースパス ---
+dirs <- file.path(ws, ".agent", "skills", "security-vulnerability-check")
 
 for (d in dirs) {
-  label <- basename(dirname(dirname(d)))  # .agent or .cursor
+  label <- basename(dirname(dirname(d)))
 
   # 1. 既存ファイル存在確認
   check(file.exists(file.path(d, "SKILL.md")),
