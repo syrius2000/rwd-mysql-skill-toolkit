@@ -91,6 +91,8 @@ cramer_v_2way <- function(tab) {
   v
 }
 
+MARGINAL_STRATA_DELTA <- 0.05
+
 effect_label <- function(v) {
   if (!is.finite(v)) {
     return(NA_character_)
@@ -228,8 +230,8 @@ for (i in seq_len(nrow(cfg))) {
   cramer_v_strata_mean <- NA_real_
   cramer_v_strata_max <- NA_real_
   cramer_v_strata_max_level <- NA_character_
-  marginal_strata_signal <- NA_character_
-  marginal_strata_note <- NA_character_
+  marginal_strata_signal <- "none"
+  marginal_strata_note <- ""
   max_abs_pearson_res <- NA_real_
   max_residual_cell_val <- NA_character_
   mosaic_rendered <- FALSE
@@ -292,6 +294,19 @@ for (i in seq_len(nrow(cfg))) {
         cramer_v_strata_max <- max(strata_v, na.rm = TRUE)
         if (is.finite(cramer_v_strata_max)) {
           cramer_v_strata_max_level <- names(which.max(strata_v))[1L]
+        }
+
+        ddiff <- abs(cramer_v_marginal - cramer_v_strata_mean)
+        if (!is.finite(ddiff) || !any(is.finite(strata_v))) {
+          marginal_strata_note <- "insufficient_strata_or_na"
+        } else if (ddiff >= MARGINAL_STRATA_DELTA) {
+          marginal_strata_signal <- "review_stratified"
+          marginal_strata_note <- sprintf(
+            "|V_marginal - mean(V_strata)|=%.4f >= %.2f",
+            ddiff, MARGINAL_STRATA_DELTA
+          )
+        } else {
+          marginal_strata_note <- "within_threshold"
         }
 
         n_cells <- prod(dim(tab3))

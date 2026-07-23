@@ -90,9 +90,8 @@ if (file.exists(summary_csv)) {
       parsed <- tryCatch(jsonlite::parse_json(row2$cramer_v_strata_json[1]), error = function(e) NULL)
       check("cramer_v_strata_json is valid JSON", is.list(parsed) && length(parsed) >= 1L)
     }
-    sig_ok <- is.na(row2$marginal_strata_signal[1]) ||
-      row2$marginal_strata_signal[1] %in% c("none", "review_stratified")
-    check("marginal_strata_signal is NA, none, or review_stratified", nrow(row2) == 1L && sig_ok)
+    sig_ok <- row2$marginal_strata_signal[1] %in% c("none", "review_stratified")
+    check("marginal_strata_signal is none or review_stratified", nrow(row2) == 1L && sig_ok)
   }
 }
 
