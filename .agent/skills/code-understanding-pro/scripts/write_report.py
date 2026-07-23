@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -14,10 +15,10 @@ from zoneinfo import ZoneInfo
 
 SKILL_DIR = Path(__file__).resolve().parents[1]
 REPORT_FILENAMES = {
-    "full": "code_understanding_report.md",
-    "review": "code_review_report.md",
-    "documentation": "code_documentation.md",
-    "refactoring": "refactoring_proposal.md",
+    "full": "report.md",
+    "review": "report.md",
+    "documentation": "report.md",
+    "refactoring": "report.md",
     "context": "code_context.md",
 }
 DISPLAY_MODES = {
@@ -27,6 +28,7 @@ DISPLAY_MODES = {
     "refactoring": "Refactoring",
     "context": "Context",
 }
+INTERFACE_VERSION = "2.0"
 
 
 def redact_secrets(text: str) -> str:
@@ -71,6 +73,28 @@ def skill_version() -> str:
         return "unknown"
 
 
+def source_entry(source: str) -> dict[str, object]:
+    path = Path(source)
+    entry: dict[str, object] = {"path": source, "exists": path.exists()}
+    if not path.exists():
+        return entry
+    if path.is_file():
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        entry.update(
+            {
+                "kind": "file",
+                "size_bytes": path.stat().st_size,
+                "sha256": digest.hexdigest(),
+            }
+        )
+    else:
+        entry["kind"] = "directory"
+    return entry
+
+
 def write_markdown_report(
     content: str,
     *,
@@ -78,6 +102,9 @@ def write_markdown_report(
     target: str,
     output_root: Path,
     run_id: str | None = None,
+    adapter: str = "generic",
+    audience: str = "beginner",
+    sources: list[str] | None = None,
 ) -> Path:
     mode_key = mode.lower()
     if mode_key == "quick":
@@ -94,15 +121,26 @@ def write_markdown_report(
     report_path = run_dir / report_file
     report_path.write_text(redact_secrets(content), encoding="utf-8")
     metadata = {
+        "interface_version": INTERFACE_VERSION,
         "skill": "code-understanding-pro",
         "skill_version": skill_version(),
         "mode": DISPLAY_MODES[mode_key],
+        "adapter": adapter,
+        "audience": audience,
         "target": target,
         "report_file": report_file,
         "generated_at": datetime.now(ZoneInfo("Asia/Tokyo")).isoformat(),
     }
     (run_dir / "run_meta.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    source_manifest = {
+        "interface_version": INTERFACE_VERSION,
+        "sources": [source_entry(source) for source in sources or []],
+    }
+    (run_dir / "source_manifest.json").write_text(
+        json.dumps(source_manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     return report_path
@@ -124,6 +162,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--content-file", type=Path, required=True, help="保存するMarkdown本文")
     parser.add_argument("--output-root", type=Path, default=Path("./skill_out/code_understanding"))
     parser.add_argument("--run-id", help="runディレクトリ名に使うID（未指定時はJST時刻）")
+    parser.add_argument("--adapter", choices=("generic", "sql", "stats"), default="generic")
+    parser.add_argument("--audience", choices=("beginner", "practitioner", "expert"), default="beginner")
+    parser.add_argument("--source", action="append", default=[], help="根拠ソースのパス（複数指定可）")
     return parser.parse_args()
 
 
@@ -137,12 +178,16 @@ def main() -> int:
             target=args.target,
             output_root=args.output_root,
             run_id=args.run_id,
+            adapter=args.adapter,
+            audience=args.audience,
+            sources=args.source,
         )
     except (OSError, UnicodeError, ValueError) as error:
         print(f"エラー: {error}", file=sys.stderr)
         return 1
     print(path)
     print(path.parent / "run_meta.json")
+    print(path.parent / "source_manifest.json")
     return 0
 
 

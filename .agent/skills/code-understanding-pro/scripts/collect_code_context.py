@@ -158,6 +158,7 @@ def main() -> int:
             return 1
         print(path)
         print(path.parent / "run_meta.json")
+        print(path.parent / "source_manifest.json")
     elif args.output:
         try:
             print(write_explicit_report(content, args.output))
