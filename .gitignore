@@ -5,6 +5,7 @@ env/
 
 # lock (uv)
 uv.lock
+!.agent/skills/anomaly-detection/uv.lock
 
 # Python
 __pycache__/

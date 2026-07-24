@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -71,12 +72,27 @@ def main() -> None:
     df = read_table(args.input)
     cfg = load_config(args.config)
     out = run_detection(df, cfg)
+
+    # 各レコードに schema_version を付与
+    schema_ver = out.get("schema_version", "v0.2.0")
+    for r in out["results"]:
+        r["schema_version"] = schema_ver
+
     if args.format == "jsonl":
         write_jsonl(out["results"], output_path)
     else:
         write_csv(out["results"], output_path)
+
+    # summary.json も同一ディレクトリに保存
+    summary_path = output_path.parent / "summary.json"
+    summary_data = {"schema_version": schema_ver}
+    summary_data.update(out["summary"])
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(summary_data, f, ensure_ascii=False, indent=2)
+
     print(out["summary"])
     print(f"output: {output_path}")
+    print(f"summary: {summary_path}")
 
 
 if __name__ == "__main__":

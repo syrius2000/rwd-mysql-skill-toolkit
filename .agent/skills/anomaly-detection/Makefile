@@ -1,23 +1,28 @@
-.PHONY: install test lint format synth infer clean
+.PHONY: setup test lint format synth infer health clean
 
-install:
-	python -m pip install -U pip
-	python -m pip install -e '.[dev]'
+RUN_ID ?= $(shell date +%Y%m%d_%H%M%S)
+
+setup:
+	python3 scripts/setup_env.py
+
+health:
+	uv run python scripts/check_health.py
 
 test:
-	pytest
+	uv run pytest tests/
 
 lint:
-	ruff check src tests scripts
+	uv run ruff check src tests scripts
 
 format:
-	ruff format src tests scripts
+	uv run ruff format src tests scripts
 
 synth:
-	python scripts/generate_synth.py --output data/synthetic_edc.csv --n 500
+	uv run python scripts/generate_synth.py --output data/synthetic_edc.csv --n 500
 
 infer:
-	python scripts/infer.py --input data/synthetic_edc.csv --output outputs/anomaly_results.jsonl
+	@echo "Running infer with run_id: run_$(RUN_ID)"
+	uv run python scripts/infer.py --input data/synthetic_edc.csv --output skill_out/anomaly_detection/run_$(RUN_ID)/anomaly_results.jsonl
 
 clean:
-	rm -rf .pytest_cache .ruff_cache build dist *.egg-info outputs/*.jsonl
+	rm -rf .pytest_cache .ruff_cache build dist *.egg-info skill_out/

@@ -1,119 +1,64 @@
-# anomaly-detection 出力（`review_note.md` / `anomaly_results.jsonl`）の解釈
+# anomaly-detection 出力（`summary.json` / `anomaly_results.jsonl` v0.2.0）の解釈
 
-対象: `.agent/skills/anomaly-detection/`
+対象: `.agent/skills/anomaly-detection/` (バージョン: `v0.2.0`)
 
-本スキルの出力は「異常の確定」ではなく、**人手レビューの優先順位付け（review queue）**です。`label=normal` でも「問題なし」を意味しません（**しきい値未満**という意味）。
+本スキルの出力は「異常の確定」ではなく、**人手レビューの優先順位付け（review queue）**および**データ品質ドリフトモニタリング**です。`label=normal` でも「問題なし」を意味しません（**しきい値未満**という意味）。
 
 ---
 
 ## 1. 何が出力されるか
 
-- `review_note.md`
+推論実行時（`make infer` または CLI 実行時）、以下の成果物が `skill_out/anomaly_detection/run_<id>/` に出力されます。
+
+- `anomaly_results.jsonl` (スキーマ: `output.schema.json` v0.2.0)
+  - 1行=1レコードの結果（`schema_version`, `record_id`, `score`, `label`, `triggered_rules`, `model_contributions`, `explanation`）
+- `summary.json`
+  - バッチ全体の集計結果（`schema_version`, `n_records`, `n_returned`, `n_warning_or_critical`, `audit`, ポピュレーション安定性指標 `psi_metrics`, KS検定 `ks_metrics`）
+- `review_note.md` (生成オプション有効時)
   - 実行条件、集計、上位候補（Top K）の表、解釈、推奨アクション
-- `anomaly_results.jsonl`
-  - 1行=1レコードの結果（`record_id`, `score`, `label`, `triggered_rules`, `model_contributions`, `explanation`）
 
 ---
 
-## 2. 表（Top candidates）の各列の意味
+## 2. 表（Top candidates）の各列と統合スコア (v0.2.0)
 
-`review_note.md` の表は次の列を持ちます。
+### 2.1 スコア統合 (Score Fusion)
 
-- **rank**
-  - 総合 `score` の高い順（1が最優先レビュー候補）
-- **record_id prefix**
-  - 匿名化された `record_id` の先頭（完全なIDは `anomaly_results.jsonl` を参照）
-- **score**
-  - 0〜1 の総合スコア（高いほど「要確認の可能性が高い」）
-- **label**
-  - しきい値で区分したカテゴリ（`normal` / `warning` / `critical`）
-- **rule evidence**
-  - ルールベースで引っかかった項目（説明可能な根拠）
-- **model evidence**
-  - 教師なしモデル由来の根拠（例: `iforest 0.5595`）
+既定設定（`configs/default.yaml`）における各検出器の評価割合:
+
+- **rule score（臨床/構造ルール）**: 30%
+- **robust MAD（ロバスト統計）**: 10%
+- **Isolation Forest（決定木外れ値）**: 20%
+- **LOF（密度偏差外れ値）**: 15%
+- **MCD（ロバストマハラノビス距離）**: 15%
+- **STL（時系列分解残差）**: 10%
+
+各スコアは 0〜1 に min-max 正規化され、加重平均された総合 `score` に基づいて `label`（`normal` / `warning` (≥0.55) / `critical` (≥0.80)）が自動付与されます。
 
 ---
 
-## 3. `score` と `label` の関係（重要）
+## 3. v0.2.0 で追加されたモデル・指標の解釈
 
-### 3.1 `label` は `score` だけで決まる
+### 3.1 MCD (Minimum Covariance Determinant)
+- **解釈**: 多変量数値データの相関構造から外れたサンプル（多変量外れ値）を、ロバスト共分散行列を用いて検出します。
+- **使いどころ**: 年齢・血圧・検査値の相互相関関係が通常と異なる臨床的に特異な症例を検出します。
 
-既定設定（`configs/default.yaml`）:
+### 3.2 STL (Seasonal-Trend Decomposition)
+- **解釈**: 時系列データのトレンド成分・季節周期成分（例: 7日周期）を分解し、予測値からの残差（乖離）を検出します。
+- **使いどころ**: 定期受診データや日次バイタルにおいて、通常の周期パターンから突発的に逸脱した測定値を捕捉します。
 
-- `warning`: score ≥ 0.55
-- `critical`: score ≥ 0.80
-- それ未満: `normal`
-
-したがって、上位に並んでいても `score < 0.55` なら `label=normal` のままです。
-
-### 3.2 `score` は複数ソースの加重平均
-
-既定設定（例）:
-
-- rule score（ルール）: 40%
-- robust MAD（ロバスト統計）: 15%
-- Isolation Forest: 25%
-- LOF: 20%
-
-単一テーブルのスモークテストでは、数値列（年齢・血圧・検査値など）が欠けると `robust_mad` が効かず、モデル evidence もカテゴリ特徴に偏ります。解釈は**ルール evidence を優先**してください。
+### 3.3 PSI (Population Stability Index) & KS検定 (`summary.json`)
+- **解釈**: ベースライン期間/群（`baseline_group`）と最新期間/群（`current_group`）の分布シフトを計測します。
+- **判定基準**:
+  - `psi_value < 0.10`: 安定 (`stable`)
+  - `0.10 ≤ psi_value ≤ 0.25`: 中度のシフト (`moderate_shift`)
+  - `psi_value > 0.25`: 重大なシフト (`significant_shift`)
+- **使いどころ**: データマート統合後や施設追加後の全体的なポピュレーション変化・測定機器変更に伴うデータシフトを早期検知します。
 
 ---
 
-## 4. `rule evidence` の解釈（例）
-
-スモークテスト（VACCINE 単一テーブル）で典型的に現れる例:
-
-### `duplicate_entity_key`
-
-同一の `study_id / site_id / subject_id / visit_date / form_name` が重複している候補です。
-
-レビュー観点:
-
-- 同一イベントの重複入力か
-- 更新履歴・再送・データマート統合など「正当な複数行」か
-
-### `unresolved_query`
-
-`is_query_open` のようなフラグ列がある場合に立つレビュー用シグナルです。
-
-注意:
-
-- **EDC の Query（発行・未解決）を直接表しているとは限りません**
-- データ定義書（フラグの意味）を確認して扱ってください
-
-### `temporal_inconsistency`
-
-`recorded_at < visit_date` の候補です（監査上の確認対象になり得ます）。
-
----
-
-## 5. `model evidence` の解釈（例: `iforest 0.5595`）
-
-Isolation Forest（`iforest`）などの教師なしモデルは、**全体分布の中で「珍しい特徴量の組み合わせ」**を 0〜1 で表します。
-
-使い方の基本:
-
-- ルール evidence と整合するなら「優先度の後押し」
-- ルール evidence が弱い／ないのにモデルが高いなら「未知のパターンの探索枠」
-- 逆に、モデルが高くても業務上の意味が薄い特徴量由来（カテゴリ偏り等）の場合は過信しない
-
----
-
-## 6. 1行（1レコード）の読み方（チェックリスト）
-
-`anomaly_results.jsonl` の各行には `explanation` があり、以下の順で読むと早いです。
-
-- **label / score**: アラート閾値を超えているか
-- **triggered_rules**: 何が「説明可能な」根拠か
-- **model_contributions**: どのモデルが押し上げたか（補助）
-- **次アクション**: DB で原票確認、サイト集計、運用上の解釈確認
-
----
-
-## 7. 実務上の推奨運用（最小）
+## 4. 実務上の推奨運用
 
 - **rank 上位から見る**（全件レビューを前提にしない）
-- まず **rule evidence を潰す**（重複・日付・欠損・フラグ）
-- `label=normal` は「問題なし」ではなく「閾値未満」なので、**上位候補は通常のレビュー対象**として扱う
-- 最終判断は、単一テーブルより **複数テーブル整合性**（時系列・関連フォーム・監査ログ）を優先する
-
+- まず **rule evidence を確認**（重複・日付・欠損・範囲外）
+- 次に **MCD / STL / IForest などのモデル貢献度** を参考にして未知の異常パターンを精査
+- `summary.json` の `psi_metrics` で `significant_shift` が検出された場合は、個々のレコード異常だけでなくデータソース全体の品質変更を疑う

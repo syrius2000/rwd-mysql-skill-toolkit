@@ -15,11 +15,13 @@ dependencies = [
   "pydantic>=2.0",
   "PyYAML>=6.0",
   "scikit-learn>=1.4",
+  "scipy>=1.10.0",
+  "statsmodels>=0.14.0",
 ]
 
 [project.optional-dependencies]
 api = ["fastapi>=0.110", "uvicorn>=0.29"]
-dev = ["pytest>=8", "ruff>=0.4", "mypy>=1.8"]
+dev = ["pytest>=8", "ruff>=0.4", "mypy>=1.8", "jsonschema>=4.0"]
 mlops = ["mlflow>=2.10", "evidently>=0.4"]
 deep = ["torch>=2.2"]
 

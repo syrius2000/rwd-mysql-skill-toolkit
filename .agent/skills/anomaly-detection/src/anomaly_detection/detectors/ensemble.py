@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
-from sklearn.pipeline import Pipeline
 
-from .features import build_preprocessor
+from ..features import build_preprocessor
 
 
 def _scale01(x: np.ndarray) -> np.ndarray:

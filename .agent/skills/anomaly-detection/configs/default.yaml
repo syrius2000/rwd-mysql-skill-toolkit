@@ -46,11 +46,27 @@ lof:
   enabled: true
   n_neighbors: 20
   contamination: 0.02
+mcd:
+  enabled: true
+  support_fraction: null
+stl:
+  enabled: false
+  time_col: "visit_date"
+  value_col: "val1"
+  period: 7
+psi:
+  enabled: true
+  group_col: "cohort_group"
+  baseline_group: "baseline"
+  current_group: "current"
+  n_bins: 10
 score_fusion:
-  rule_weight: 0.40
-  robust_weight: 0.15
-  iforest_weight: 0.25
-  lof_weight: 0.20
+  rule_weight: 0.30
+  robust_weight: 0.10
+  iforest_weight: 0.20
+  lof_weight: 0.15
+  mcd_weight: 0.15
+  stl_weight: 0.10
 thresholds:
   warning: 0.55
   critical: 0.80
