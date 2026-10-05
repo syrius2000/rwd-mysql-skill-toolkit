@@ -508,7 +508,7 @@ if (mode == "profile") {
 - [ ] **Step 7: analysis.R をテスト（Pass 1）**
 
 ```bash
-cd /Users/myamaguchi/Programing/OSX_IDE_Skill_management
+cd ~/Programing/OSX_IDE_Skill_management
 Rscript .agent/skills/vcd-categorical-analysis/templates/analysis.R --profile
 ```
 

@@ -8,12 +8,12 @@
 
 ### vcd-categorical-analysis
 
-#### [NEW] [verify_skill.sh](file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/.agent/skills/vcd-categorical-analysis/tests/verify_skill.sh)
+#### [NEW] [verify_skill.sh](../../../.agents/skills/vcd-categorical-analysis/tests/verify_skill.sh)
 - R がインストールされているか確認。
 - `analysis.R --profile` を実行し、`data_profile.json` の存在を確認。
 - `analysis.R --render` を実行し、主要な 15 ファイル（HTML, PNG, CSV）が正しく生成されたか検証。
 
-#### [NEW] [test_logic.R](file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/.agent/skills/vcd-categorical-analysis/tests/test_logic.R)
+#### [NEW] [test_logic.R](../../../.agents/skills/vcd-categorical-analysis/tests/test_logic.R)
 - 統計計算の期待値検証（オプション）。
 - `loglm` が特定のデータで正しく収束するか確認。
 

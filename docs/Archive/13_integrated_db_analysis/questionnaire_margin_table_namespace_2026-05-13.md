@@ -38,9 +38,9 @@ base::margin.table(tab, c(1L, 2L))
 
 以下の参照専用ディレクトリにも同種の記述がある場合は、各ディレクトリを別作業として同じ修正を適用する必要がある。この作業では参照ディレクトリは変更していない。
 
-- `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_VSCODE/`
-- `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_RAW/`
-- `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_Gemini/`
+- `~/Programing/OSX_IDE_Skill_management_VSCODE/`
+- `~/Programing/OSX_IDE_Skill_management_RAW/`
+- `~/Programing/OSX_IDE_Skill_management_Gemini/`
 
 ## 検証
 

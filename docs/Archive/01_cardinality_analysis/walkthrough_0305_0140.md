@@ -31,8 +31,8 @@ author: AI Agent (Gemini 2.0 Pro)
 - 生成された CSV および JSON ファイルの内容が妥当であることを確認しました。
 
 ## 出力ファイル location
-- [VACCINE_CH_t02_outpatient_columns_cardinality.csv](file:///tmp/mysql_table_cardinality/VACCINE_CH_t02_outpatient_columns_cardinality.csv)
-- [VACCINE_CH_t02_outpatient_report.json](file:///tmp/mysql_table_cardinality/VACCINE_CH_t02_outpatient_report.json)
+- `VACCINE_CH_t02_outpatient_columns_cardinality.csv` (`/tmp/mysql_table_cardinality/VACCINE_CH_t02_outpatient_columns_cardinality.csv`)
+- `VACCINE_CH_t02_outpatient_report.json` (`/tmp/mysql_table_cardinality/VACCINE_CH_t02_outpatient_report.json`)
 
 > [!NOTE]
 > プロジェクトディレクトリ `./skill-output` への権限エラーのため、ファイルは `/tmp` に配置されています。必要に応じて手動で移動してください。

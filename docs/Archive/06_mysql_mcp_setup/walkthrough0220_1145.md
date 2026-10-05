@@ -12,7 +12,7 @@ author: AI Agent (Gemini 2.0 Flash)
 - **追加された設定**:
   ```json
   "mysql": {
-    "command": "/Users/myamaguchi/.gemini/extensions/mysql/toolbox",
+    "command": "~/.gemini/extensions/mysql/toolbox",
     "args": ["--prebuilt", "mysql", "--stdio"],
     "env": {
       "MYSQL_HOST": "127.0.0.1",

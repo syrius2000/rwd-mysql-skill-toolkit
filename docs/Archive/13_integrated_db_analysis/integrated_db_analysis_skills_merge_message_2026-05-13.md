@@ -6,9 +6,9 @@ This branch changes the repository direction from a generic IDE skill management
 
 The three existing development directories were used as read-only references only:
 
-- `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_VSCODE/`
-- `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_RAW/`
-- `/Users/myamaguchi/Programing/OSX_IDE_Skill_management_Gemini/`
+- `~/Programing/OSX_IDE_Skill_management_VSCODE/`
+- `~/Programing/OSX_IDE_Skill_management_RAW/`
+- `~/Programing/OSX_IDE_Skill_management_Gemini/`
 
 They were not modified.
 

@@ -12,9 +12,9 @@
 
 ### 2. 自動テスト基盤の構築
 スキルディレクトリ内に `tests/` を新設し、2 種類のテストを実装しました。
-- **[verify_skill.sh](file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/.agent/skills/vcd-categorical-analysis/tests/verify_skill.sh)**: 
+- **[verify_skill.sh](../../../.agents/skills/vcd-categorical-analysis/tests/verify_skill.sh)**: 
   - 結合テスト。Pass 1 (Profile) および Pass 2 (Render) を実行し、全成果物（JSON, HTML, PNG, CSV）が正しく生成されるか検証します。
-- **[test_logic.R](file:///Users/myamaguchi/Programing/OSX_IDE_Skill_management/.agent/skills/vcd-categorical-analysis/tests/test_logic.R)**: 
+- **[test_logic.R](../../../.agents/skills/vcd-categorical-analysis/tests/test_logic.R)**: 
   - ロジックテスト。数値の factor 変換や sparsity 計算が正しく機能するか、モックデータを用いて検証します。
 
 ### 3. 環境の同期 (ミラーリング)
