@@ -35,7 +35,7 @@ def frontmatter_value(frontmatter: str, key: str) -> str:
 
 
 def test_all_skill_frontmatter_has_valid_discovery_fields() -> None:
-    skill_files = sorted((ROOT / ".agent/skills").glob("*/SKILL.md"))
+    skill_files = sorted((ROOT / ".agents/skills").glob("*/SKILL.md"))
     assert skill_files
     for path in skill_files:
         frontmatter = read_frontmatter(path)
@@ -48,7 +48,7 @@ def test_all_skill_frontmatter_has_valid_discovery_fields() -> None:
 
 
 def test_generic_skill_copies_are_not_tracked_locally() -> None:
-    skills_dir = ROOT / ".agent/skills"
+    skills_dir = ROOT / ".agents/skills"
     tracked_copies = [name for name in GENERIC_SKILL_COPIES if (skills_dir / name).exists()]
     assert not tracked_copies, (
         "generic skills belong to Productivity-Skill and must not be tracked here: "

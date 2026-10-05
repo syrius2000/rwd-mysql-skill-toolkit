@@ -44,12 +44,12 @@ flowchart LR
 - DB構築・SQL成果物: `sql/drafts/<topic>/` で作成し、検証後に`sql/validated/<topic>/`へ進めます。
 - 標準SQL成果物: `main_query.sql`、`validation_query.sql`、`query_note.md`です。
 - Skill実行成果物: 各Skillの契約に従い、原則`skill_out/`へ保存します。
-- 共通品質契約・実行ユーティリティ: `.agent/shared/`を利用します。4ファイルは移動・削除しません。
+- 共通品質契約・実行ユーティリティ: `.agents/shared/`を利用します。4ファイルは移動・削除しません。
 
 ## リポジトリ構成
 
 ```text
-├── .agent/
+├── .agents/
 │   ├── skills/             # ローカル管理Skill（14件）
 │   └── shared/             # 共通契約とR/Pythonユーティリティ
 ├── docs/                   # 索引、計画、記録、参照資料

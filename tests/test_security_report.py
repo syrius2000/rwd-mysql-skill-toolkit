@@ -11,8 +11,8 @@ import tempfile
 from pathlib import Path
 
 WS = Path(__file__).resolve().parent.parent
-SCRIPT = WS / ".agent" / "skills" / "security-vulnerability-check" / "scripts" / "run_static_analysis.py"
-REPORT_RMD = WS / ".agent" / "skills" / "security-vulnerability-check" / "templates" / "security_report.Rmd"
+SCRIPT = WS / ".agents" / "skills" / "security-vulnerability-check" / "scripts" / "run_static_analysis.py"
+REPORT_RMD = WS / ".agents" / "skills" / "security-vulnerability-check" / "templates" / "security_report.Rmd"
 
 pass_count = 0
 fail_count = 0

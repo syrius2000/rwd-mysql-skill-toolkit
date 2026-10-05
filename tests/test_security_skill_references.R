@@ -22,7 +22,7 @@ check <- function(cond, msg) {
 }
 
 # --- ローカルSkillディレクトリのベースパス ---
-dirs <- file.path(ws, ".agent", "skills", "security-vulnerability-check")
+dirs <- file.path(ws, ".agents", "skills", "security-vulnerability-check")
 
 for (d in dirs) {
   label <- basename(dirname(dirname(d)))

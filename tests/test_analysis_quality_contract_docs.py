@@ -9,7 +9,7 @@ def read(path: str) -> str:
 
 
 def test_analysis_quality_contract_exists_and_sets_boundaries():
-    text = read(".agent/shared/analysis_quality_contract.md")
+    text = read(".agents/shared/analysis_quality_contract.md")
 
     required_phrases = [
         "Pass 2.5",
@@ -28,22 +28,22 @@ def test_analysis_quality_contract_exists_and_sets_boundaries():
 
 def test_target_skills_reference_analysis_quality_contract():
     skill_paths = [
-        ".agent/skills/vcd-pass0-consultation/SKILL.md",
-        ".agent/skills/vcd-categorical-analysis/SKILL.md",
-        ".agent/skills/vcd-bayesian-evidence-analysis/SKILL.md",
-        ".agent/skills/questionnaire-batch-analysis/SKILL.md",
+        ".agents/skills/vcd-pass0-consultation/SKILL.md",
+        ".agents/skills/vcd-categorical-analysis/SKILL.md",
+        ".agents/skills/vcd-bayesian-evidence-analysis/SKILL.md",
+        ".agents/skills/questionnaire-batch-analysis/SKILL.md",
     ]
 
     for path in skill_paths:
         text = read(path)
-        assert ".agent/shared/analysis_quality_contract.md" in text
+        assert ".agents/shared/analysis_quality_contract.md" in text
         assert "共通品質契約" in text
 
 
 def test_vcd_skills_define_quality_check_outputs():
     for path in [
-        ".agent/skills/vcd-categorical-analysis/SKILL.md",
-        ".agent/skills/vcd-bayesian-evidence-analysis/SKILL.md",
+        ".agents/skills/vcd-categorical-analysis/SKILL.md",
+        ".agents/skills/vcd-bayesian-evidence-analysis/SKILL.md",
     ]:
         text = read(path)
         assert "Pass 2.5" in text
@@ -53,7 +53,7 @@ def test_vcd_skills_define_quality_check_outputs():
 
 
 def test_questionnaire_skill_defines_cross_question_summary():
-    text = read(".agent/skills/questionnaire-batch-analysis/SKILL.md")
+    text = read(".agents/skills/questionnaire-batch-analysis/SKILL.md")
 
     required_phrases = [
         "cross_question_summary.md",

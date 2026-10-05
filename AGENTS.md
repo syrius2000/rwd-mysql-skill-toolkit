@@ -62,13 +62,13 @@ vcd-pass0-consultation
 ## Skillと共有資産
 
 ```text
-.agent/
+.agents/
 ├── skills/<skill-name>/   # ローカル管理Skill
 └── shared/                # 共通契約とR/Pythonユーティリティ
 ```
 
 - `.cursor/skills/`は廃止済みのため復活させない。
-- `.agent/shared/analysis_quality_contract.md`、`.agent/shared/inspect_data.R`、`.agent/shared/run_scope.R`、`.agent/shared/run_scope.py`は現行Skillの必須依存であり、移動・削除しない。
+- `.agents/shared/analysis_quality_contract.md`、`.agents/shared/inspect_data.R`、`.agents/shared/run_scope.R`、`.agents/shared/run_scope.py`は現行Skillの必須依存であり、移動・削除しない。
 - 同一Skillの再実行は`run_<id>/`へ隔離し、既存成果物を上書きしない。
 - SQL成果物はSkill配下ではなく`sql/`に保存する。
 - `mysql-create-query-support`のSQLは`sql/drafts/`から`sql/validated/`へ進める。標準成果物は`main_query.sql`、`validation_query.sql`、`query_note.md`である。

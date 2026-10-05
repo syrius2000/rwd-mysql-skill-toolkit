@@ -5,7 +5,7 @@ env/
 
 # lock (uv)
 uv.lock
-!.agent/skills/anomaly-detection/uv.lock
+!.agents/skills/anomaly-detection/uv.lock
 
 # Python
 __pycache__/
@@ -31,18 +31,14 @@ Thumbs.db
 .codex/
 .cursor/
 tmp/
+.agents/skills/openspec-*/
+.agents/skills/.openspec-target
+.agents/workflows/
 .agent/skills/openspec-*/
 .agent/workflows/
 
 # Productivity / generic agent skills (not repo-specific)
 # Prefer Cursor plugins or ~/.agents; do not vendor here.
-.agent/skills/brainstorming/
-.agent/skills/executing-plans/
-.agent/skills/find-skills/
-.agent/skills/grilling/
-.agent/skills/systematic-debugging/
-.agent/skills/verification-before-completion/
-.agent/skills/writing-plans/
 chrome_profile_notebooklm/
 *.local
 .env
@@ -71,6 +67,7 @@ skill_out/*
 tests/skill_out_smoke/
 .env_local
 *.excalidraw
+.agents/skills/*/*/*.png
 .agent/skills/*/*/*.png
 .cursor/skills/*/*/*.png
 
@@ -79,5 +76,9 @@ tests/skill_out_smoke/
 **/tests/test_out_logic/
 **/vcd-categorical-analysis/templates/skill_out/
 # skill templates may produce outputs (do not track)
+.agents/skills/**/templates/skill_out/
 .agent/skills/**/templates/skill_out/
 .cursor/skills/**/templates/skill_out/
+
+# QMS audit cases (local only)
+docs/Artifacts/qms-cases/

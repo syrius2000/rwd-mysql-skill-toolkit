@@ -2,7 +2,7 @@
 # Run from repo root: Rscript tests/test_vcd_bayesian_run_id.R
 
 root <- normalizePath(".", mustWork = TRUE)
-analysis <- file.path(root, ".agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R")
+analysis <- file.path(root, ".agents/skills/vcd-bayesian-evidence-analysis/templates/analysis.R")
 stopifnot(file.exists(analysis))
 
 td <- tempfile("vcd_bay_runid_")

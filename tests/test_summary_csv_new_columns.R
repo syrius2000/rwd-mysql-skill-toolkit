@@ -18,7 +18,7 @@ root <- if (length(fa) > 0) {
 }
 
 runner_path <- file.path(
-  root, ".agent", "skills",
+  root, ".agents", "skills",
   "questionnaire-batch-analysis", "templates", "batch_runner.R"
 )
 tmp_dir <- file.path(tempdir(), "summary_csv_test")

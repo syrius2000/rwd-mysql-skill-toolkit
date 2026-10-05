@@ -1,4 +1,4 @@
-"""Tests for .agent/shared/run_scope.py"""
+"""Tests for .agents/shared/run_scope.py"""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SHARED = REPO_ROOT / ".agent" / "shared"
+SHARED = REPO_ROOT / ".agents" / "shared"
 sys.path.insert(0, str(SHARED))
 
 import run_scope as rs  # noqa: E402

@@ -22,7 +22,7 @@ root <- if (length(fa) > 0) {
 
 data_path    <- file.path(root, "tests", "sample_survey.csv")
 config_path  <- file.path(root, "tests", "question_config_test.csv")
-runner_path  <- file.path(root, ".agent", "skills", "questionnaire-batch-analysis",
+runner_path  <- file.path(root, ".agents", "skills", "questionnaire-batch-analysis",
                           "templates", "batch_runner.R")
 out_dir      <- file.path(root, "tests", "skill_out_smoke")
 

@@ -12,10 +12,10 @@ repo <- if (is.na(f) || !nzchar(f)) {
 }
 
 # --- 対象: vcd-categorical-analysis report.Rmd ---
-vcd_path <- file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd")
+vcd_path <- file.path(repo, ".agents/skills/vcd-categorical-analysis/templates/report.Rmd")
 
 # --- 対象: questionnaire-batch-analysis report.Rmd ---
-qba_path <- file.path(repo, ".agent/skills/questionnaire-batch-analysis/templates/report.Rmd")
+qba_path <- file.path(repo, ".agents/skills/questionnaire-batch-analysis/templates/report.Rmd")
 
 pass <- 0L
 fail <- 0L

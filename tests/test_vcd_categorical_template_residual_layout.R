@@ -10,7 +10,7 @@ repo <- if (is.na(f) || !nzchar(f)) {
   normalizePath(file.path(dirname(f), ".."), winslash = "/", mustWork = TRUE)
 }
 
-path <- file.path(repo, ".agent/skills/vcd-categorical-analysis/templates/report.Rmd")
+path <- file.path(repo, ".agents/skills/vcd-categorical-analysis/templates/report.Rmd")
 
 p <- path
   stopifnot(file.exists(p))

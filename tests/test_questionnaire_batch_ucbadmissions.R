@@ -18,7 +18,7 @@ root <- if (length(fa) > 0) {
 
 runner_path <- file.path(
   root,
-  ".agent",
+  ".agents",
   "skills",
   "questionnaire-batch-analysis",
   "templates",

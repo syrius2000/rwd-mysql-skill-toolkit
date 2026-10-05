@@ -32,8 +32,8 @@ stopifnot(os %in% c("Darwin", "Windows", "Linux"))
 message("  [PASS] OS '", os, "' is a supported platform")
 
 # --- 3. Template files contain base_family in theme_minimal ---
-vcd_rmd <- ".agent/skills/vcd-categorical-analysis/templates/report.Rmd"
-quest_rmd <- ".agent/skills/questionnaire-batch-analysis/templates/report.Rmd"
+vcd_rmd <- ".agents/skills/vcd-categorical-analysis/templates/report.Rmd"
+quest_rmd <- ".agents/skills/questionnaire-batch-analysis/templates/report.Rmd"
 
 check_template_font <- function(path) {
   stopifnot(file.exists(path))

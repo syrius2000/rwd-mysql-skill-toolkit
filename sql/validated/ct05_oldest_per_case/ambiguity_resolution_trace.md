@@ -13,7 +13,7 @@
 ## 0. 入力プロンプト（原文に近い形）
 
 ```text
-@.agent/skills/mysql-create-query-support のスキルをつかって、
+@.agents/skills/mysql-create-query-support のスキルをつかって、
 Ct05のテーブルを利用し、各症例の一番古いレコードを抽出したい
 ```
 
@@ -39,7 +39,7 @@ Ct05のテーブルを利用し、各症例の一番古いレコードを抽出�
 
 ## 2. スキル契約の読み込み（手順の固定）
 
-最初に `.agent/skills/mysql-create-query-support/SKILL.md` を読み、次を契約として固定した。
+最初に `.agents/skills/mysql-create-query-support/SKILL.md` を読み、次を契約として固定した。
 
 1. 目的を分解する（誰・何・いつ・何で判定）
 2. 粒度を決める
@@ -179,4 +179,4 @@ flowchart TD
 - [main_query.sql](./main_query.sql)
 - [validation_query.sql](./validation_query.sql)
 - [query_note.md](./query_note.md)
-- スキル正本: `.agent/skills/mysql-create-query-support/SKILL.md`
+- スキル正本: `.agents/skills/mysql-create-query-support/SKILL.md`

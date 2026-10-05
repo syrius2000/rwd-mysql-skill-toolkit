@@ -1,6 +1,6 @@
 # anomaly-detection 出力（`summary.json` / `anomaly_results.jsonl` v0.2.0）の解釈
 
-対象: `.agent/skills/anomaly-detection/` (バージョン: `v0.2.0`)
+対象: `.agents/skills/anomaly-detection/` (バージョン: `v0.2.0`)
 
 本スキルの出力は「異常の確定」ではなく、**人手レビューの優先順位付け（review queue）**および**データ品質ドリフトモニタリング**です。`label=normal` でも「問題なし」を意味しません（**しきい値未満**という意味）。
 

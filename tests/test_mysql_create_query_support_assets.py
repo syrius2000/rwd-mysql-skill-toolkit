@@ -14,7 +14,7 @@ REQUIRED_RELATIVE_FILES = [
 
 def test_query_support_skill_exists_in_agent():
     for rel in REQUIRED_RELATIVE_FILES:
-        path = ROOT / ".agent/skills" / SKILL / rel
+        path = ROOT / ".agents/skills" / SKILL / rel
         assert path.exists(), f"missing {path}"
 
 
@@ -23,7 +23,7 @@ def test_cursor_skill_mirror_is_not_tracked():
 
 
 def test_query_support_skill_requires_validation_sql_and_note():
-    skill_md = (ROOT / ".agent/skills" / SKILL / "SKILL.md").read_text(encoding="utf-8")
+    skill_md = (ROOT / ".agents/skills" / SKILL / "SKILL.md").read_text(encoding="utf-8")
     assert "main_query.sql" in skill_md
     assert "validation_query.sql" in skill_md
     assert "query_note.md" in skill_md
@@ -67,10 +67,10 @@ def test_agents_describes_external_sources_and_sql_policy():
 
 def test_existing_db_skills_link_to_query_support():
     skill_paths = [
-        ".agent/skills/flat-file-mysql-overview/SKILL.md",
-        ".agent/skills/mysql-er-diagram/SKILL.md",
-        ".agent/skills/mysql-table-cardinality/SKILL.md",
-        ".agent/skills/mysql-entity-matrix/SKILL.md",
+        ".agents/skills/flat-file-mysql-overview/SKILL.md",
+        ".agents/skills/mysql-er-diagram/SKILL.md",
+        ".agents/skills/mysql-table-cardinality/SKILL.md",
+        ".agents/skills/mysql-entity-matrix/SKILL.md",
     ]
     for rel in skill_paths:
         content = (ROOT / rel).read_text(encoding="utf-8")
@@ -83,24 +83,24 @@ def test_reference_analysis_skills_are_local_integration_mirrors():
         "vcd-bayesian-evidence-analysis",
     ]
     for skill in optional_skills:
-        agent_dir = ROOT / ".agent/skills" / skill
+        agent_dir = ROOT / ".agents/skills" / skill
         assert agent_dir.exists(), f"missing {agent_dir}"
         assert (agent_dir / "SKILL.md").exists(), f"missing {agent_dir / 'SKILL.md'}"
 
     bayesian = (
-        ROOT / ".agent/skills/vcd-bayesian-evidence-analysis/SKILL.md"
+        ROOT / ".agents/skills/vcd-bayesian-evidence-analysis/SKILL.md"
     ).read_text(encoding="utf-8")
     assert "run_shell_command" not in bayesian
     assert "write_file" not in bayesian
     assert "sql/validated/" in bayesian
     assert (
-        ROOT / ".agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R"
+        ROOT / ".agents/skills/vcd-bayesian-evidence-analysis/templates/analysis.R"
     ).exists()
     assert (
-        ROOT / ".agent/skills/vcd-bayesian-evidence-analysis/templates/dashboard.Rmd"
+        ROOT / ".agents/skills/vcd-bayesian-evidence-analysis/templates/dashboard.Rmd"
     ).exists()
     assert (
-        ROOT / ".agent/skills/vcd-categorical-reporting/references/interface.md"
+        ROOT / ".agents/skills/vcd-categorical-reporting/references/interface.md"
     ).exists()
 
 

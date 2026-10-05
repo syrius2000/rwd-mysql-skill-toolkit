@@ -18,6 +18,10 @@
 ## Archive（過去）
 
 テーマ別サブディレクトリ（例: `04_flat_file_mysql_skills/`）。初期設計 [1st_design.md](Archive/04_flat_file_mysql_skills/1st_design.md) は flat-file 系スキル実装前の要件メモ。
+完了した計画・実装報告は以下のテーマ別ディレクトリに集約管理されている：
+- [14_anomaly_detection_enhancement](Archive/14_anomaly_detection_enhancement/summary.md): EDC/RWD 異常検知スキル強化・uv移行・Score Fusion統一（2026-07）
+- [15_code_understanding_and_repo_maintenance](Archive/15_code_understanding_and_repo_maintenance/summary.md): 出力隔離・README刷新・Code Understanding Suite整備（2026-07）
+- [16_migrate_agent_to_agents](Archive/16_migrate_agent_to_agents/summary.md): Skill配置の標準化（.agent → .agents）および openspec 除外（2026-10）
 
 ## 新規ドキュメントの置き方
 

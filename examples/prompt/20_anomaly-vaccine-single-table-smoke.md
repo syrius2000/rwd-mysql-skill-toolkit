@@ -1,6 +1,6 @@
 # anomaly-detection: VACCINE 1テーブルスモークテスト
 
-VACCINE DB の `CH_t05_covid_vaccine` を使い、`.agent/skills/anomaly-detection/` の動作確認をしてください。
+VACCINE DB の `CH_t05_covid_vaccine` を使い、`.agents/skills/anomaly-detection/` の動作確認をしてください。
 
 目的:
 - 実データ由来 CSV で異常検知 CLI が動くことを確認する
@@ -10,7 +10,7 @@ VACCINE DB の `CH_t05_covid_vaccine` を使い、`.agent/skills/anomaly-detecti
 1. `VACCINE` DB の `CH_t05_covid_vaccine` の行数、日付範囲、ID 欠損を確認する
 2. `sql/drafts/anomaly_vaccine_single_table/` の SQL を使って抽出する
 3. 抽出結果を `skill_out/anomaly_detection/vaccine_single_table/input.csv` に保存する
-4. `.agent/skills/anomaly-detection/scripts/infer.py` を実行する
+4. `.agents/skills/anomaly-detection/scripts/infer.py` を実行する
 5. 結果を `skill_out/anomaly_detection/vaccine_single_table/review_note.md` に日本語で要約する
 
 レビュー文書の書き方:

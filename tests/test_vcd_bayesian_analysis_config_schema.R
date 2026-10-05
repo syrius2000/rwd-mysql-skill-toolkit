@@ -2,8 +2,8 @@
 # Run from repo root: Rscript tests/test_vcd_bayesian_analysis_config_schema.R
 
 root <- normalizePath(".", mustWork = TRUE)
-analysis <- file.path(root, ".agent/skills/vcd-bayesian-evidence-analysis/templates/analysis.R")
-schema <- file.path(root, ".agent/skills/vcd-bayesian-evidence-analysis/references/analysis_config.schema.json")
+analysis <- file.path(root, ".agents/skills/vcd-bayesian-evidence-analysis/templates/analysis.R")
+schema <- file.path(root, ".agents/skills/vcd-bayesian-evidence-analysis/references/analysis_config.schema.json")
 stopifnot(file.exists(analysis))
 stopifnot(file.exists(schema))
 
