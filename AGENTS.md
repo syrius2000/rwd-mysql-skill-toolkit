@@ -21,7 +21,7 @@ Productivity-Skillの導入コマンド:
 npx skills add syrius2000/Productivity-Skill
 ```
 
-ローカル管理Skillは14件だけである。
+ローカル管理Skillは`.agents/skills/`配下に置く。DB・RWD・統計系の14件と、OpenSpec変更管理用の`openspec-*`12件である。
 
 ```text
 anomaly-detection
@@ -38,6 +38,7 @@ vcd-bayesian-evidence-analysis
 vcd-categorical-analysis
 vcd-categorical-reporting
 vcd-pass0-consultation
+openspec-* (12件)
 ```
 
 `code-understanding-pro`、`code-understanding-pyramid`、`stats-sql-comprehension`、`teach`、`writing-great-skills`、`grilling`は外部汎用Skillであり、ローカル管理一覧に含めない。
@@ -45,8 +46,9 @@ vcd-pass0-consultation
 ## 基本ルール
 
 - 回答は日本語で簡潔にし、根拠ファイルと行番号を示す。
-- TODO/PLANは「実行して」と明示されるまで実装しない。レビューのみは承認ではない。
-- 大規模変更は`docs/Artifacts/`に実装計画を作り、承認後に着手する。
+- 依頼された作業は、確認を挟まず完了まで進める。途中の前提や判断は最終報告で明示する。
+- 大規模変更は`docs/Artifacts/`に計画書を残してから進める（計画書は記録であり、承認待ちには使わない）。
+- 承認が必要なのは、DB更新系SQLの実行、外部システムへの書き込み、本番相当データの変更のみ。
 - 既存の無関係な変更は戻さず、コミットにも混ぜない。
 - APIキー、パスワード、PHI/PIIをハードコードまたは成果物へ複製しない。
 - DB操作は接続先を確認し、明示承認なしに更新系SQLを実行しない。
@@ -67,7 +69,6 @@ vcd-pass0-consultation
 └── shared/                # 共通契約とR/Pythonユーティリティ
 ```
 
-- `.cursor/skills/`は廃止済みのため復活させない。
 - `.agents/shared/analysis_quality_contract.md`、`.agents/shared/inspect_data.R`、`.agents/shared/run_scope.R`、`.agents/shared/run_scope.py`は現行Skillの必須依存であり、移動・削除しない。
 - 同一Skillの再実行は`run_<id>/`へ隔離し、既存成果物を上書きしない。
 - SQL成果物はSkill配下ではなく`sql/`に保存する。
